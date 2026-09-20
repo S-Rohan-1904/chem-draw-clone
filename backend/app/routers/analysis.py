@@ -26,3 +26,42 @@ def bonding(body: SmilesIn, db: Session = Depends(get_db)):
         return analysis.bonding(body.smiles, _molblock(db, body.smiles))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class AcidBaseIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    ph: float = Field(default=7.4, ge=-2, le=16)
+
+
+@router.post("/acidbase")
+def acid_base(body: AcidBaseIn):
+    from .. import acidbase
+
+    try:
+        return acidbase.analyse(body.smiles, body.ph)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class IsotopeLabel(BaseModel):
+    atom_idx: int
+    isotope: str = Field(max_length=6)
+    count: int = Field(default=1, ge=1, le=12)
+
+
+class IsotopesIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    labels: list[IsotopeLabel] = Field(default_factory=list, max_length=50)
+
+
+@router.post("/isotopes")
+def isotopes_apply(body: IsotopesIn):
+    from .. import isotopes
+
+    try:
+        mol = chem.mol_from_smiles(body.smiles)
+        out = isotopes.apply_labels(body.smiles, [lab.model_dump() for lab in body.labels])
+        out["options"] = isotopes.options_for(mol)
+        return out
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))

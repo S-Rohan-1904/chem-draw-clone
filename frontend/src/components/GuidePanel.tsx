@@ -54,6 +54,14 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Acids, bases and isotopes',
+    body: [
+      'The Acids and bases panel appears when the molecule has an ionisable group. Each site is listed with its group, a typical pKa and the fraction ionised at the chosen pH. Move the pH slider or select a preset (stomach, blood, intestine, or the isoelectric point when the molecule has both an acid and a base) and the drawing updates to the dominant form at that pH, with the net charge.',
+      'The pKa values are textbook values for each type of group, not predictions for the specific molecule, so treat them as accurate to about one unit.',
+      'Isotope labels lets you replace an atom, or some of the hydrogens on an atom, with a heavier isotope such as deuterium, carbon-13, nitrogen-15 or oxygen-18. The panel shows the labelled structure, the isotopic formula, the exact mass and the mass shift.',
+    ],
+  },
+  {
     title: 'Name breakdown',
     body: [
       'For molecules built from a name, the Name breakdown panel colours each part of the name: stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey; the name itself was still read correctly.',

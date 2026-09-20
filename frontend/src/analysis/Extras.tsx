@@ -1,5 +1,7 @@
 import type { Molecule } from '../types'
+import { AcidBase } from './AcidBase'
 import { Bonding } from './Bonding'
+import { Isotopes } from './Isotopes'
 import './analysis.css'
 
 interface Props {
@@ -12,6 +14,8 @@ export function ResultExtras({ mol, onHighlight }: Props) {
   return (
     <>
       <Bonding mol={mol} onHighlight={onHighlight} />
+      <AcidBase mol={mol} onHighlight={onHighlight} />
+      <Isotopes mol={mol} onHighlight={onHighlight} />
     </>
   )
 }

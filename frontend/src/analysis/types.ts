@@ -87,3 +87,45 @@ export interface Bonding {
   hbond: { donors: number[]; acceptors: number[]; both: number[]; svg: string }
   solubility: Solubility
 }
+
+export interface AcidBaseSite {
+  atom_idx: number
+  symbol: string
+  group: string
+  pka: number
+  kind: 'acid' | 'base'
+  in_water_range: boolean
+  atoms: number[]
+  fraction_ionised: number
+}
+
+export interface AcidBase {
+  ph: number
+  sites: AcidBaseSite[]
+  net_charge: number
+  species_smiles: string
+  species_svg: string
+  species_charge: number
+  pi: number | null
+  strongest_acid: string | null
+  strongest_base: string | null
+  note: string
+}
+
+export interface IsotopeLabel {
+  atom_idx: number
+  isotope: string
+  count: number
+}
+
+export interface IsotopeResult {
+  smiles: string
+  formula: string
+  exact_mass: number
+  base_mass: number
+  shift: number
+  nominal_shift: number
+  svg: string
+  applied: { atom_idx: number; isotope: string; count: number; text: string }[]
+  options: { atom_idx: number; symbol: string; hs: number; codes: string[] }[]
+}

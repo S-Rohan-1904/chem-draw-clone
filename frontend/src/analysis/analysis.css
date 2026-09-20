@@ -25,3 +25,8 @@
 @media (max-width: 720px) {
   .bonding-split { grid-template-columns: 1fr; }
 }
+.ph-slider input[type='range'] { flex: 1; min-width: 120px; }
+.tag-acid { background: #fee2e2; color: #b91c1c; }
+.tag-base { background: #dbeafe; color: #1e40af; }
+.frac-bar { display: inline-block; width: 60px; height: 8px; background: var(--border); border-radius: 4px; margin-right: 0.4rem; vertical-align: middle; overflow: hidden; }
+.frac-bar > span { display: block; height: 100%; }

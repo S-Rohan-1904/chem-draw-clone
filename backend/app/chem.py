@@ -93,6 +93,7 @@ class MoleculeResult:
     inchikey: str
     warnings: list[str] = field(default_factory=list)
     normalised_input: str = ""
+    properties: dict = field(default_factory=dict)
 
 
 def _looks_like_smiles(text: str) -> bool:
@@ -387,6 +388,31 @@ def canonical_smiles(smiles: str) -> str:
     return Chem.MolToSmiles(mol_from_smiles(smiles), isomericSmiles=True)
 
 
+def compute_properties(mol: Chem.Mol) -> dict:
+    """Common descriptors for the properties panel."""
+    from rdkit.Chem import Crippen, Lipinski, QED
+
+    mw = Descriptors.MolWt(mol)
+    logp = Crippen.MolLogP(mol)
+    hbd = Lipinski.NumHDonors(mol)
+    hba = Lipinski.NumHAcceptors(mol)
+    return {
+        "exact_mass": round(Descriptors.ExactMolWt(mol), 4),
+        "logp": round(logp, 2),
+        "tpsa": round(rdMolDescriptors.CalcTPSA(mol), 1),
+        "hbd": hbd,
+        "hba": hba,
+        "rotatable_bonds": Lipinski.NumRotatableBonds(mol),
+        "heavy_atoms": mol.GetNumHeavyAtoms(),
+        "rings": rdMolDescriptors.CalcNumRings(mol),
+        "aromatic_rings": rdMolDescriptors.CalcNumAromaticRings(mol),
+        "stereocentres": len(Chem.FindMolChiralCenters(mol, includeUnassigned=True, useLegacyImplementation=False)),
+        "charge": Chem.GetFormalCharge(mol),
+        "qed": round(QED.qed(mol), 2),
+        "lipinski_violations": sum([mw > 500, logp > 5, hbd > 5, hba > 10]),
+    }
+
+
 def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles") -> MoleculeResult:
     mol = mol_from_smiles(smiles)
     stereo = _stereo_report(mol)
@@ -403,6 +429,7 @@ def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles")
         mw=round(Descriptors.MolWt(mol), 3),
         inchi=Chem.MolToInchi(mol),
         inchikey=Chem.MolToInchiKey(mol),
+        properties=compute_properties(mol),
     )
 
 

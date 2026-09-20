@@ -47,8 +47,6 @@ export function StereoPanel({ mol, onHover }: Props) {
       <dl className="props">
         <dt>Source</dt><dd>{mol.source === 'iupac' ? 'IUPAC name' : mol.source === 'molfile' ? 'Drawn structure' : 'SMILES'}</dd>
         <dt>SMILES</dt><dd><code>{mol.smiles}</code></dd>
-        <dt>Formula</dt><dd>{mol.formula}</dd>
-        <dt>MW</dt><dd>{mol.mw.toFixed(2)} g/mol</dd>
         <dt>InChIKey</dt><dd><code>{mol.inchikey}</code></dd>
       </dl>
     </section>

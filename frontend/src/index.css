@@ -158,3 +158,8 @@ input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color:
 .editor-loading { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .draw-actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 @media (max-width: 960px) { .editor-wrap { height: 440px; } }
+
+.props-grid { grid-template-columns: max-content 1fr max-content 1fr; }
+.tag-ok { background: var(--green-soft); color: var(--green); }
+.tag-warn { background: var(--warn-soft); color: var(--warn); }
+@media (max-width: 600px) { .props-grid { grid-template-columns: max-content 1fr; } }

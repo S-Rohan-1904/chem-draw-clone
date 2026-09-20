@@ -6,6 +6,7 @@ import { DrawPanel } from './components/DrawPanel'
 import { ErrorPanel } from './components/ErrorPanel'
 import { Gallery } from './components/Gallery'
 import { NameInput } from './components/NameInput'
+import { Properties } from './components/Properties'
 import { SavedList } from './components/SavedList'
 import { ResultSkeleton } from './components/Skeleton'
 import { StereoPanel } from './components/StereoPanel'
@@ -202,7 +203,10 @@ export default function App() {
                 <Structure2D mol={mol} />
                 <Structure3D mol={mol} highlight={highlight} />
               </div>
-              <StereoPanel mol={mol} onHover={setHighlight} />
+              <div className="grid2">
+                <StereoPanel mol={mol} onHover={setHighlight} />
+                <Properties mol={mol} />
+              </div>
               <Downloads mol={mol} />
             </>
           )}

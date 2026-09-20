@@ -24,6 +24,7 @@ export interface Molecule {
   cached: boolean
   warnings: string[]
   normalised_input: string
+  properties: MolProperties
 }
 
 export interface SavedMolecule {
@@ -37,6 +38,22 @@ export interface SavedMolecule {
 export interface AuthState {
   token: string
   username: string
+}
+
+export interface MolProperties {
+  exact_mass: number
+  logp: number
+  tpsa: number
+  hbd: number
+  hba: number
+  rotatable_bonds: number
+  heavy_atoms: number
+  rings: number
+  aromatic_rings: number
+  stereocentres: number
+  charge: number
+  qed: number
+  lipinski_violations: number
 }
 
 export interface CheckResult {

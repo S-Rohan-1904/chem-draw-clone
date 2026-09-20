@@ -103,3 +103,13 @@ def test_bad_molfile_rejected():
         build("garbage\n\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n")
     with pytest.raises(ChemError):
         build("\n\n\n  1  0  0  0  0  0            999 V2000\n    0.0 0.0 0.0 Xx  0  0\nM  END\n")
+
+
+def test_properties_panel_values():
+    r = build("2-acetyloxybenzoic acid")  # aspirin
+    p = r.properties
+    assert p["hbd"] == 1 and p["hba"] == 3 and p["rings"] == 1 and p["aromatic_rings"] == 1
+    assert 1.0 < p["logp"] < 1.5 and 60 < p["tpsa"] < 65
+    assert p["lipinski_violations"] == 0 and p["charge"] == 0
+    assert abs(p["exact_mass"] - 180.0423) < 0.001
+    assert build("(2R)-butan-2-ol").properties["stereocentres"] == 1

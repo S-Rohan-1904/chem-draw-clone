@@ -5,8 +5,9 @@ Stereo descriptors in the name (R/S, E/Z, cis/trans) are parsed by OPSIN, shown
 with wedge bonds and labels in 2D, and enforced in the 3D conformer. Unspecified
 stereocentres are marked with a question mark.
 
-Users can register, log in and save molecules. SVG, PNG, MOL and SMILES downloads
-are available.
+Peptides, DNA and RNA can be built from a sequence (one- or three-letter codes, or
+HELM). Users can register, log in, save molecules and search the saved list by
+structure. SVG, PNG, MOL and SMILES downloads are available.
 
 ## Stack
 
@@ -47,10 +48,20 @@ Regenerate with `openssl rand -base64 48`. Set `CHEM_DB_PATH` to move the SQLite
 
 ## Drawing
 
-The Draw tab opens a Ketcher editor. Draw a structure, use the wedge or hash bond
-tool for stereocentres, then press Build 3D. The result shows the SMILES instead of a
-name (no offline name generation). Copy to editor loads any result into the editor.
-The editor bundle is loaded only when the tab is first opened.
+The Draw tab opens a Ketcher editor, full width (the side lists are hidden there).
+Draw a structure, use the wedge or hash bond tool for stereocentres, then press Build 3D.
+The result shows the SMILES instead of a name (no offline name generation). Copy to
+editor loads any result into the editor. The editor bundle is loaded only when the tab
+is first opened.
+
+- **Insert template** adds a ready-made structure to the canvas: the twenty amino acids,
+  nucleobases and nucleosides, sugars (open chain and ring forms), steroids and terpenes,
+  heterocycles, carbocycles, common reagents and solvents (`frontend/src/tools/templates.ts`).
+- The editor exports V3000, so Ketcher's enhanced stereo marks are kept: centres drawn as
+  racemic (AND) or relative (OR) produce a warning on the result saying the model shows one
+  of the configurations.
+- A drawn structure or SMILES with a valence or aromaticity problem is reported per atom
+  (`C2 has 5 bonds, more than C can carry`) instead of a generic parse failure.
 
 ## Mistyped names
 
@@ -70,7 +81,10 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 - **Isotope labels**: D, T, 13C, 15N, 18O and others, with the isotopic formula and exact mass shift.
 - **Fischer and Haworth**: Fischer projections with D/L for sugars and amino acids; Haworth projections with alpha/beta and D/L, all read from the 3D model.
 - **Conformational energy**: MMFF94 torsion scan around a chosen bond with a linked Newman projection; energies of the two chairs of a substituted ring.
+- **Conformers and energy** (`backend/app/tools.py`): ETKDG + MMFF94 ensemble of up to 8 distinct conformers with energy above the lowest, Boltzmann population at 298 K and heavy-atom RMSD, each viewable in 3D; "Minimise model" gives the steric energy of the shown geometry before and after minimisation.
+- **Properties**: elemental analysis (atoms, mass and mass % per element) under the usual descriptors.
 - **Reactions**: textbook reaction templates applied to the molecule (regiochemistry by Markovnikov, Zaitsev, Hofmann and ortho/para/meta rules) and one-step retrosynthetic disconnections; reaction SMILES inputs are classified and given an SN1/SN2/E1/E2 note.
+- **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.
 - **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
 
 ## Spectra
@@ -79,17 +93,28 @@ Every built molecule gets a Spectra card with four tabs. Hovering a peak or band
 highlights the atoms responsible in the 2D drawing.
 
 - **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
-  integration and n+1 multiplicities are computed locally. Shifts come from the
-  nmrshiftdb2 HOSE-code prediction service when reachable, otherwise from additive
-  substituent rules (teaching accuracy only).
+  integrations are computed locally. Shifts come from the nmrshiftdb2 HOSE-code
+  prediction service when reachable, otherwise from additive substituent rules
+  (teaching accuracy only).
+- **Couplings** (`backend/app/couplings.py`): first-order J values and multiplet patterns
+  (d, dd, td, ...). 7 Hz across freely rotating bonds, Karplus J from the dihedral in the
+  lowest-energy MMFF conformer inside rings, 16 / 10.5 Hz trans / cis on alkenes, 8 / 2 Hz
+  ortho / meta, 2.5 Hz aldehyde; O-H and N-H are broad singlets. Equivalent partners that
+  differ in J (axial / equatorial, cis / trans on a =CH2) are split apart. The spectrum
+  draws each multiplet from its J values, exaggerated for visibility.
 - **IR**: characteristic bands from the functional groups present, drawn as a synthetic
   transmittance curve, with the experimental spectrum from the NIST Chemistry WebBook
   overlaid when NIST has one.
-- **Mass spec**: molecular-ion isotope pattern (Cl/Br/S visible), likely fragment cations
-  from single-bond cleavages ranked by stability (acylium, benzylic/allylic, alpha to a
-  heteroatom), and NIST's experimental EI spectrum when available.
+- **Mass spec**: molecular-ion isotope pattern (Cl/Br/S visible), NIST's experimental EI
+  spectrum when available, and a fragmentation tree (`backend/app/msfrag.py`): single-bond
+  cleavages ranked by stability (acylium, benzylic/allylic, alpha to a heteroatom), the
+  McLafferty rearrangement, neutral losses (H2O, CO, HCN, CO2, HX, NH3), then second-step
+  ions (acylium −CO, tropylium −C2H2, alkyl −C2H4). Each ion is drawn with its charge and,
+  with Cl / Br, its isotope cluster; an ion reachable both directly and stepwise is listed
+  once under its precursor.
 
-Results are cached per molecule. `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no
+Results are cached per molecule (`SPECTRA_VERSION` in `backend/app/cache.py` invalidates
+old rows when the payload changes). `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no
 nmrshiftdb2 or NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each
 request. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
 
@@ -148,18 +173,15 @@ SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
 | GET/POST | `/api/saved` | `{label, input_text, smiles}` | bearer |
 | DELETE | `/api/saved/{id}` | | bearer |
 
-## Tools
+## Sequences and saved-list search
 
-- Properties card: elemental analysis (mass % per element).
-- Name tab: build a peptide (one- or three-letter codes), DNA, RNA or HELM sequence.
-- Conformers card: ETKDG + MMFF94 ensemble with relative energies, Boltzmann populations and RMSD; each conformer opens in a small 3D view. "Minimise model" reports the steric energy of the displayed geometry.
-- Reactions: stoichiometry grid (coefficients, masses, mmol, equivalents, limiting reagent, theoretical and percent yield). Atom-mapped reaction SMILES colour matching atoms on both sides.
-- Saved list: search by SMILES/SMARTS substructure, falling back to Morgan/Tanimoto similarity.
-- Draw tab: "Insert template" adds amino acids, nucleobases, sugars, steroids, heterocycles and common reagents to the canvas. The editor exports V3000, so Ketcher's enhanced stereo marks (racemic AND, relative OR) are read and reported as a warning on the result.
-- Invalid structures (valence, unkekulisable rings) are reported per atom instead of a generic parse failure.
-- 1H NMR: first-order coupling constants and multiplet patterns (dd, td, ...). 7 Hz across freely rotating bonds, Karplus dihedrals from the lowest-energy conformer in rings, 16 / 10.5 Hz trans / cis on alkenes, 8 / 2 Hz ortho / meta; peaks are drawn with their real splitting.
-- Mass spec: fragmentation tree. Single cleavages, McLafferty rearrangement and neutral losses (H2O, CO, HCN, CO2, HX, NH3), then second-step ions (acylium −CO, tropylium −C2H2, alkyl −C2H4); each ion has a drawing and, with Cl / Br, its isotope cluster.
-- The Draw tab hides the side lists so the editor gets the full width.
+- Under the Name input, "Build from a peptide or nucleotide sequence" accepts a peptide as
+  one-letter (`AGSK`) or three-letter (`Ala-Gly-Ser`) codes in the L or D series, DNA or
+  RNA written 5' to 3', or HELM (`PEPTIDE1{A.G.S}$$$$`). The limit is the viewer's 150
+  heavy atoms (about 18 amino acids or 7 nucleotides).
+- The search box above the saved list takes a SMILES or SMARTS: entries containing it as a
+  substructure are shown; with no substructure hit the list is ranked by Morgan / Tanimoto
+  similarity instead.
 
 ## Notes
 

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, projections, ratelimit, resolver, resonance, stereo_explain, suggest
+from .. import cache, chem, nameparse, projections, ratelimit, resolver, resonance, stereo_explain, suggest
 from ..db import NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -137,6 +137,16 @@ def molecule_charges(body: SmilesIn, db: Session = Depends(get_db)):
             q = 0.0
         charges.append(0.0 if q != q else round(q, 4))  # NaN guard
     return {"charges": charges, "min": min(charges), "max": max(charges)}
+
+
+class BreakdownIn(BaseModel):
+    name: str = Field(min_length=1, max_length=500)
+    smiles: str = Field(min_length=1, max_length=4000)
+
+
+@router.post("/breakdown")
+def molecule_breakdown(body: BreakdownIn):
+    return nameparse.breakdown(chem.normalise_name(body.name), body.smiles)
 
 
 @router.post("/resonance")

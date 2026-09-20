@@ -10,6 +10,7 @@ import { Gallery } from './components/Gallery'
 import { Groups } from './components/Groups'
 import { GuidePanel } from './components/GuidePanel'
 import { Isomers } from './components/Isomers'
+import { NameBreakdown } from './components/NameBreakdown'
 import { NameInput } from './components/NameInput'
 import { NameLookup } from './components/NameLookup'
 import { Projections } from './components/Projections'
@@ -375,6 +376,7 @@ export default function App() {
                 <Properties mol={mol} />
               </div>
               {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
+              <NameBreakdown mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Resonance mol={mol} />
               <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">

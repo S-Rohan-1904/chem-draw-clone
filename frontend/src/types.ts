@@ -182,3 +182,15 @@ export interface IsomerResult {
   skipped_unstable: number
   note: string
 }
+
+export interface NameToken {
+  text: string
+  kind: string
+  atoms?: number[]
+}
+
+export interface NameBreakdown {
+  tokens: NameToken[]
+  legend: { kind: string; colour: string; text: string }[]
+  colours: Record<string, string>
+}

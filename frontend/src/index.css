@@ -281,3 +281,10 @@ button.chip { font: inherit; cursor: pointer; }
 .isomer-tile:hover { border-color: var(--accent); }
 .isomer-tile svg { width: 100%; height: auto; }
 .isomer-tile code { color: #1a1d29; font-size: 0.75rem; }
+
+.name-tokens { font-size: 1.25rem; line-height: 1.9; margin: 0 0 0.6rem; word-break: break-word; }
+.name-token { color: var(--c); border-bottom: 2px solid var(--c); padding: 0 1px; cursor: default; }
+.name-token:hover { background: color-mix(in srgb, var(--c) 18%, transparent); }
+.kind-other { border-bottom-style: dotted; }
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.82rem; color: var(--muted); }
+.legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: middle; margin-right: 0.2rem; }

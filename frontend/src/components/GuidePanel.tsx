@@ -4,7 +4,8 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'Type an IUPAC name or a SMILES string in the box on the Name tab and select Build. The application draws the 2D structure, builds a 3D model that respects the stereochemistry in your name, and lists the properties of the molecule.',
       'The Examples list on the left contains molecules that show common features. Select any entry to load it.',
-      'As you type, a tick or a cross appears in the box. A cross means the name cannot be read yet; the reason is shown under the box. A dropdown offers names that match what you have typed so far.',
+      'As you type, a tick or a cross appears in the box. A cross means the name cannot be read yet; the reason is shown under the box. A dropdown offers names that match what you have typed so far. A SMILES with a structural error (an atom with too many bonds, a ring that cannot be aromatic) is reported per atom, for example C2 has 5 bonds.',
+      'Build from a peptide or nucleotide sequence, under the box, turns a sequence into the structure: a peptide as one-letter (AGSK) or three-letter (Ala-Gly-Ser) codes, written N to C terminus, in the L or D series; DNA or RNA written 5\u2032 to 3\u2032; or HELM notation. Molecules up to about 18 amino acids or 7 nucleotides are accepted.',
     ],
   },
   {
@@ -29,6 +30,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'The Functional groups panel lists every group detected in the molecule. Select a group to highlight its atoms in both views.',
       'The Properties panel reports formula, molecular weight, exact mass, logP, topological polar surface area, hydrogen bond donors and acceptors, rotatable bonds, ring counts, stereocentre count, formal charge and QED, together with a Lipinski rule of five summary.',
+      'Show elemental analysis adds a table with the number of atoms, the mass and the mass percentage of each element, in Hill order.',
     ],
   },
   {
@@ -73,7 +75,17 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'Bond rotation scans the energy of the molecule as a chosen single bond is turned through 360 degrees in 10 degree steps, relaxing everything else at each step with the MMFF94 force field. The plot shows the staggered minima and eclipsed maxima and the barrier between them. Select a point on the plot to see that conformer as a Newman projection.',
       'Chair flip compares the two chair forms of a substituted six membered ring. Both chairs are drawn with their axial and equatorial groups, the energy difference is given, and the panel states which chair dominates and roughly what fraction of the mixture it makes up at room temperature.',
+      'The Conformers and energy panel searches more widely. Find conformers embeds several starting geometries, minimises each with MMFF94 and lists the distinct results with their energy above the lowest, the fraction of the mixture each would make up at room temperature, and the heavy atom RMSD from the lowest one. Select a row to see that conformer in a small 3D view. Minimise model reports the steric energy of the geometry shown in the main 3D view before and after minimisation.',
       'These are force field energies. They reproduce trends well (a tert-butyl group locks the ring, an anti conformation beats a gauche one) but are not measured values.',
+    ],
+  },
+  {
+    title: 'Spectra',
+    body: [
+      'The Spectra panel predicts the 1H and 13C NMR, IR and mass spectra of the current molecule. Hover a peak or a table row to highlight the atoms responsible.',
+      '1H NMR: hydrogens are grouped into signals by symmetry, with a chemical shift, an integration and a multiplicity. The multiplicity comes from first-order coupling: each signal lists its coupling constants (for example dd, J = 8.0, 2.0 Hz). Typical values are used: 7 Hz across a freely rotating single bond, the Karplus value for the dihedral in the lowest energy conformer inside rings, 16 Hz trans and 10.5 Hz cis across a double bond, 8 Hz ortho and 2 Hz meta on a benzene ring, and 2.5 Hz between an aldehyde hydrogen and its neighbour. Hydrogens on oxygen and nitrogen exchange and appear as broad singlets. The drawing builds each multiplet from its real coupling constants, with the splitting exaggerated so it can be seen. Shifts come from nmrshiftdb2 when the service is reachable and from additive rules otherwise; expect about 0.5 ppm (1H) and 10 ppm (13C) of error.',
+      '13C NMR: one signal per set of equivalent carbons with its environment. IR: the characteristic bands of every functional group present, drawn as a synthetic transmittance curve and listed with their range and intensity. When the NIST WebBook holds an experimental IR or mass spectrum for the compound it is overlaid and linked.',
+      'Mass spectrum: the molecular ion with its isotope pattern, and a fragmentation tree. Ions in the first row come straight from the molecular ion: the most stable single bond cleavages (acylium, benzylic and allylic, alpha to a heteroatom), the McLafferty rearrangement of carbonyl compounds with a gamma hydrogen, and characteristic neutral losses such as water from alcohols, CO from aldehydes and phenols, HCN from nitriles, CO2 from acids and HX from alkyl halides. Under those sit second step ions: an acylium loses CO, the tropylium ion at m/z 91 loses ethyne to m/z 65, and alkyl cations lose ethene down the 29, 43, 57 series. Each ion is drawn with its charge; ions containing chlorine or bromine show their M+2 partner. Peak heights in the drawing rank the ions by expected stability and are not intensities.',
     ],
   },
   {
@@ -93,7 +105,9 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     title: 'Drawing structures',
     body: [
       'The Draw tab opens a structure editor. Draw a molecule with the atom and bond tools, use the wedge and hash bond tools to set stereocentres, and select Build 3D. The result appears below the editor and is shown with its SMILES, since drawn structures do not carry a name.',
-      'Copy to editor, available on every result, loads the current molecule into the editor so you can modify it and build again.',
+      'Copy to editor, available on every result, loads the current molecule into the editor so you can modify it and build again. On the Draw tab the side lists are hidden so the editor and its result use the full width.',
+      'Insert template adds a ready made structure to the canvas next to whatever is already there: the twenty amino acids, nucleobases and nucleosides, sugars in open chain and ring forms, steroids and terpenes, heterocycles, carbocycles, and common reagents and solvents. The structure arrives with its natural stereochemistry.',
+      'The editor also has a structure library of its own (the book icon), and an enhanced stereochemistry tool. Marking centres as racemic (AND) or relative (OR) is understood: the model can only show one configuration, so the result carries a warning saying which centres were drawn as a mixture or with unknown absolute configuration. If a drawn structure has a valence problem, the message names the atom.',
     ],
   },
   {
@@ -105,7 +119,8 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
   {
     title: 'Reactions',
     body: [
-      'A reaction SMILES such as CC(=O)O.CCO>>CC(=O)OCC.O, entered in the Name tab, draws the reaction with reactants, agents and products, lists each component with its formula, and reports whether the atoms balance. Components open in the viewer.',
+      'A reaction SMILES such as CC(=O)O.CCO>>CC(=O)OCC.O, entered in the Name tab, draws the reaction with reactants, agents and products, lists each component with its formula, and reports whether the atoms balance. Components open in the viewer. Atom map numbers in the SMILES ([CH3:1][OH:2]) colour the matching atoms on both sides of the arrow, so you can follow where each atom goes.',
+      'Show stoichiometry opens a grid for the reaction. Enter a coefficient for each component (the SMILES carries none) and the mass of at least one reactant; the grid fills in millimoles, equivalents, the limiting reagent, and the theoretical yield of each product. Enter the mass actually obtained to get the percentage yield.',
       'Under every molecule, the Reactions panel lists the textbook reactions it can undergo (What can it make) with the reagents, the product and the rule that decides the regiochemistry: Markovnikov or anti-Markovnikov additions, Zaitsev or Hofmann eliminations, ortho, para or meta substitution on an aromatic ring. Where can it come from lists one step disconnections: the precursors and the reaction that would make the molecule. Select any product or precursor to load it and continue forwards or backwards.',
       'When you enter a reaction (reactants>>products) the Reaction panel names the reaction when it matches one of the templates, states the reaction type, and for substitutions and eliminations says whether SN1, SN2, E1 or E2 is expected from the substitution pattern of the reacting carbon.',
     ],
@@ -149,6 +164,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     title: 'Accounts and saving',
     body: [
       'Create an account with Log in / Register to save molecules. Save stores the current molecule with a label and an optional collection. Saved molecules appear in the left column grouped by collection; select the pencil icon to add notes or move an entry to another collection.',
+      'The search box above the saved list finds molecules by structure. Type a SMILES or SMARTS: entries that contain it as a substructure are shown; if nothing contains it, the list is ranked by similarity instead, with the percentage beside each entry.',
       'Share copies a link to the current molecule. Anyone with the link sees the same structure.',
       'The Recent list under Examples keeps the last twenty molecules built in this browser.',
     ],

@@ -1,9 +1,10 @@
-"""Constitutional isomer enumeration for small acyclic formulas.
+"""Constitutional isomer enumeration for small formulas.
 
 Scope: up to 8 heavy atoms, elements C, N, O, F, Cl, Br, I, at most two
-heteroatoms, and a degree of unsaturation of 0 or 1 (one double bond;
-rings are not enumerated). This covers the formulas used in introductory
-courses (C4H10, C5H12, C4H10O, C3H8O, C4H8, C4H9Cl, C3H9N, C4H8O ...).
+heteroatoms, and a degree of unsaturation of 0 or 1 (one double bond or
+one ring). Each constitutional isomer also reports its stereoisomers.
+This covers the formulas used in introductory courses (C4H10, C5H12,
+C4H10O, C3H8O, C4H8, C4H9Cl, C3H9N, C4H8O ...).
 """
 
 from __future__ import annotations
@@ -109,6 +110,40 @@ def _has_bad_bond(m: Chem.Mol) -> bool:
     return False
 
 
+def _add_ring_bond(smiles: str) -> set[str]:
+    """Close one ring by bonding two non-adjacent atoms (tree + one edge = one ring)."""
+    mol = Chem.MolFromSmiles(smiles)
+    n = mol.GetNumAtoms()
+    out: set[str] = set()
+    for i in range(n):
+        for j in range(i + 1, n):
+            if mol.GetBondBetweenAtoms(i, j) is not None:
+                continue
+            ai, aj = mol.GetAtomWithIdx(i), mol.GetAtomWithIdx(j)
+            if ai.GetDegree() >= _MAX_DEGREE[ai.GetSymbol()] or aj.GetDegree() >= _MAX_DEGREE[aj.GetSymbol()]:
+                continue
+            # ring size >= 3: i and j must not share a neighbour... they may (gives a 3-ring), just not be bonded
+            rw = Chem.RWMol(mol)
+            rw.AddBond(i, j, Chem.BondType.SINGLE)
+            m = rw.GetMol()
+            try:
+                Chem.SanitizeMol(m)
+            except Exception:  # noqa: BLE001
+                continue
+            if _has_bad_bond(m):
+                continue
+            out.add(Chem.MolToSmiles(m))
+    return out
+
+
+def _stereoisomers(smiles: str) -> list[str]:
+    from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
+
+    mol = Chem.MolFromSmiles(smiles)
+    opts = StereoEnumerationOptions(onlyUnassigned=True, unique=True, tryEmbedding=False, maxIsomers=32)
+    return sorted({Chem.MolToSmiles(m) for m in EnumerateStereoisomers(mol, options=opts)})
+
+
 def _add_double_bond(smiles: str) -> set[str]:
     mol = Chem.MolFromSmiles(smiles)
     out: set[str] = set()
@@ -143,16 +178,17 @@ def enumerate_isomers(formula: str) -> dict:
         raise ChemError("Up to two heteroatoms are supported.")
     dbe = unsaturation(counts)
     if dbe not in (0, 1):
-        raise ChemError("Only formulas with zero or one degree of unsaturation are supported (no rings, one double bond at most).")
+        raise ChemError("Only formulas with zero or one degree of unsaturation are supported (one double bond or one ring at most).")
 
     skeletons: set[str] = set()
     for tree in carbon_trees(heavy):
         skeletons |= _substitute(tree, hetero)
     if dbe == 1:
-        with_double: set[str] = set()
+        unsaturated: set[str] = set()
         for s in skeletons:
-            with_double |= _add_double_bond(s)
-        skeletons = with_double
+            unsaturated |= _add_double_bond(s)
+            unsaturated |= _add_ring_bond(s)
+        skeletons = unsaturated
 
     # Verify formula and dedupe by canonical SMILES (stereo ignored).
     from rdkit.Chem import rdMolDescriptors
@@ -168,13 +204,34 @@ def enumerate_isomers(formula: str) -> dict:
             skipped += 1
             continue
         results.append(s)
+    # acyclic first, then rings; within each, canonical order
+    def _nrings(smi: str) -> int:
+        m = Chem.MolFromSmiles(smi)
+        Chem.FastFindRings(m)
+        return m.GetRingInfo().NumRings()
+
+    results.sort(key=lambda s: (_nrings(s), s))
+    isomers = []
+    stereo_total = 0
+    for s in results:
+        stereo = _stereoisomers(s)
+        stereo_total += len(stereo)
+        isomers.append({
+            "smiles": s,
+            "svg": _svg(s),
+            "cyclic": _nrings(s) > 0,
+            "stereoisomers": stereo,
+            "stereo_count": len(stereo),
+        })
     return {
         "formula": formula.strip(),
         "count": len(results),
+        "stereo_total": stereo_total,
         "unsaturation": dbe,
-        "isomers": [{"smiles": s, "svg": _svg(s)} for s in results],
+        "isomers": isomers,
         "skipped_unstable": skipped,
-        "note": ("Acyclic constitutional isomers only; stereoisomers and rings are not counted." if dbe == 1 else "Constitutional isomers only; stereoisomers are not counted.")
+        "note": ("Constitutional isomers with at most one ring or double bond." if dbe == 1 else "Constitutional isomers.")
+        + f" Counting stereoisomers separately gives {stereo_total}."
         + (f" {skipped} enol or gem-diol tautomer{'s' if skipped != 1 else ''} omitted." if skipped else ""),
     }
 

@@ -178,8 +178,9 @@ export interface NameLookup {
 export interface IsomerResult {
   formula: string
   count: number
+  stereo_total: number
   unsaturation: number
-  isomers: { smiles: string; svg: string }[]
+  isomers: { smiles: string; svg: string; cyclic: boolean; stereoisomers: string[]; stereo_count: number }[]
   skipped_unstable: number
   note: string
 }

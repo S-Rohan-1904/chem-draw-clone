@@ -5,7 +5,7 @@ from app.isomers import carbon_trees, enumerate_isomers
 
 
 @pytest.mark.parametrize("formula,count", [("C4H10", 2), ("C5H12", 3), ("C6H14", 5), ("C7H16", 9), ("C8H18", 18),
-                                           ("C4H10O", 7), ("C3H8O", 3), ("C4H9Cl", 4), ("C3H9N", 4), ("C4H8", 3), ("C2H6O", 2)])
+                                           ("C4H10O", 7), ("C3H8O", 3), ("C4H9Cl", 4), ("C3H9N", 4), ("C4H8", 5), ("C5H10", 10), ("C6H12", 25), ("C2H6O", 2)])
 def test_known_counts(formula, count):
     assert enumerate_isomers(formula)["count"] == count
 
@@ -26,3 +26,12 @@ def test_limits():
     for bad in ["C9H20", "C6H6", "C2H6S", "C4H10O3", "xyz"]:
         with pytest.raises(ChemError):
             enumerate_isomers(bad)
+
+
+def test_rings_and_stereo():
+    r = enumerate_isomers("C4H8")
+    cyclic = {i["smiles"] for i in r["isomers"] if i["cyclic"]}
+    assert cyclic == {"C1CCC1", "CC1CC1"}
+    butene = next(i for i in r["isomers"] if i["smiles"] == "CC=CC")
+    assert butene["stereo_count"] == 2 and r["stereo_total"] == 6
+    assert enumerate_isomers("C4H10O")["stereo_total"] == 8  # butan-2-ol has R and S

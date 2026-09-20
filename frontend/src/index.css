@@ -279,8 +279,11 @@ button.chip { font: inherit; cursor: pointer; }
 
 .isomers { display: flex; flex-direction: column; gap: 0.7rem; }
 .isomer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.6rem; }
-.isomer-tile { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.4rem; background: var(--paper); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.isomer-tile { display: flex; flex-direction: column; align-items: stretch; gap: 0.2rem; padding: 0.4rem; background: var(--paper); border: 1px solid var(--border); border-radius: 10px; }
+.isomer-open { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; background: none; border: none; padding: 0; cursor: pointer; }
 .isomer-tile:hover { border-color: var(--accent); }
+.isomer-stereo { display: flex; flex-wrap: wrap; gap: 0.2rem 0.5rem; align-items: baseline; padding: 0.2rem 0.3rem; border-top: 1px dashed var(--border); }
+.isomer-stereo .link { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; }
 .isomer-tile svg { width: 100%; height: auto; }
 .isomer-tile code { color: #1a1d29; font-size: 0.75rem; }
 

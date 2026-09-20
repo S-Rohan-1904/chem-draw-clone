@@ -63,7 +63,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
   {
     title: 'Isomers',
     body: [
-      'The Isomers tab lists the constitutional isomers of a molecular formula, for example C4H10O. It handles formulas with up to eight heavy atoms, the elements C, H, N, O and halogens, at most two heteroatoms, and either no double bond or one. Rings and stereoisomers are not enumerated, and enol or gem-diol tautomers are omitted. Select any isomer to open it in the viewer.',
+      'The Isomers tab lists the constitutional isomers of a molecular formula, for example C4H10O or C5H10. It handles formulas with up to eight heavy atoms, the elements C, H, N, O and halogens, at most two heteroatoms, and at most one ring or one double bond. Acyclic and cyclic isomers are grouped, each isomer lists its stereoisomers, and the total including stereoisomers is shown. Enol and gem-diol tautomers are omitted. Select any structure to open it in the viewer.',
     ],
   },
   {

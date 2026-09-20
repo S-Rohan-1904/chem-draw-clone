@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SavedMolecule } from '../types'
+import { WorksheetButton } from './WorksheetButton'
 
 interface Props {
   items: SavedMolecule[]
@@ -45,7 +46,10 @@ export function SavedList({ items, onPick, onDelete, onUpdate }: Props) {
       {items.length === 0 && <p className="muted">Nothing saved yet.</p>}
       {groupBy(items).map(([coll, rows]) => (
         <div key={coll || '__none'} className="collection">
-          {coll && <h3 className="collection-title">{coll}</h3>}
+          <div className="collection-head">
+            {coll && <h3 className="collection-title">{coll}</h3>}
+            <WorksheetButton title={coll || 'Saved molecules'} items={rows.map((r) => ({ name: r.label, smiles: r.smiles }))} />
+          </div>
           <ul className="list">
             {rows.map((it) => (
               <li key={it.id} className="list-item">

@@ -89,6 +89,11 @@ export const api = {
     request<Assignment>(`/api/assignments/${encodeURIComponent(code)}/done/${itemId}`, { method: done ? 'POST' : 'DELETE' }, auth),
   assignmentProgress: (auth: AuthState, code: string) => request<AssignmentProgress>(`/api/assignments/${encodeURIComponent(code)}/progress`, {}, auth),
   deleteAssignment: (auth: AuthState, code: string) => request<void>(`/api/assignments/${encodeURIComponent(code)}`, { method: 'DELETE' }, auth),
+  worksheet: async (title: string, items: { name: string; smiles: string }[], showNames: boolean) => {
+    const res = await fetch('/api/worksheet', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, items, show_names: showNames, answer_key: true }) })
+    if (!res.ok) throw new ApiError(res.status, 'Worksheet failed')
+    return res.blob()
+  },
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

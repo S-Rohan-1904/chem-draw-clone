@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api, ApiError } from '../api'
 import type { Assignment, AssignmentProgress, AuthState } from '../types'
+import { WorksheetButton } from './WorksheetButton'
 
 interface Props {
   auth: AuthState | null
@@ -156,6 +157,7 @@ export function Assignments({ auth, onOpen, onLogin }: Props) {
             <div className="toolbar">
               <span className="muted small">by {current.owner}{auth ? ` · ${current.done_count} of ${current.items.length} done` : ''}</span>
               <button type="button" onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}/?assignment=${current.code}`)}>Copy link</button>
+              <WorksheetButton title={current.title} items={current.items.map((i) => ({ name: i.name, smiles: i.smiles }))} />
               {current.mine && <button type="button" onClick={() => void remove()}>Delete</button>}
             </div>
           </header>

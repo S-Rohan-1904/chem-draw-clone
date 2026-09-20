@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import type { Molecule } from '../types'
+import { Elemental } from '../tools/Elemental'
 
 const ROWS: { key: keyof Molecule['properties']; label: string; hint: string; fmt?: (v: number) => string }[] = [
   { key: 'exact_mass', label: 'Exact mass', hint: 'Monoisotopic mass, Da', fmt: (v) => v.toFixed(4) },
@@ -37,6 +38,7 @@ export function Properties({ mol }: { mol: Molecule }) {
           </Fragment>
         ))}
       </dl>
+      <Elemental smiles={mol.smiles} />
     </section>
   )
 }

@@ -221,6 +221,8 @@ def check(body: MoleculeIn, db: Session = Depends(get_db)):
     try:
         r = chem.resolve_full(body.input, lookup=False)
     except chem.ChemError as e:
+        if not e.opsin_error:  # structure-level problem (valence, aromaticity): show it as is
+            return {"ok": False, "reason": str(e), "highlight": None, "lookup": False}
         diag = suggest.diagnose(chem.normalise_name(body.input), e.opsin_error, [])
         return {"ok": False, "reason": diag.reason, "highlight": list(diag.highlight) if diag.highlight else None, "lookup": resolver.enabled()}
     return {"ok": True, "warnings": r.warnings, "source": r.source}

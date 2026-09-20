@@ -124,11 +124,62 @@ def resolve_molfile(text: str) -> Resolved:
     if mol is None:
         mol = Chem.MolFromMolBlock("\n" + text.strip(), sanitize=True, removeHs=True)
     if mol is None:
-        raise ChemError("Could not read the drawn structure.")
+        raise ChemError("Could not read the drawn structure." + _problem_report(Chem.MolFromMolBlock("\n" + text.strip(), sanitize=False, removeHs=False)))
     if mol.GetNumAtoms() == 0:
         raise ChemError("Nothing drawn yet.")
     Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
-    return Resolved(Chem.MolToSmiles(mol, isomericSmiles=True), "molfile", [], "")
+    return Resolved(Chem.MolToSmiles(mol, isomericSmiles=True), "molfile", _stereo_group_notes(mol), "")
+
+
+_GROUP_WORDS = {
+    Chem.StereoGroupType.STEREO_ABSOLUTE: "absolute",
+    Chem.StereoGroupType.STEREO_AND: "racemic (AND)",
+    Chem.StereoGroupType.STEREO_OR: "relative, one unknown enantiomer (OR)",
+}
+
+
+def _stereo_group_notes(mol: Chem.Mol) -> list[str]:
+    """Enhanced stereo flags from a V3000 molfile (Ketcher's ABS / AND / OR
+    marks). The model can only show one configuration, so say what the
+    drawing actually claims."""
+    notes = []
+    for g in mol.GetStereoGroups():
+        kind = g.GetGroupType()
+        if kind == Chem.StereoGroupType.STEREO_ABSOLUTE:
+            continue
+        atoms = ", ".join(f"{a.GetSymbol()}{a.GetIdx() + 1}" for a in g.GetAtoms())
+        notes.append(
+            f"Enhanced stereo: {atoms} drawn as {_GROUP_WORDS[kind]}. "
+            + ("The structure is a mixture of both enantiomers at these centres; the model shows one of them." if kind == Chem.StereoGroupType.STEREO_AND
+               else "The relative configuration is known but the absolute one is not; the model shows one possibility.")
+        )
+    return notes
+
+
+def _problem_report(mol: Chem.Mol | None) -> str:
+    """' Problems: ...' listing valence and aromaticity errors per atom, or ''."""
+    if mol is None:
+        return ""
+    try:
+        problems = Chem.DetectChemistryProblems(mol)
+    except Exception:  # noqa: BLE001
+        return ""
+    msgs = []
+    for p in problems:
+        msg = p.Message()
+        if p.GetType() == "AtomValenceException":
+            a = mol.GetAtomWithIdx(p.GetAtomIdx())
+            m = re.search(r"valence for atom # ?\d+ (\w+), (\d+)", msg)
+            if m:
+                msg = f"{a.GetSymbol()}{a.GetIdx() + 1} has {m.group(2)} bonds, more than {a.GetSymbol()} can carry"
+                if a.GetFormalCharge() == 0:
+                    msg += " (add a charge or remove a bond)"
+        elif p.GetType() in ("KekulizeException", "AtomKekulizeException"):
+            idxs = [int(x) for x in re.findall(r"\d+", msg.split("atoms:")[-1])] if "atoms:" in msg else [p.GetAtomIdx()] if hasattr(p, "GetAtomIdx") else []
+            atoms = ", ".join(f"{mol.GetAtomWithIdx(i).GetSymbol()}{i + 1}" for i in idxs if i < mol.GetNumAtoms())
+            msg = f"aromatic ring at {atoms or 'the lowercase atoms'} cannot be drawn with alternating double bonds (check the ring size, charges and hydrogens)"
+        msgs.append(msg)
+    return f" Problems: {'; '.join(msgs)}." if msgs else ""
 
 
 def resolve_full(text: str, lookup: bool = True) -> Resolved:
@@ -153,6 +204,13 @@ def resolve_full(text: str, lookup: bool = True) -> Resolved:
 
     if _looks_like_smiles(text):
         return Resolved(text, "smiles", [], text)
+
+    if " " not in text:
+        # Parses as SMILES but fails sanitisation: say which atom is wrong.
+        report = _problem_report(Chem.MolFromSmiles(text, sanitize=False))
+        if report:
+            # No opsin_error: the API should show this message, not a name diagnosis.
+            raise ChemError(f"'{text}' is not a valid structure.{report}")
 
     not_found = ""
     if lookup:

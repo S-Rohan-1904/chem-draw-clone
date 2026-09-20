@@ -199,9 +199,9 @@ export interface NameBreakdown {
 
 export interface ReactionResult {
   svg: string
-  reactants: { smiles: string; formula: string }[]
-  agents: { smiles: string; formula: string }[]
-  products: { smiles: string; formula: string }[]
+  reactants: { smiles: string; formula: string; mw: number }[]
+  agents: { smiles: string; formula: string; mw: number }[]
+  products: { smiles: string; formula: string; mw: number }[]
   balanced: boolean
   imbalance: Record<string, number>
   mapped: boolean

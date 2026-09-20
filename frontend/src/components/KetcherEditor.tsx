@@ -9,6 +9,8 @@ const provider = new StandaloneStructServiceProvider()
 export interface EditorHandle {
   getMolfile: () => Promise<string>
   setMolecule: (struct: string) => Promise<void>
+  /** Add a structure to the canvas next to what is already there. */
+  addFragment: (struct: string) => Promise<void>
   clear: () => Promise<void>
 }
 
@@ -36,7 +38,7 @@ export default function KetcherEditor({ onReady, onError }: Props) {
         ketcher.current = k
         ;(window as unknown as { ketcher?: Ketcher }).ketcher = k
         onReady({
-          getMolfile: () => k.getMolfile('v2000'),
+          getMolfile: () => k.getMolfile('v3000'), // V3000 carries enhanced stereo (ABS / AND / OR) marks
           setMolecule: async (s) => {
             await k.setMolecule(s)
             // onInit can fire for an instance Ketcher has already replaced
@@ -44,6 +46,9 @@ export default function KetcherEditor({ onReady, onError }: Props) {
             // nothing, and getSmiles throws. Fail so the caller retries on
             // the live instance.
             if (s && !(await k.getSmiles())) throw new Error('Editor not ready.')
+          },
+          addFragment: async (s) => {
+            await k.addFragment(s)
           },
           clear: async () => {
             await k.setMolecule('')

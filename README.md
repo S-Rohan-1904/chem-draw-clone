@@ -137,11 +137,26 @@ SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
 | POST | `/api/molecule/check` | `{input}` | parse only: `{ok, reason?, highlight?, warnings?}` |
 | GET | `/api/molecule/suggest?q=` | | `{names}` autocomplete |
 | POST | `/api/molecule/png` | `{smiles, width}` | PNG image |
+| POST | `/api/tools/elemental` | `{smiles}` | mass % per element |
+| POST | `/api/tools/sequence` | `{kind, sequence}` | peptide / d-peptide / dna / rna / helm to SMILES |
+| POST | `/api/tools/conformers` | `{smiles, n}` | MMFF94 conformer ensemble with relative energies and populations |
+| POST | `/api/tools/minimise` | `{smiles}` | energy of the shown model before and after minimisation |
+| POST | `/api/tools/search` | `{query, mode}` | substructure / similarity search over the user's saved molecules (bearer) |
 | POST | `/api/auth/register` | `{username, password}` | → `{token, username}` |
 | POST | `/api/auth/login` | `{username, password}` | → `{token, username}` |
 | GET | `/api/auth/me` | | bearer |
 | GET/POST | `/api/saved` | `{label, input_text, smiles}` | bearer |
 | DELETE | `/api/saved/{id}` | | bearer |
+
+## Tools
+
+- Properties card: elemental analysis (mass % per element).
+- Name tab: build a peptide (one- or three-letter codes), DNA, RNA or HELM sequence.
+- Conformers card: ETKDG + MMFF94 ensemble with relative energies, Boltzmann populations and RMSD; each conformer opens in a small 3D view. "Minimise model" reports the steric energy of the displayed geometry.
+- Reactions: stoichiometry grid (coefficients, masses, mmol, equivalents, limiting reagent, theoretical and percent yield). Atom-mapped reaction SMILES colour matching atoms on both sides.
+- Saved list: search by SMILES/SMARTS substructure, falling back to Morgan/Tanimoto similarity.
+- Draw tab: "Insert template" adds amino acids, nucleobases, sugars, steroids, heterocycles and common reagents to the canvas. The editor exports V3000, so Ketcher's enhanced stereo marks (racemic AND, relative OR) are read and reported as a warning on the result.
+- Invalid structures (valence, unkekulisable rings) are reported per atom instead of a generic parse failure.
 
 ## Notes
 

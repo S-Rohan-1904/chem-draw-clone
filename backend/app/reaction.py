@@ -7,7 +7,7 @@ import re
 from collections import Counter
 
 from rdkit import Chem
-from rdkit.Chem import AllChem, rdDepictor, rdMolDescriptors
+from rdkit.Chem import AllChem, Descriptors, rdDepictor, rdMolDescriptors
 from rdkit.Chem.Draw import rdMolDraw2D
 
 from .chem import ChemError
@@ -31,16 +31,36 @@ _GAP = 28
 _ARROW = 130
 
 
+# Colours for atom-map numbers, cycled: the same map number gets the same
+# colour on both sides of the arrow.
+_MAP_COLOURS = [
+    (0.86, 0.15, 0.15), (0.15, 0.39, 0.92), (0.02, 0.59, 0.41), (0.85, 0.47, 0.02), (0.49, 0.23, 0.93),
+    (0.86, 0.15, 0.47), (0.03, 0.57, 0.70), (0.63, 0.32, 0.18), (0.29, 0.33, 0.39), (0.55, 0.65, 0.05),
+]
+
+
 def _mol_svg(mol: Chem.Mol, width: int, height: int) -> str:
-    """Inner SVG (no header) of one molecule drawn into width x height."""
+    """Inner SVG (no header) of one molecule drawn into width x height.
+    Mapped atoms are highlighted by map number and drawn without the :n label."""
     m = Chem.Mol(mol)
     rdDepictor.Compute2DCoords(m)
+    colours = {}
+    for a in m.GetAtoms():
+        n = a.GetAtomMapNum()
+        if n:
+            colours[a.GetIdx()] = _MAP_COLOURS[(n - 1) % len(_MAP_COLOURS)] + (0.45,)
+            a.SetAtomMapNum(0)
+            a.SetProp("atomNote", str(n))
     drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
     opts = drawer.drawOptions()
     opts.clearBackground = False
     opts.bondLineWidth = 2
     opts.fixedBondLength = 28
-    drawer.DrawMolecule(m)
+    opts.annotationFontScale = 0.6
+    if colours:
+        drawer.DrawMolecule(m, highlightAtoms=list(colours), highlightAtomColors=colours, highlightBonds=[])
+    else:
+        drawer.DrawMolecule(m)
     drawer.FinishDrawing()
     text = drawer.GetDrawingText()
     body = text.split("<!-- END OF HEADER -->", 1)[1]
@@ -104,6 +124,10 @@ def draw_reaction(reactants: list[Chem.Mol], agents: list[Chem.Mol], products: l
     )
 
 
+def _component(m: Chem.Mol) -> dict:
+    return {"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m), "mw": round(Descriptors.MolWt(m), 2)}
+
+
 def parse_reaction(text: str) -> dict:
     try:
         rxn = AllChem.ReactionFromSmarts(text.strip(), useSmiles=True)
@@ -125,9 +149,9 @@ def parse_reaction(text: str) -> dict:
     diff = {el: right.get(el, 0) - left.get(el, 0) for el in set(left) | set(right) if right.get(el, 0) != left.get(el, 0)}
     return {
         "svg": svg,
-        "reactants": [{"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m)} for m in reactants],
-        "agents": [{"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m)} for m in agents],
-        "products": [{"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m)} for m in products],
+        "reactants": [_component(m) for m in reactants],
+        "agents": [_component(m) for m in agents],
+        "products": [_component(m) for m in products],
         "balanced": not diff,
         "imbalance": diff,
         "mapped": any(a.GetAtomMapNum() for m in reactants for a in m.GetAtoms()),

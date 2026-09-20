@@ -1,0 +1,24 @@
+/* Tools: elemental analysis, sequence builder, conformers, stoichiometry, saved search. */
+.elemental { margin-top: 0.5rem; }
+.elemental-table { margin-top: 0.4rem; }
+.elemental-table tfoot td { color: var(--muted); font-size: 0.82rem; border-bottom: none; }
+.frac-bar > span { display: block; height: 100%; background: var(--accent); }
+
+.seq-builder { margin-top: 0.5rem; }
+.seq-form { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.4rem; }
+.seq-form input { flex: 1 1 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.seq-form .hint { flex-basis: 100%; margin: 0; }
+
+.conf-table tbody tr.selected { background: var(--paper); font-weight: 600; }
+
+.stoich { margin-top: 0.6rem; }
+.stoich-table { margin-top: 0.4rem; }
+.stoich-table code { font-size: 0.8rem; word-break: break-all; }
+.stoich-table td { vertical-align: middle; }
+.stoich-num { width: 5.5rem; padding: 0.2rem 0.35rem; font-size: 0.85rem; }
+.stoich-table tr.limiting td:first-child { color: var(--warn); }
+.stoich-table tr.product td { background: var(--paper); }
+.stoich-table td .stoich-num { margin-left: 0.3rem; }
+
+.saved-search { display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 0.5rem; }
+.saved-search input { width: 100%; font-size: 0.85rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

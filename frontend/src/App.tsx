@@ -30,6 +30,8 @@ import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
 import { ResultExtras } from './analysis/Extras'
 import { MechanismsPanel } from './analysis/Mechanisms'
+import { Conformers } from './tools/Conformers'
+import { SequenceBuilder } from './tools/SequenceBuilder'
 import { useTheme } from './theme'
 import type { AuthState, BuildError, ReactionResult, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
 
@@ -323,6 +325,7 @@ export default function App() {
       </div>
       <div hidden={mode !== 'name'}>
         <NameInput value={input} onChange={setInput} onSubmit={build} loading={loading} showHint={!error} />
+        <SequenceBuilder onBuild={openInPlace} loading={loading} />
       </div>
       {drawOpened && (
         <div hidden={mode !== 'draw'}>
@@ -344,7 +347,7 @@ export default function App() {
         <aside className="side">
           <Gallery onPick={pick} />
           <Recent items={recent} onPick={pick} onClear={() => setRecent(clearRecent())} />
-          {auth && <SavedList items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} onUpdate={updateSaved} />}
+          {auth && <SavedList auth={auth} items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} onUpdate={updateSaved} />}
         </aside>
 
         <main className="main">
@@ -437,6 +440,7 @@ export default function App() {
               <NameBreakdown mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Resonance mol={mol} />
               <ResultExtras mol={mol} onOpen={openInPlace} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
+              <Conformers mol={mol} />
               <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <Spectra mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">

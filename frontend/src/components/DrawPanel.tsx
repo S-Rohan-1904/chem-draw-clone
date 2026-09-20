@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { EditorBoundary } from './EditorBoundary'
 import type { EditorHandle } from './KetcherEditor'
+import { TEMPLATE_GROUPS } from '../tools/templates'
 
 const KetcherEditor = lazy(() => import('./KetcherEditor'))
 
@@ -39,6 +40,16 @@ export function DrawPanel({ onBuild, loading, loadStruct }: Props) {
     else pending.current = loadStruct.value
   }, [loadStruct, load])
 
+  const insert = async (smiles: string) => {
+    if (!handle.current || !smiles) return
+    setMsg(null)
+    try {
+      await handle.current.addFragment(smiles)
+    } catch {
+      setMsg('Could not insert the template.')
+    }
+  }
+
   const build = async () => {
     if (!handle.current) return
     setMsg(null)
@@ -64,7 +75,15 @@ export function DrawPanel({ onBuild, loading, loadStruct }: Props) {
           {loading ? 'Building...' : 'Build 3D'}
         </button>
         <button type="button" onClick={() => void handle.current?.clear()} disabled={!ready}>Clear</button>
-        <span className="muted small">Use the wedge or hash bond tool to set stereocentres.</span>
+        <select value="" onChange={(e) => void insert(e.target.value)} disabled={!ready} aria-label="Insert a template" title="Add a ready-made structure to the canvas">
+          <option value="">Insert template...</option>
+          {TEMPLATE_GROUPS.map((g) => (
+            <optgroup key={g.group} label={g.group}>
+              {g.items.map((t) => <option key={t.name} value={t.smiles}>{t.name}</option>)}
+            </optgroup>
+          ))}
+        </select>
+        <span className="muted small">Use the wedge or hash bond tool to set stereocentres; the enhanced stereo tool marks racemic (AND) or relative (OR) centres.</span>
         {msg && <span className="hint-bad small">{msg}</span>}
       </div>
     </div>

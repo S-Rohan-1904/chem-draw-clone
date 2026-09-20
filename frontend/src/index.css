@@ -305,3 +305,8 @@ button.chip { font: inherit; cursor: pointer; }
 .progress-list .ok .mark { color: var(--green); }
 .progress-list .bad .mark { color: var(--error); }
 .progress-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.assignments { display: flex; flex-direction: column; gap: 1rem; }
+.assignment-items { margin: 0 0 0.8rem; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.assignment-items li { display: flex; gap: 0.5rem; align-items: center; }
+.assignment-items li.done .link { text-decoration: line-through; color: var(--muted); }

@@ -1,4 +1,4 @@
-import type { AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
+import type { Assignment, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -80,6 +80,15 @@ export const api = {
   breakdown: (name: string, smiles: string) => request<NameBreakdown>('/api/molecule/breakdown', { method: 'POST', body: JSON.stringify({ name, smiles }) }),
   reaction: (text: string) => request<ReactionResult>('/api/molecule/reaction', { method: 'POST', body: JSON.stringify({ text }) }),
   quizStats: (auth: AuthState) => request<QuizStats>('/api/quiz/stats', {}, auth),
+  createAssignment: (auth: AuthState, title: string, names: string[]) =>
+    request<{ assignment: Assignment; rejected: { name: string; reason: string }[] }>('/api/assignments', { method: 'POST', body: JSON.stringify({ title, names }) }, auth),
+  myAssignments: (auth: AuthState) => request<Assignment[]>('/api/assignments/mine', {}, auth),
+  joinedAssignments: (auth: AuthState) => request<Assignment[]>('/api/assignments/joined', {}, auth),
+  getAssignment: (code: string, auth: AuthState | null) => request<Assignment>(`/api/assignments/${encodeURIComponent(code)}${auth ? '/me' : ''}`, {}, auth),
+  markDone: (auth: AuthState, code: string, itemId: number, done: boolean) =>
+    request<Assignment>(`/api/assignments/${encodeURIComponent(code)}/done/${itemId}`, { method: done ? 'POST' : 'DELETE' }, auth),
+  assignmentProgress: (auth: AuthState, code: string) => request<AssignmentProgress>(`/api/assignments/${encodeURIComponent(code)}/progress`, {}, auth),
+  deleteAssignment: (auth: AuthState, code: string) => request<void>(`/api/assignments/${encodeURIComponent(code)}`, { method: 'DELETE' }, auth),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

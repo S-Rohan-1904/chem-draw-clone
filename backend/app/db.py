@@ -50,6 +50,41 @@ class SavedMolecule(Base):
     user: Mapped[User] = relationship(back_populates="molecules")
 
 
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    code: Mapped[str] = mapped_column(String(12), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    items: Mapped[list["AssignmentItem"]] = relationship(back_populates="assignment", cascade="all, delete-orphan", order_by="AssignmentItem.position")
+
+
+class AssignmentItem(Base):
+    __tablename__ = "assignment_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id"), index=True)
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    name: Mapped[str] = mapped_column(Text)
+    smiles: Mapped[str] = mapped_column(Text)
+    inchikey: Mapped[str] = mapped_column(String(32), default="")
+
+    assignment: Mapped[Assignment] = relationship(back_populates="items")
+
+
+class AssignmentProgress(Base):
+    __tablename__ = "assignment_progress"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("assignment_items.id"), index=True)
+    done_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 class QuizAttempt(Base):
     __tablename__ = "quiz_attempts"
 

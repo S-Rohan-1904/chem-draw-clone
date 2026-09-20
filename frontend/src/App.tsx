@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError, loadAuth, storeAuth } from './api'
+import { Assignments } from './components/Assignments'
 import { AuthDialog } from './components/AuthDialog'
 import { BatchPanel } from './components/BatchPanel'
 import { Compare } from './components/Compare'
@@ -30,7 +31,7 @@ import type { AuthState, BuildError, ReactionResult, FunctionalGroup, Highlight,
 export default function App() {
   const [theme, toggleTheme] = useTheme()
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'guide'>('name')
+  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'assignments' | 'guide'>(() => (new URLSearchParams(window.location.search).get('assignment') ? 'assignments' : 'name'))
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [recent, setRecent] = useState<RecentItem[]>(() => loadRecent())
@@ -298,6 +299,7 @@ export default function App() {
         <button type="button" role="tab" aria-selected={mode === 'batch'} className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Batch</button>
         <button type="button" role="tab" aria-selected={mode === 'quiz'} className={mode === 'quiz' ? 'active' : ''} onClick={() => setMode('quiz')}>Quiz</button>
         <button type="button" role="tab" aria-selected={mode === 'isomers'} className={mode === 'isomers' ? 'active' : ''} onClick={() => setMode('isomers')}>Isomers</button>
+        <button type="button" role="tab" aria-selected={mode === 'assignments'} className={mode === 'assignments' ? 'active' : ''} onClick={() => setMode('assignments')}>Assignments</button>
         <button type="button" role="tab" aria-selected={mode === 'guide'} className={mode === 'guide' ? 'active' : ''} onClick={() => setMode('guide')}>Guide</button>
       </div>
       <div hidden={mode !== 'name'}>
@@ -314,6 +316,7 @@ export default function App() {
       {mode === 'quiz' && <QuizPanel auth={auth} onOpen={pick} />}
       {mode === 'guide' && <GuidePanel />}
       {mode === 'isomers' && <Isomers onOpen={openInPlace} />}
+      {mode === 'assignments' && <Assignments auth={auth} onOpen={openInPlace} onLogin={() => setShowAuth(true)} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
       <div className="layout" hidden={mode === 'quiz' || mode === 'guide'}>

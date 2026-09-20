@@ -212,3 +212,27 @@ export interface QuizStats {
   streak: number
   recent: { inchikey: string; name: string; correct: boolean; attempts: number; at: string }[]
 }
+
+export interface AssignmentItem {
+  id: number
+  position: number
+  name: string
+  smiles: string
+  done: boolean
+}
+
+export interface Assignment {
+  id: number
+  title: string
+  code: string
+  owner: string
+  mine: boolean
+  created_at: string
+  items: AssignmentItem[]
+  done_count: number
+}
+
+export interface AssignmentProgress {
+  items: { id: number; name: string }[]
+  participants: { username: string; done: number[]; count: number }[]
+}

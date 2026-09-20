@@ -273,3 +273,4 @@ button.chip { font: inherit; cursor: pointer; }
 .resonance-thumb { flex: 0 0 auto; padding: 0.2rem; background: var(--paper); border: 2px solid var(--border); border-radius: 8px; }
 .resonance-thumb.active { border-color: var(--accent); background: var(--paper); }
 .resonance-thumb svg { width: 220px; height: auto; display: block; }
+.legend-bar { display: inline-block; width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #d62728, #ffffff, #1f77b4); border: 1px solid var(--border); }

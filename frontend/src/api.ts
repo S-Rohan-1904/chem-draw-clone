@@ -75,6 +75,7 @@ export const api = {
   chair: (smiles: string, ring: number[]) => request<ChairOut>('/api/molecule/chair', { method: 'POST', body: JSON.stringify({ smiles, ring }) }),
   lookupName: (inchikey: string) => request<NameLookup>(`/api/molecule/name/${encodeURIComponent(inchikey)}`),
   resonance: (smiles: string) => request<{ forms: { svg: string; smiles: string }[] }>('/api/molecule/resonance', { method: 'POST', body: JSON.stringify({ smiles }) }),
+  charges: (smiles: string) => request<{ charges: number[]; min: number; max: number }>('/api/molecule/charges', { method: 'POST', body: JSON.stringify({ smiles }) }),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

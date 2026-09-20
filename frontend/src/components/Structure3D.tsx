@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as $3Dmol from '3dmol'
+import { api } from '../api'
 import type { Highlight, Molecule } from '../types'
 
 type Style = 'stick' | 'ballstick' | 'sphere' | 'line'
@@ -55,6 +56,8 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
   const [showLabels, setShowLabels] = useState(true)
   const [measuring, setMeasuring] = useState(false)
   const [showHyb, setShowHyb] = useState(false)
+  const [surface, setSurface] = useState(false)
+  const [surfaceRange, setSurfaceRange] = useState<[number, number] | null>(null)
   const hybLabels = useRef<unknown[]>([])
   const [picked, setPicked] = useState<number[]>([])
   const [reading, setReading] = useState<string | null>(null)
@@ -259,6 +262,41 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
     v.render()
   }, [showHyb, mol, showLabels])
 
+  // Electrostatic-style surface coloured by Gasteiger partial charge.
+  useEffect(() => {
+    const v = viewer.current
+    if (!v) return
+    v.removeAllSurfaces()
+    setSurfaceRange(null)
+    if (!surface) {
+      v.render()
+      return
+    }
+    let cancelled = false
+    api
+      .charges(mol.smiles)
+      .then((r) => {
+        if (cancelled || !viewer.current) return
+        const atoms = v.selectedAtoms({})
+        for (const a of atoms) {
+          const i = a.index as number
+          a.properties = { ...(a.properties ?? {}), partialCharge: r.charges[i] ?? 0 }
+        }
+        const lim = Math.max(Math.abs(r.min), Math.abs(r.max), 0.05)
+        v.addSurface($3Dmol.SurfaceType.VDW, {
+          opacity: 0.75,
+          colorscheme: { prop: 'partialCharge', gradient: new $3Dmol.Gradient.RWB(-lim, lim) },
+        } as unknown as Record<string, unknown>)
+        setSurfaceRange([-lim, lim])
+        v.render()
+      })
+      .catch(() => setSurface(false))
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [surface, mol])
+
   useEffect(() => {
     viewer.current?.spin(spin ? 'y' : false)
   }, [spin])
@@ -281,6 +319,9 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
           <label className="check">
             <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Labels
           </label>
+          <label className="check" title="Van der Waals surface coloured by partial charge: red negative, blue positive">
+            <input type="checkbox" checked={surface} onChange={(e) => setSurface(e.target.checked)} /> Surface
+          </label>
           <label className="check" title="Show hybridisation and lone pairs on each heavy atom">
             <input type="checkbox" checked={showHyb} onChange={(e) => setShowHyb(e.target.checked)} /> Orbitals
           </label>
@@ -296,6 +337,12 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
         </div>
       </header>
       <div className={`viewer3d ${measuring ? 'measuring' : ''}`} ref={box} />
+      {surface && surfaceRange && (
+        <p className="measure-bar">
+          <span className="legend-bar" aria-hidden="true" />
+          <span className="small muted">partial charge {surfaceRange[0].toFixed(2)} (red) to {surfaceRange[1].toFixed(2)} (blue)</span>
+        </p>
+      )}
       {measuring && (
         <p className="measure-bar">
           {picked.length === 0 && 'Click atoms: 2 for distance, 3 for angle, 4 for dihedral.'}

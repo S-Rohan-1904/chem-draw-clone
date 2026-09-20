@@ -253,3 +253,12 @@ def test_batch_endpoint():
         assert [x["ok"] for x in rows] == [True, True, False, True]
         assert rows[1]["stereo"].endswith(":R") and rows[0]["formula"] == "C2H6O"
         assert rows[2]["error"] and "suggestions" in rows[2]
+
+
+def test_charges_endpoint():
+    with client:
+        base = client.post("/api/molecule", json={"input": "ethanol"}).json()
+        r = client.post("/api/molecule/charges", json={"smiles": base["smiles"]}).json()
+        n_atoms = base["molblock"].split("\n")[3][:3].strip()
+        assert len(r["charges"]) == int(n_atoms)
+        assert r["min"] < -0.3 and r["max"] > 0.1  # oxygen negative, hydroxyl H positive

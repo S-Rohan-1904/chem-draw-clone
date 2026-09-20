@@ -117,6 +117,28 @@ class SmilesIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
 
 
+@router.post("/charges")
+def molecule_charges(body: SmilesIn, db: Session = Depends(get_db)):
+    """Gasteiger partial charges per atom, in the 3D mol block's atom order (H included)."""
+    from rdkit import Chem
+    from rdkit.Chem import AllChem
+
+    try:
+        mb = _molblock(db, body.smiles)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    mol = Chem.MolFromMolBlock(mb, removeHs=False)
+    AllChem.ComputeGasteigerCharges(mol)
+    charges = []
+    for a in mol.GetAtoms():
+        try:
+            q = float(a.GetProp("_GasteigerCharge"))
+        except KeyError:
+            q = 0.0
+        charges.append(0.0 if q != q else round(q, 4))  # NaN guard
+    return {"charges": charges, "min": min(charges), "max": max(charges)}
+
+
 @router.post("/resonance")
 def molecule_resonance(body: SmilesIn):
     try:

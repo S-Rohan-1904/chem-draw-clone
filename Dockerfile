@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: backend runtime (Python + JRE for OPSIN)
-FROM python:3.14-slim
+FROM python:3.12-slim
 # JAVA_TOOL_OPTIONS keeps the OPSIN JVM small enough for 512 MB hosts.
 ENV PYTHONUNBUFFERED=1 \
     UV_LINK_MODE=copy \
@@ -17,7 +17,7 @@ ENV PYTHONUNBUFFERED=1 \
     JAVA_TOOL_OPTIONS="-Xmx192m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xshare:auto"
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends default-jre-headless libxrender1 libxext6 \
+ && apt-get install -y --no-install-recommends default-jre-headless libexpat1 libfreetype6 libfontconfig1 libxrender1 libxext6 \
  && rm -rf /var/lib/apt/lists/* \
  && pip install --no-cache-dir uv
 
@@ -32,8 +32,8 @@ RUN cd backend && uv sync --frozen --no-dev
 COPY --chown=app:app backend/ backend/
 COPY --chown=app:app --from=web /web/dist frontend/dist
 
-# Sanity check: OPSIN must run inside the image.
-RUN cd backend && uv run --no-sync python -c "from app.opsin import strict; assert strict.convert('ethanol')[0]; strict.stop()"
+# Sanity check: RDKit drawing and OPSIN must both work inside the image.
+RUN cd backend && uv run --no-sync python -c "from app.chem import build; assert build('ethanol').svg"
 
 EXPOSE 7860
 WORKDIR /app/backend

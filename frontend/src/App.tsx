@@ -9,6 +9,7 @@ import { ErrorPanel } from './components/ErrorPanel'
 import { Gallery } from './components/Gallery'
 import { Groups } from './components/Groups'
 import { NameInput } from './components/NameInput'
+import { Projections } from './components/Projections'
 import { Properties } from './components/Properties'
 import { QuizPanel } from './components/QuizPanel'
 import { SavedList } from './components/SavedList'
@@ -70,6 +71,12 @@ export default function App() {
   const pick = (name: string) => {
     setInput(name)
     setMode('name')
+    void build(name)
+  }
+
+  // Build without leaving the current tab (batch and quiz results open in place).
+  const openInPlace = (name: string) => {
+    setInput(name)
     void build(name)
   }
 
@@ -271,7 +278,7 @@ export default function App() {
         </div>
       )}
       <div hidden={mode !== 'batch'}>
-        <BatchPanel onOpen={pick} />
+        <BatchPanel onOpen={openInPlace} />
       </div>
       {mode === 'quiz' && <QuizPanel auth={auth} onOpen={pick} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
@@ -349,6 +356,7 @@ export default function App() {
                 <Properties mol={mol} />
               </div>
               {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
+              <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">
                 <Groups mol={mol} active={group?.name ?? null} onSelect={selectGroup} />
               </div>

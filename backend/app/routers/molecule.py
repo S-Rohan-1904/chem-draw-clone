@@ -36,6 +36,15 @@ class BatchIn(BaseModel):
     inputs: list[str] = Field(min_length=1, max_length=200)
 
 
+class ProjectionIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    front: int | None = None
+    back: int | None = None
+    rotate: float = 0.0
+    ring: list[int] | None = None
+    flipped: bool = False
+
+
 class PngIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
     width: int = Field(default=1200, ge=200, le=4000)
@@ -167,6 +176,46 @@ def molecule_batch(body: BatchIn):
             diag = suggest.diagnose(chem.normalise_name(text), e.opsin_error, [])
             rows.append({"input": text, "ok": False, "error": diag.reason, "suggestions": diag.suggestions})
     return {"rows": rows}
+
+
+def _molblock(db: Session, smiles: str) -> str:
+    data, _ = cache.get_or_build(db, smiles)
+    return data["molblock"]
+
+
+@router.post("/projections")
+def projections_available(body: ProjectionIn, db: Session = Depends(get_db)):
+    """Which Newman bonds and chair rings a molecule offers."""
+    try:
+        mb = _molblock(db, body.smiles)
+        return {"newman_bonds": projections.newman_bonds(mb), "chair_rings": projections.chair_rings(mb)}
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@router.post("/newman")
+def newman(body: ProjectionIn, db: Session = Depends(get_db)):
+    if body.front is None or body.back is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "front and back atoms required")
+    try:
+        return projections.newman_svg(_molblock(db, body.smiles), body.front, body.back, body.rotate)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@router.post("/chair")
+def chair(body: ProjectionIn, db: Session = Depends(get_db)):
+    if not body.ring:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "ring required")
+    try:
+        analysis = projections.chair_analysis(_molblock(db, body.smiles), body.ring)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    return {
+        **analysis,
+        "svg": projections.chair_svg(analysis, flipped=False),
+        "svg_flipped": projections.chair_svg(analysis, flipped=True),
+    }
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

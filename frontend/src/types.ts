@@ -135,3 +135,22 @@ export interface QuizAnswer {
   accepted: string[]
   your_formula?: string | null
 }
+
+export interface ProjectionInfo {
+  newman_bonds: { atoms: [number, number]; label: string }[]
+  chair_rings: number[][]
+}
+
+export interface NewmanOut {
+  svg: string
+  dihedral: number | null
+}
+
+export interface ChairOut {
+  ring: number[]
+  substituents: { ring_pos: number; atom_idx: number; label: string; axial: boolean; up: boolean }[]
+  axial_count: number
+  equatorial_count: number
+  svg: string
+  svg_flipped: string
+}

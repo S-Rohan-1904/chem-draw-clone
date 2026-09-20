@@ -113,3 +113,18 @@ def test_properties_panel_values():
     assert p["lipinski_violations"] == 0 and p["charge"] == 0
     assert abs(p["exact_mass"] - 180.0423) < 0.001
     assert build("(2R)-butan-2-ol").properties["stereocentres"] == 1
+
+
+def test_atom_table():
+    from app.chem import atom_table
+
+    rows = {r["symbol"] + str(r["idx"]): r for r in atom_table(Chem.MolFromSmiles("CC(=O)O"))}
+    assert rows["C0"]["hybridization"] == "sp3" and rows["C1"]["hybridization"] == "sp2"
+    assert rows["O2"]["lone_pairs"] == 2 and rows["O3"]["lone_pairs"] == 2
+    amine = atom_table(Chem.MolFromSmiles("CN"))[1]
+    assert amine["lone_pairs"] == 1 and amine["hs"] == 2
+    nitrile = atom_table(Chem.MolFromSmiles("CC#N"))
+    assert nitrile[1]["hybridization"] == "sp" and nitrile[2]["lone_pairs"] == 1
+    assert all(r["hybridization"] == "sp2" for r in atom_table(Chem.MolFromSmiles("c1ccccc1")))
+    ammonium = atom_table(Chem.MolFromSmiles("C[N+](C)(C)C"))[1]
+    assert ammonium["lone_pairs"] == 0 and ammonium["charge"] == 1

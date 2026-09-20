@@ -54,6 +54,8 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
   const [spin, setSpin] = useState(false)
   const [showLabels, setShowLabels] = useState(true)
   const [measuring, setMeasuring] = useState(false)
+  const [showHyb, setShowHyb] = useState(false)
+  const hybLabels = useRef<unknown[]>([])
   const [picked, setPicked] = useState<number[]>([])
   const [reading, setReading] = useState<string | null>(null)
   const pickedRef = useRef<number[]>([])
@@ -194,6 +196,69 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
     }
   }
 
+  // Hover tooltip with hybridisation and lone pairs; optional labels on heavy atoms.
+  useEffect(() => {
+    const v = viewer.current
+    if (!v) return
+    const info = new Map((mol.atoms ?? []).map((a) => [a.idx, a]))
+    const describe = (a: { index?: number; elem?: string }) => {
+      const row = a.index !== undefined ? info.get(a.index) : undefined
+      if (!row) return a.elem === 'H' ? 'H' : a.elem ?? ''
+      const bits = [`${row.symbol}${row.idx + 1}`, row.hybridization]
+      if (row.lone_pairs) bits.push(`${row.lone_pairs} lone pair${row.lone_pairs > 1 ? 's' : ''}`)
+      if (row.charge) bits.push(`charge ${row.charge > 0 ? '+' : ''}${row.charge}`)
+      return bits.join(' · ')
+    }
+    let hoverLabel: unknown = null
+    v.setHoverable(
+      {},
+      true,
+      (atom: { index?: number; elem?: string; x: number; y: number; z: number }) => {
+        if (hoverLabel) v.removeLabel(hoverLabel as Parameters<$3Dmol.GLViewer['removeLabel']>[0])
+        hoverLabel = v.addLabel(describe(atom), {
+          position: { x: atom.x, y: atom.y, z: atom.z },
+          fontSize: 12,
+          backgroundColor: '#1a1d29',
+          backgroundOpacity: 0.85,
+          fontColor: 'white',
+          borderThickness: 0,
+          inFront: true,
+        })
+        v.render()
+      },
+      () => {
+        if (hoverLabel) {
+          v.removeLabel(hoverLabel as Parameters<$3Dmol.GLViewer['removeLabel']>[0])
+          hoverLabel = null
+          v.render()
+        }
+      },
+    )
+    v.render()
+    return () => {
+      if (hoverLabel) v.removeLabel(hoverLabel as Parameters<$3Dmol.GLViewer['removeLabel']>[0])
+    }
+  }, [mol])
+
+  useEffect(() => {
+    const v = viewer.current
+    if (!v) return
+    for (const l of hybLabels.current) v.removeLabel(l as Parameters<$3Dmol.GLViewer['removeLabel']>[0])
+    hybLabels.current = []
+    if (showHyb) {
+      for (const a of mol.atoms ?? []) {
+        if (a.symbol === 'H') continue
+        const p = pos(v, a.idx)
+        if (!p) continue
+        const text = a.lone_pairs ? `${a.hybridization} · ${a.lone_pairs}lp` : a.hybridization
+        hybLabels.current.push(
+          v.addLabel(text, { position: p, fontSize: 11, fontColor: '#1a1d29', backgroundColor: '#e2e8f0', backgroundOpacity: 0.9, borderThickness: 0, inFront: true }),
+        )
+      }
+    }
+    v.render()
+  }, [showHyb, mol, showLabels])
+
   useEffect(() => {
     viewer.current?.spin(spin ? 'y' : false)
   }, [spin])
@@ -215,6 +280,9 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
           </select>
           <label className="check">
             <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Labels
+          </label>
+          <label className="check" title="Show hybridisation and lone pairs on each heavy atom">
+            <input type="checkbox" checked={showHyb} onChange={(e) => setShowHyb(e.target.checked)} /> Orbitals
           </label>
           <button type="button" className={spin ? 'active' : ''} onClick={() => setSpin((s) => !s)}>
             {spin ? 'Stop' : 'Spin'}

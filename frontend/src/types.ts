@@ -26,6 +26,7 @@ export interface Molecule {
   normalised_input: string
   properties: MolProperties
   groups: FunctionalGroup[]
+  atoms: AtomInfo[]
 }
 
 export interface SavedMolecule {
@@ -41,6 +42,16 @@ export interface SavedMolecule {
 export interface AuthState {
   token: string
   username: string
+}
+
+export interface AtomInfo {
+  idx: number
+  symbol: string
+  hybridization: string
+  lone_pairs: number
+  charge: number
+  hs: number
+  aromatic: boolean
 }
 
 export interface FunctionalGroup {

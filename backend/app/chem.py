@@ -97,6 +97,7 @@ class MoleculeResult:
     normalised_input: str = ""
     properties: dict = field(default_factory=dict)
     groups: list[dict] = field(default_factory=list)
+    atoms: list[dict] = field(default_factory=list)
 
 
 def _looks_like_smiles(text: str) -> bool:
@@ -429,6 +430,38 @@ def canonical_smiles(smiles: str) -> str:
     return Chem.MolToSmiles(mol_from_smiles(smiles), isomericSmiles=True)
 
 
+_HYB = {
+    Chem.HybridizationType.SP: "sp",
+    Chem.HybridizationType.SP2: "sp2",
+    Chem.HybridizationType.SP3: "sp3",
+    Chem.HybridizationType.SP3D: "sp3d",
+    Chem.HybridizationType.SP3D2: "sp3d2",
+}
+
+
+def atom_table(mol: Chem.Mol) -> list[dict]:
+    """Per heavy atom: hybridisation, lone pairs, charge, H count (indices match the SMILES)."""
+    pt = Chem.GetPeriodicTable()
+    out = []
+    for a in mol.GetAtoms():
+        valence_e = pt.GetNOuterElecs(a.GetAtomicNum())
+        bonding_e = int(round(sum(b.GetBondTypeAsDouble() for b in a.GetBonds()))) + a.GetTotalNumHs()
+        lone = max(0, (valence_e - a.GetFormalCharge() - bonding_e) // 2)
+        hyb = _HYB.get(a.GetHybridization(), "")
+        if a.GetIsAromatic():
+            hyb = "sp2"
+        out.append({
+            "idx": a.GetIdx(),
+            "symbol": a.GetSymbol(),
+            "hybridization": hyb,
+            "lone_pairs": lone,
+            "charge": a.GetFormalCharge(),
+            "hs": a.GetTotalNumHs(),
+            "aromatic": a.GetIsAromatic(),
+        })
+    return out
+
+
 def compute_properties(mol: Chem.Mol) -> dict:
     """Common descriptors for the properties panel."""
     from rdkit.Chem import Crippen, Lipinski, QED
@@ -482,6 +515,7 @@ def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles")
         inchikey=Chem.MolToInchiKey(mol),
         properties=compute_properties(mol),
         groups=_groups.find_groups(mol),
+        atoms=atom_table(mol),
     )
 
 

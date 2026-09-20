@@ -192,10 +192,10 @@ input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color:
 .tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
 .tabs button:hover { color: var(--accent); }
 .draw-panel { display: flex; flex-direction: column; gap: 0.6rem; }
-.editor-wrap { height: 540px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--paper); }
+.editor-wrap { height: clamp(640px, 78vh, 900px); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--paper); }
 .editor-loading { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .draw-actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
-@media (max-width: 960px) { .editor-wrap { height: 440px; } }
+@media (max-width: 960px) { .editor-wrap { height: 600px; } }
 
 .props-grid { grid-template-columns: max-content 1fr max-content 1fr; }
 .tag-ok { background: var(--green-soft); color: var(--green); }

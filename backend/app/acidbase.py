@@ -155,6 +155,8 @@ def analyse(smiles: str, ph: float = 7.4) -> dict:
     mol = mol_from_smiles(smiles)
     base_charge = sum(a.GetFormalCharge() for a in mol.GetAtoms())
     site_list = sites(mol)
+    if not any(s["in_water_range"] for s in site_list):
+        site_list = []  # nothing ionises between pH 0 and 14: no card
     for s in site_list:
         s["fraction_ionised"] = round(fraction_ionised(s, ph), 3)
     species = species_at(mol, site_list, ph)

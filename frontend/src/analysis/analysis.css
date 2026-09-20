@@ -4,7 +4,7 @@
 .bonding-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
 .bonding-split > div:last-child { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
 .bonding-svg { min-height: 280px; }
-.bonding-svg svg { max-width: 100%; height: auto; }
+.bonding-svg svg { width: 100%; max-width: 440px; height: auto; }
 .bonding-title { font-size: 1.05rem; }
 .bonding-table { border-collapse: collapse; font-size: 0.88rem; width: 100%; }
 .bonding-table th, .bonding-table td { text-align: left; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }

@@ -65,3 +65,13 @@ def isotopes_apply(body: IsotopesIn):
         return out
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@router.post("/sugars")
+def sugar_projections(body: SmilesIn, db: Session = Depends(get_db)):
+    from .. import sugars
+
+    try:
+        return sugars.projections(_molblock(db, body.smiles))
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))

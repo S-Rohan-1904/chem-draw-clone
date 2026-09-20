@@ -129,3 +129,39 @@ export interface IsotopeResult {
   applied: { atom_idx: number; isotope: string; count: number; text: string }[]
   options: { atom_idx: number; symbol: string; hs: number; codes: string[] }[]
 }
+
+export interface FischerRow {
+  idx: number
+  kind: 'end' | 'centre' | 'mid'
+  label: string
+  left: { idx: number; text: string; symbol: string } | null
+  right: { idx: number; text: string; symbol: string } | null
+  note?: string
+}
+
+export interface Fischer {
+  chain: number[]
+  rows: FischerRow[]
+  dl: 'D' | 'L' | null
+  dl_reason: string | null
+  svg: string
+}
+
+export interface Haworth {
+  ring: number[]
+  oxygen: number
+  size: number
+  kind: 'pyranose' | 'furanose'
+  atoms: { num: number; label: number; idx: number; subs: { idx: number; text: string; symbol: string; up: boolean; h: boolean }[] }[]
+  anomer: 'alpha' | 'beta' | null
+  anomeric_up: boolean | null
+  reference: { num: number; text: string; up: boolean } | null
+  dl: 'D' | 'L' | null
+  svg: string
+  rings_available: number
+}
+
+export interface SugarProjections {
+  fischer: Fischer | null
+  haworth: Haworth | null
+}

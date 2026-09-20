@@ -62,6 +62,13 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Fischer and Haworth projections',
+    body: [
+      'For open chain molecules with stereocentres on a carbon chain, such as sugars and amino acids, the Fischer tab draws the Fischer projection: the chain runs vertically with the most oxidised carbon on top, vertical bonds point away from you and horizontal bonds towards you. Left and right are read from the 3D model. The D or L series is stated when the molecule is a sugar or an amino acid.',
+      'For cyclic sugars (a five or six membered ring with one oxygen and an anomeric carbon) the Haworth tab draws the ring with the thick edge nearest to you and every substituent up or down. The panel names the anomer (alpha or beta), the D or L series and the reasoning.',
+    ],
+  },
+  {
     title: 'Name breakdown',
     body: [
       'For molecules built from a name, the Name breakdown panel colours each part of the name: stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey; the name itself was still read correctly.',

@@ -133,6 +133,7 @@ def test_enhanced_stereo_notes():
 def test_reaction_components_have_mw_and_map_colours():
     out = reaction.parse_reaction("[CH3:1][OH:2].[C:3](=O)O>>[CH3:1][O:2][C:3](=O)")
     assert out["mapped"] and out["reactants"][0]["mw"] == 32.04
+    assert out["reactants"][0]["smiles"] == "CO"  # map numbers stripped
     assert out["svg"].count("fill:#") >= 3  # highlight circles for mapped atoms
     plain = reaction.parse_reaction("CO.C(=O)O>>COC(=O)")
     assert not plain["mapped"] and plain["products"][0]["mw"] > 0

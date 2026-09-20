@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { IrSpectrum, Molecule, MsSpectrum, NmrSpectrum } from '../types'
+import type { IrSpectrum, Molecule, MsNode, MsSpectrum, NmrSpectrum } from '../types'
 
 interface Props {
   mol: Molecule
@@ -119,7 +119,7 @@ function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' |
           return (
             <g key={i} className={`peak ${sel === i ? 'sel' : ''}`} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)} onClick={() => hover(sel === i ? null : i)}>
               <rect x={x - 6} y={PAD.t} width={12} height={PH} className="hit" />
-              <Multiplet x={x} y0={PAD.t + PH} h={h} mult={nucleus === 'h' ? p.multiplicity ?? 's' : 's'} />
+              <Multiplet x={x} y0={PAD.t + PH} h={h} mult={nucleus === 'h' ? p.multiplicity ?? 's' : 's'} couplings={nucleus === 'h' ? p.couplings : undefined} />
               {nucleus === 'h' && (labelled[i] || sel === i) && <text x={x} y={PAD.t + PH - h - 6} textAnchor="middle" className="int">{p.integration}H</text>}
             </g>
           )
@@ -132,36 +132,54 @@ function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' |
             <tr key={i} className={sel === i ? 'sel' : ''} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)}>
               <td>{p.shift.toFixed(nucleus === 'h' ? 2 : 1)}</td>
               <td>{p.integration}</td>
-              {nucleus === 'h' && <td>{p.multiplicity}{p.exchangeable ? ' (br, exchangeable)' : ''}</td>}
+              {nucleus === 'h' && <td>{p.multiplicity}{p.exchangeable ? ' (br, exchangeable)' : ''}{p.couplings && p.couplings.length > 0 && <span className="muted">, J = {p.couplings.map((c) => c.J.toFixed(1)).join(', ')} Hz</span>}</td>}
               <td>{p.label}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="muted small">{peaks.length} signal{peaks.length === 1 ? '' : 's'}. {data.note} Multiplicities from the n+1 rule.</p>
+      <p className="muted small">{peaks.length} signal{peaks.length === 1 ? '' : 's'}. {data.note}{nucleus === 'h' && ' Multiplicities from first-order coupling: 7 Hz across freely rotating bonds, Karplus dihedrals in rings, 16/10.5 Hz trans/cis on alkenes, 8/2 Hz ortho/meta. Splittings in the drawing are exaggerated for visibility.'}</p>
     </div>
   )
 }
 
-function Multiplet({ x, y0, h, mult }: { x: number; y0: number; h: number; mult: string }) {
-  // Relative line heights: binomial for s/d/t/q…, a jagged blob for m.
-  const n = { s: 1, d: 2, t: 3, q: 4, quint: 5, sext: 6, sept: 7 }[mult as 's']
-  let rel: number[]
-  if (n) {
-    rel = [1]
-    for (let i = 1; i < n; i++) rel.push((rel[i - 1] * (n - i)) / i)
-    const top = Math.max(...rel)
-    rel = rel.map((v) => v / top)
+function Multiplet({ x, y0, h, mult, couplings }: { x: number; y0: number; h: number; mult: string; couplings?: { J: number; n: number }[] }) {
+  // Lines from the actual couplings (each J splits every line n times),
+  // exaggerated to ~0.6 px per Hz so a 7 Hz triplet is visible; falls back
+  // to binomial spacing when no couplings are known, a jagged blob for m.
+  let lines: { off: number; rel: number }[]
+  if (couplings && couplings.length > 0 && mult !== 'm') {
+    lines = [{ off: 0, rel: 1 }]
+    for (const c of couplings) {
+      for (let k = 0; k < c.n; k++) {
+        const next = new Map<number, number>()
+        for (const l of lines) {
+          for (const d of [-c.J / 2, c.J / 2]) {
+            const key = Math.round((l.off + d) * 10)
+            next.set(key, (next.get(key) ?? 0) + l.rel / 2)
+          }
+        }
+        lines = [...next.entries()].map(([k, rel]) => ({ off: k / 10, rel })).sort((a, b) => a.off - b.off)
+      }
+    }
+    const top = Math.max(...lines.map((l) => l.rel))
+    lines = lines.map((l) => ({ off: l.off * 0.6, rel: l.rel / top }))
   } else {
-    rel = [0.5, 0.9, 0.7, 1, 0.6]
+    const n = { s: 1, d: 2, t: 3, q: 4, quint: 5, sext: 6, sept: 7 }[mult as 's']
+    let rel: number[]
+    if (n) {
+      rel = [1]
+      for (let i = 1; i < n; i++) rel.push((rel[i - 1] * (n - i)) / i)
+      const top = Math.max(...rel)
+      rel = rel.map((v) => v / top)
+    } else {
+      rel = [0.5, 0.9, 0.7, 1, 0.6]
+    }
+    lines = rel.map((r, i) => ({ off: (i - (rel.length - 1) / 2) * 3, rel: r }))
   }
-  const gap = 3
   return (
     <g className="stick">
-      {rel.map((r, i) => {
-        const lx = x + (i - (rel.length - 1) / 2) * gap
-        return <line key={i} x1={lx} x2={lx} y1={y0} y2={y0 - h * r} />
-      })}
+      {lines.map((l, i) => <line key={i} x1={x + l.off} x2={x + l.off} y1={y0} y2={y0 - h * l.rel} />)}
     </g>
   )
 }
@@ -229,13 +247,26 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
 function Ms({ data, onHighlight }: { data: MsSpectrum; onHighlight: Props['onHighlight'] }) {
   const [sel, setSel] = useState<number | null>(null)
   const exp = data.experimental
+  const tree = data.tree ?? []
+  const ions = tree.filter((n) => n.parent >= 0)
   const maxMz = Math.ceil((Math.max(data.nominal_mass, ...(exp ? exp.peaks.map((p) => p.mz) : [])) + 12) / 10) * 10
   const sx = (mz: number) => PAD.l + (mz / maxMz) * PW
   const sy = (rel: number) => PAD.t + (1 - rel / 100) * PH
-  const hover = (i: number | null) => {
-    setSel(i)
-    onHighlight(i === null ? null : data.fragments[i].atoms)
+  const hover = (id: number | null) => {
+    setSel(id)
+    const node = id === null ? null : tree.find((n) => n.id === id)
+    onHighlight(node && node.atoms.length ? node.atoms : null)
   }
+  // Depth-first order for the table, so each ion sits under its precursor.
+  const rows: { node: MsNode; depth: number }[] = []
+  const walk = (parent: number, depth: number) => {
+    for (const n of tree.filter((n) => n.parent === parent)) {
+      rows.push({ node: n, depth })
+      walk(n.id, depth + 1)
+    }
+  }
+  walk(-1, 0)
+  const height = (n: MsNode) => (n.parent === 0 ? Math.max(15, 70 - ions.indexOf(n) * 6) : 12)
   const tickStep = maxMz > 300 ? 50 : maxMz > 120 ? 20 : 10
   return (
     <div className="spectrum">
@@ -248,11 +279,12 @@ function Ms({ data, onHighlight }: { data: MsSpectrum; onHighlight: Props['onHig
             {i === 0 && <text x={sx(p.nominal)} y={sy(p.rel) - 4} textAnchor="middle" className="int">M⁺• {p.nominal}</text>}
           </g>
         ))}
-        {data.fragments.map((f, i) => (
-          <g key={`f${i}`} className={`peak ${sel === i ? 'sel' : ''}`} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)} onClick={() => hover(sel === i ? null : i)}>
+        {ions.map((f) => (
+          <g key={`f${f.id}`} className={`peak ${sel === f.id ? 'sel' : ''}`} onMouseEnter={() => hover(f.id)} onMouseLeave={() => hover(null)} onClick={() => hover(sel === f.id ? null : f.id)}>
             <rect x={sx(f.nominal) - 5} y={PAD.t} width={10} height={PH} className="hit" />
-            <line x1={sx(f.nominal)} x2={sx(f.nominal)} y1={sy(0)} y2={sy(Math.max(15, 70 - i * 8))} className="stick frag" />
-            <text x={sx(f.nominal)} y={sy(Math.max(15, 70 - i * 8)) - 4} textAnchor="middle" className="int">{f.nominal}</text>
+            <line x1={sx(f.nominal)} x2={sx(f.nominal)} y1={sy(0)} y2={sy(height(f))} className="stick frag" />
+            {f.isotopes.slice(1).map((iso) => <line key={iso.nominal} x1={sx(iso.nominal)} x2={sx(iso.nominal)} y1={sy(0)} y2={sy((height(f) * iso.rel) / 100)} className="stick frag" />)}
+            <text x={sx(f.nominal)} y={sy(height(f)) - 4} textAnchor="middle" className="int">{f.nominal}</text>
           </g>
         ))}
       </svg>
@@ -260,18 +292,28 @@ function Ms({ data, onHighlight }: { data: MsSpectrum; onHighlight: Props['onHig
         <b>{data.formula}</b>, exact mass {data.exact_mass}, M⁺• at m/z {data.nominal_mass}
         {data.isotopes.length > 1 && <> · isotope pattern {data.isotopes.map((p) => `${p.nominal} (${Math.round(p.rel)}%)`).join(', ')}</>}
       </p>
-      <table className="peak-table">
-        <thead><tr><th>m/z</th><th>ion</th><th>loss</th><th>why</th></tr></thead>
+      <table className="peak-table ms-tree">
+        <thead><tr><th>m/z</th><th>ion</th><th>from</th><th>loss</th><th>why</th></tr></thead>
         <tbody>
-          {data.fragments.map((f, i) => (
-            <tr key={i} className={sel === i ? 'sel' : ''} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)}>
-              <td>{f.nominal}</td><td>{f.formula}</td><td>−{f.loss}</td><td>{f.why}</td>
+          {rows.map(({ node: f, depth }) => (
+            <tr key={f.id} className={sel === f.id ? 'sel' : ''} onMouseEnter={() => hover(f.id)} onMouseLeave={() => hover(null)}>
+              <td>{f.nominal}{f.isotopes.length > 1 && <span className="muted small"> / {f.isotopes.slice(1).map((i) => `${i.nominal} (${Math.round(i.rel)}%)`).join(', ')}</span>}</td>
+              <td>
+                <div className="ms-ion" style={{ paddingLeft: `${depth * 1.1}rem` }}>
+                  {depth > 0 && <span className="ms-branch" aria-hidden="true">└</span>}
+                  <span>{f.formula}</span>
+                  {f.svg && <span className="ms-thumb" dangerouslySetInnerHTML={{ __html: f.svg }} />}
+                </div>
+              </td>
+              <td>{f.parent < 0 ? '' : f.parent === 0 ? 'M⁺•' : `m/z ${tree.find((n) => n.id === f.parent)?.nominal}`}</td>
+              <td>{f.loss ? `−${f.loss}` : ''}</td>
+              <td>{f.why}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="muted small">
-        Fragment heights are illustrative (ranked by expected stability), not intensities. {data.note}{' '}
+        Fragment heights are illustrative (ranked by expected stability), not intensities. Ions are grouped under the ion they come from. {data.note}{' '}
         {exp && <a href={exp.url} target="_blank" rel="noreferrer">View at NIST</a>}
       </p>
     </div>

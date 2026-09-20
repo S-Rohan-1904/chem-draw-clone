@@ -275,6 +275,7 @@ export interface NmrPeak {
   atoms: number[]
   integration: number
   multiplicity?: string
+  couplings?: { J: number; n: number; atoms: number[] }[]
   label: string
   exchangeable?: boolean
 }
@@ -304,12 +305,27 @@ export interface IrSpectrum {
   cached: boolean
 }
 
+export interface MsNode {
+  id: number
+  parent: number
+  mz: number
+  nominal: number
+  formula: string
+  loss: string
+  why: string
+  atoms: number[]
+  svg: string
+  isotopes: { nominal: number; rel: number }[]
+  score: number
+}
+
 export interface MsSpectrum {
   formula: string
   exact_mass: number
   nominal_mass: number
   isotopes: { mz: number; nominal: number; rel: number }[]
   fragments: { mz: number; nominal: number; formula: string; loss: string; atoms: number[]; score: number; why: string }[]
+  tree: MsNode[]
   experimental: { peaks: { mz: number; rel: number }[]; url: string } | null
   note: string
   cached: boolean

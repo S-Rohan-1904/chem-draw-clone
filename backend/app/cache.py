@@ -123,6 +123,10 @@ def get_by_inchikey(db: Session, inchikey: str) -> dict | None:
     return data
 
 
+# Bump when the spectra payload gains fields, so stale rows are rebuilt.
+SPECTRA_VERSION = 3
+
+
 def get_spectra(db: Session, smiles: str, kind: str, builder) -> dict:
     """Spectra payload for (canonical smiles, kind). `builder(smiles, kind)`
     returns (payload, complete); incomplete results (network trouble) are
@@ -130,9 +134,11 @@ def get_spectra(db: Session, smiles: str, kind: str, builder) -> dict:
     row = db.get(SpectraCache, (smiles, kind))
     if row is not None:
         data = json.loads(row.result_json)
-        data["cached"] = True
-        return data
+        if data.get("_sv") == SPECTRA_VERSION:
+            data["cached"] = True
+            return data
     data, complete = builder(smiles, kind)
+    data["_sv"] = SPECTRA_VERSION
     if complete:
         db.merge(SpectraCache(smiles=smiles, kind=kind, result_json=json.dumps(data)))
         try:

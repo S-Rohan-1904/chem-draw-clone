@@ -125,7 +125,10 @@ def draw_reaction(reactants: list[Chem.Mol], agents: list[Chem.Mol], products: l
 
 
 def _component(m: Chem.Mol) -> dict:
-    return {"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m), "mw": round(Descriptors.MolWt(m), 2)}
+    plain = Chem.Mol(m)
+    for a in plain.GetAtoms():
+        a.SetAtomMapNum(0)  # map numbers are for the drawing, not the SMILES shown or opened
+    return {"smiles": Chem.MolToSmiles(plain), "formula": rdMolDescriptors.CalcMolFormula(m), "mw": round(Descriptors.MolWt(m), 2)}
 
 
 def parse_reaction(text: str) -> dict:

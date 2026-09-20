@@ -343,8 +343,9 @@ export default function App() {
       {SHOW_ASSIGNMENTS && mode === 'assignments' && <Assignments auth={auth} onOpen={pick} onLogin={() => setShowAuth(true)} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
-      <div className="layout" hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'mechanisms' || mode === 'assignments' || mode === 'stats'}>
-        <aside className="side">
+      <div className={`layout ${mode === 'draw' ? 'layout-full' : ''}`} hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'mechanisms' || mode === 'assignments' || mode === 'stats'}>
+        {/* The Draw tab keeps the whole width for the editor and its result. */}
+        <aside className="side" hidden={mode === 'draw'}>
           <Gallery onPick={pick} />
           <Recent items={recent} onPick={pick} onClear={() => setRecent(clearRecent())} />
           {auth && <SavedList auth={auth} items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} onUpdate={updateSaved} />}

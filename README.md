@@ -157,6 +157,9 @@ SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
 - Saved list: search by SMILES/SMARTS substructure, falling back to Morgan/Tanimoto similarity.
 - Draw tab: "Insert template" adds amino acids, nucleobases, sugars, steroids, heterocycles and common reagents to the canvas. The editor exports V3000, so Ketcher's enhanced stereo marks (racemic AND, relative OR) are read and reported as a warning on the result.
 - Invalid structures (valence, unkekulisable rings) are reported per atom instead of a generic parse failure.
+- 1H NMR: first-order coupling constants and multiplet patterns (dd, td, ...). 7 Hz across freely rotating bonds, Karplus dihedrals from the lowest-energy conformer in rings, 16 / 10.5 Hz trans / cis on alkenes, 8 / 2 Hz ortho / meta; peaks are drawn with their real splitting.
+- Mass spec: fragmentation tree. Single cleavages, McLafferty rearrangement and neutral losses (H2O, CO, HCN, CO2, HX, NH3), then second-step ions (acylium −CO, tropylium −C2H2, alkyl −C2H4); each ion has a drawing and, with Cl / Br, its isotope cluster.
+- The Draw tab hides the side lists so the editor gets the full width.
 
 ## Notes
 

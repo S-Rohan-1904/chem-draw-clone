@@ -18,6 +18,8 @@ from collections import defaultdict
 from urllib.parse import quote
 
 import httpx
+
+from . import couplings
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdMolDescriptors
 
@@ -273,16 +275,22 @@ def nmr_local(mol: Chem.Mol) -> dict:
     """Rule-based 1H and 13C: {h: {peaks}, c: {peaks}}. Atom indices refer to
     the heavy-atom mol (hydrogens are reported through their parent)."""
     mh, ranks = equivalence(mol)
+    conf = couplings.conformer(mh) if mol.GetNumHeavyAtoms() <= 60 else None
     h_peaks = []
     for cls in _classes(mh, ranks, 1):
         parent = mh.GetAtomWithIdx(cls[0]).GetNeighbors()[0]
         shift, label, exch = _h_shift(parent, mh)
         parents = sorted({mh.GetAtomWithIdx(i).GetNeighbors()[0].GetIdx() for i in cls})
+        if exch:
+            mult, js = "s", []
+        else:
+            mult, js = couplings.pattern(couplings.couplings(mh, ranks, conf, cls[0]))
         h_peaks.append({
             "shift": shift,
             "atoms": parents,
             "integration": len(cls),
-            "multiplicity": _multiplicity(parent, mh, ranks, exch),
+            "multiplicity": mult,
+            "couplings": js,
             "label": label,
             "exchangeable": exch,
         })
@@ -583,6 +591,8 @@ def ms_fragments(mol: Chem.Mol, limit: int = 8) -> list[dict]:
 
 
 def ms_predict(mol: Chem.Mol) -> dict:
+    from . import msfrag
+
     counts = _element_counts(mol)
     return {
         "formula": rdMolDescriptors.CalcMolFormula(mol),
@@ -590,6 +600,7 @@ def ms_predict(mol: Chem.Mol) -> dict:
         "nominal_mass": int(round(_mono_mass(counts))),
         "isotopes": isotope_pattern(counts),
         "fragments": ms_fragments(mol),
+        "tree": msfrag.tree(mol)["nodes"],
     }
 
 

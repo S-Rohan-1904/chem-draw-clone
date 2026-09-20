@@ -194,3 +194,13 @@ export interface NameBreakdown {
   legend: { kind: string; colour: string; text: string }[]
   colours: Record<string, string>
 }
+
+export interface ReactionResult {
+  svg: string
+  reactants: { smiles: string; formula: string }[]
+  agents: { smiles: string; formula: string }[]
+  products: { smiles: string; formula: string }[]
+  balanced: boolean
+  imbalance: Record<string, number>
+  mapped: boolean
+}

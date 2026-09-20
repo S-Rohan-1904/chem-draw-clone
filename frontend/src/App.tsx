@@ -16,6 +16,7 @@ import { NameLookup } from './components/NameLookup'
 import { Projections } from './components/Projections'
 import { Resonance } from './components/Resonance'
 import { Properties } from './components/Properties'
+import { Reaction } from './components/Reaction'
 import { Recent, clearRecent, loadRecent, pushRecent, type RecentItem } from './components/Recent'
 import { QuizPanel } from './components/QuizPanel'
 import { SavedList } from './components/SavedList'
@@ -24,7 +25,7 @@ import { StereoPanel } from './components/StereoPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
 import { useTheme } from './theme'
-import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
+import type { AuthState, BuildError, ReactionResult, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
 
 export default function App() {
   const [theme, toggleTheme] = useTheme()
@@ -33,6 +34,7 @@ export default function App() {
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [recent, setRecent] = useState<RecentItem[]>(() => loadRecent())
+  const [rxn, setRxn] = useState<{ text: string; result: ReactionResult } | null>(null)
   const [mol, setMol] = useState<Molecule | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<BuildError | null>(null)
@@ -63,6 +65,19 @@ export default function App() {
     setStereoSel(null)
     setExplanation(null)
     setCompare(null)
+    setRxn(null)
+    if (text.includes('>') && !text.includes(' ')) {
+      try {
+        setRxn({ text, result: await api.reaction(text) })
+        setMol(null)
+      } catch (e) {
+        setMol(null)
+        setError({ message: e instanceof ApiError ? e.message : 'Could not reach the server.', suggestions: [] })
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
     try {
       const built = await api.molecule(text)
       setMol(built)
@@ -309,7 +324,8 @@ export default function App() {
         </aside>
 
         <main className="main">
-          {!mol && !loading && (
+          {rxn && !loading && <Reaction text={rxn.text} rxn={rxn.result} onOpen={openInPlace} />}
+          {!mol && !rxn && !loading && (
             <section className="card empty">
               <p>Enter a name or pick an example.</p>
             </section>

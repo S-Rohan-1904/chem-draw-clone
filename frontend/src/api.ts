@@ -1,4 +1,4 @@
-import type { AuthState, BatchRow, IsomerResult, NameBreakdown, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
+import type { AuthState, BatchRow, IsomerResult, NameBreakdown, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -78,6 +78,7 @@ export const api = {
   charges: (smiles: string) => request<{ charges: number[]; min: number; max: number }>('/api/molecule/charges', { method: 'POST', body: JSON.stringify({ smiles }) }),
   isomers: (formula: string) => request<IsomerResult>(`/api/isomers?formula=${encodeURIComponent(formula)}`),
   breakdown: (name: string, smiles: string) => request<NameBreakdown>('/api/molecule/breakdown', { method: 'POST', body: JSON.stringify({ name, smiles }) }),
+  reaction: (text: string) => request<ReactionResult>('/api/molecule/reaction', { method: 'POST', body: JSON.stringify({ text }) }),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

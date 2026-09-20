@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, nameparse, projections, ratelimit, resolver, resonance, stereo_explain, suggest
+from .. import cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, stereo_explain, suggest
 from ..db import NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -147,6 +147,18 @@ class BreakdownIn(BaseModel):
 @router.post("/breakdown")
 def molecule_breakdown(body: BreakdownIn):
     return nameparse.breakdown(chem.normalise_name(body.name), body.smiles)
+
+
+class ReactionIn(BaseModel):
+    text: str = Field(min_length=3, max_length=4000)
+
+
+@router.post("/reaction", dependencies=[Depends(ratelimit.check)])
+def molecule_reaction(body: ReactionIn):
+    try:
+        return reaction.parse_reaction(body.text)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
 
 @router.post("/resonance")

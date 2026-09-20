@@ -25,6 +25,11 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
       setNames([])
       return
     }
+    if (text.includes('>')) {
+      setCheck(null)
+      setNames([])
+      return
+    }
     const t = window.setTimeout(() => {
       if (text !== checked.current) {
         checked.current = text
@@ -88,7 +93,7 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 150)}
           onKeyDown={onKey}
-          placeholder="IUPAC name or SMILES"
+          placeholder="IUPAC name, SMILES, or reaction SMILES (A.B>>C)"
           aria-label="IUPAC name or SMILES"
           aria-autocomplete="list"
           aria-expanded={open && names.length > 0}

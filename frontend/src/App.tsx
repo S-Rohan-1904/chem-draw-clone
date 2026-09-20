@@ -14,6 +14,7 @@ import { NameLookup } from './components/NameLookup'
 import { Projections } from './components/Projections'
 import { Resonance } from './components/Resonance'
 import { Properties } from './components/Properties'
+import { Recent, clearRecent, loadRecent, pushRecent, type RecentItem } from './components/Recent'
 import { QuizPanel } from './components/QuizPanel'
 import { SavedList } from './components/SavedList'
 import { ResultSkeleton } from './components/Skeleton'
@@ -29,6 +30,7 @@ export default function App() {
   const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'guide'>('name')
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
+  const [recent, setRecent] = useState<RecentItem[]>(() => loadRecent())
   const [mol, setMol] = useState<Molecule | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<BuildError | null>(null)
@@ -60,7 +62,9 @@ export default function App() {
     setExplanation(null)
     setCompare(null)
     try {
-      setMol(await api.molecule(text))
+      const built = await api.molecule(text)
+      setMol(built)
+      setRecent(pushRecent(built))
     } catch (e) {
       setMol(null)
       if (e instanceof ApiError) {
@@ -296,6 +300,7 @@ export default function App() {
       <div className="layout" hidden={mode === 'quiz' || mode === 'guide'}>
         <aside className="side">
           <Gallery onPick={pick} />
+          <Recent items={recent} onPick={pick} onClear={() => setRecent(clearRecent())} />
           {auth && <SavedList items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} onUpdate={updateSaved} />}
         </aside>
 

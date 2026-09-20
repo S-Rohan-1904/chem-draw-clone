@@ -28,6 +28,7 @@ REMOTE_NAME = "data.db"
 _stop = threading.Event()
 _thread: threading.Thread | None = None
 _last_mtime = 0.0
+status: dict = {"enabled": False, "restored": False, "last_upload": None, "last_error": None}
 
 
 def enabled() -> bool:
@@ -56,16 +57,18 @@ def pull(db_path: str) -> None:
     try:
         cached = hf_hub_download(REPO, REMOTE_NAME, repo_type="dataset", token=TOKEN)
     except (EntryNotFoundError, RepositoryNotFoundError):
-        log.info("no remote %s yet; starting fresh", REMOTE_NAME)
+        log.warning("no remote %s in %s yet; starting fresh", REMOTE_NAME, REPO)
         return
     except Exception as e:  # noqa: BLE001
         log.warning("could not pull DB: %s", e)
+        status["last_error"] = f"pull: {e}"
         return
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     Path(db_path).write_bytes(Path(cached).read_bytes())
     global _last_mtime
     _last_mtime = os.path.getmtime(db_path)
-    log.info("restored %s from %s", db_path, REPO)
+    status["restored"] = True
+    log.warning("restored %s from %s", db_path, REPO)
 
 
 def push(db_path: str) -> None:
@@ -82,8 +85,10 @@ def push(db_path: str) -> None:
             repo_type="dataset",
             commit_message="sync data.db",
         )
-        log.info("uploaded %s to %s", REMOTE_NAME, REPO)
+        status["last_upload"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        log.warning("uploaded %s to %s", REMOTE_NAME, REPO)
     except Exception as e:  # noqa: BLE001
+        status["last_error"] = f"push: {e}"
         log.warning("could not push DB: %s", e)
     finally:
         os.unlink(tmp)
@@ -104,13 +109,16 @@ def _loop(db_path: str) -> None:
 def start(db_path: str) -> None:
     global _thread
     if not enabled():
+        log.warning("DB sync disabled: set HF_TOKEN and HF_DATASET_REPO to persist data across restarts")
         return
+    status["enabled"] = True
     from huggingface_hub import HfApi
 
     try:
         HfApi(token=TOKEN).create_repo(REPO, repo_type="dataset", private=True, exist_ok=True)
     except Exception as e:  # noqa: BLE001
-        log.warning("could not ensure dataset repo: %s", e)
+        status["last_error"] = f"create_repo: {e}"
+        log.warning("could not ensure dataset repo %s: %s", REPO, e)
     pull(db_path)
     _thread = threading.Thread(target=_loop, args=(db_path,), daemon=True, name="dbsync")
     _thread.start()

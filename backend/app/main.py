@@ -35,7 +35,7 @@ app.include_router(saved.router)
 
 @app.get("/api/health")
 def health():
-    return {"ok": True}
+    return {"ok": True, "db_sync": dbsync.status}
 
 
 if FRONTEND_DIST.is_dir():

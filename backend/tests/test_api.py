@@ -102,3 +102,64 @@ def test_dbsync_snapshot_is_consistent_copy(tmp_path):
     finally:
         os.unlink(snap)
     assert not dbsync.enabled()  # no HF env in tests
+
+
+def test_dbsync_race_handling(tmp_path, monkeypatch):
+    """New instance re-pulls a newer remote copy while untouched, and never
+    overwrites the remote with an unchanged local file on shutdown."""
+    import sqlite3
+
+    from app import dbsync
+
+    remote = {"sha": "a", "blob": None}
+    calls = {"upload": 0}
+
+    def fake_download(repo, name, repo_type, token, revision=None):
+        p = tmp_path / f"remote-{remote['sha']}.db"
+        p.write_bytes(remote["blob"])
+        return str(p)
+
+    class FakeApi:
+        def __init__(self, token=None): ...
+        def dataset_info(self, repo):
+            return type("I", (), {"sha": remote["sha"]})()
+        def create_repo(self, *a, **k): ...
+        def upload_file(self, path_or_fileobj, **k):
+            calls["upload"] += 1
+            remote["blob"] = open(path_or_fileobj, "rb").read()
+            remote["sha"] = remote["sha"] + "x"
+
+    import huggingface_hub
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+    monkeypatch.setattr(huggingface_hub, "HfApi", FakeApi)
+    monkeypatch.setattr(dbsync, "REPO", "u/r")
+    monkeypatch.setattr(dbsync, "TOKEN", "t")
+
+    # remote v1: table with one row
+    v1 = tmp_path / "v1.db"
+    c = sqlite3.connect(v1); c.execute("create table t(a)"); c.execute("insert into t values (1)"); c.commit(); c.close()
+    remote["blob"] = v1.read_bytes()
+
+    local = tmp_path / "local.db"
+    dbsync.pull(str(local))
+    assert sqlite3.connect(local).execute("select count(*) from t").fetchone()[0] == 1
+    assert not dbsync._changed_locally(str(local))
+
+    # old instance uploads v2 after we started; we are untouched, so adopt it
+    v2 = tmp_path / "v2.db"
+    c = sqlite3.connect(v2); c.execute("create table t(a)"); c.execute("insert into t values (1)"); c.execute("insert into t values (2)"); c.commit(); c.close()
+    remote["blob"] = v2.read_bytes(); remote["sha"] = "b"
+    assert dbsync._remote_revision() != dbsync._remote_sha
+    dbsync.pull(str(local))
+    assert sqlite3.connect(local).execute("select count(*) from t").fetchone()[0] == 2
+
+    # unchanged local: shutdown must not upload
+    dbsync._stop.clear()
+    dbsync.stop(str(local))
+    assert calls["upload"] == 0
+
+    # changed local: shutdown uploads
+    c = sqlite3.connect(local); c.execute("insert into t values (3)"); c.commit(); c.close()
+    os.utime(local, None)
+    dbsync.stop(str(local))
+    assert calls["upload"] == 1

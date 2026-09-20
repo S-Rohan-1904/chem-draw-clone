@@ -69,6 +69,14 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Conformational energy',
+    body: [
+      'Bond rotation scans the energy of the molecule as a chosen single bond is turned through 360 degrees in 10 degree steps, relaxing everything else at each step with the MMFF94 force field. The plot shows the staggered minima and eclipsed maxima and the barrier between them. Select a point on the plot to see that conformer as a Newman projection.',
+      'Chair flip compares the two chair forms of a substituted six membered ring. Both chairs are drawn with their axial and equatorial groups, the energy difference is given, and the panel states which chair dominates and roughly what fraction of the mixture it makes up at room temperature.',
+      'These are force field energies. They reproduce trends well (a tert-butyl group locks the ring, an anti conformation beats a gauche one) but are not measured values.',
+    ],
+  },
+  {
     title: 'Name breakdown',
     body: [
       'For molecules built from a name, the Name breakdown panel colours each part of the name: stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey; the name itself was still read correctly.',

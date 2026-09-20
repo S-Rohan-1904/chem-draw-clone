@@ -75,3 +75,35 @@ def sugar_projections(body: SmilesIn, db: Session = Depends(get_db)):
         return sugars.projections(_molblock(db, body.smiles))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class ScanIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    front: int
+    back: int
+    step: int = Field(default=10, ge=5, le=30)
+
+
+@router.post("/scan", dependencies=[Depends(ratelimit.check)])
+def torsion_scan(body: ScanIn, db: Session = Depends(get_db)):
+    from .. import conformers
+
+    try:
+        return conformers.torsion_scan(_molblock(db, body.smiles), body.front, body.back, body.step)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class ChairEnergyIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    ring: list[int] = Field(min_length=6, max_length=6)
+
+
+@router.post("/chair-energy", dependencies=[Depends(ratelimit.check)])
+def chair_energy(body: ChairEnergyIn, db: Session = Depends(get_db)):
+    from .. import conformers
+
+    try:
+        return conformers.chair_energies(_molblock(db, body.smiles), body.ring)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))

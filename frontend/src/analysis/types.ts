@@ -165,3 +165,26 @@ export interface SugarProjections {
   fischer: Fischer | null
   haworth: Haworth | null
 }
+
+export interface TorsionScan {
+  atoms: [number, number, number, number]
+  labels: [string, string]
+  start_dihedral: number
+  step: number
+  points: { angle: number; energy: number }[]
+  barrier: number
+  minima: number[]
+  maxima: number[]
+  unit: string
+  note: string
+}
+
+export interface ChairEnergy {
+  ring: number[]
+  chairs: { which: 'current' | 'flipped'; energy: number; axial: { atom_idx: number; label: string }[]; equatorial: { atom_idx: number; label: string }[] }[]
+  delta: number | null
+  summary: string
+  conformers_checked: number
+  unit: string
+  note: string
+}

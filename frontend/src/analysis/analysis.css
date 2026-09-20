@@ -30,3 +30,5 @@
 .tag-base { background: #dbeafe; color: #1e40af; }
 .frac-bar { display: inline-block; width: 60px; height: 8px; background: var(--border); border-radius: 4px; margin-right: 0.4rem; vertical-align: middle; overflow: hidden; }
 .frac-bar > span { display: block; height: 100%; }
+.scan-plot { width: 100%; height: auto; background: var(--paper); border-radius: 8px; }
+.chair-box { display: flex; flex-direction: column; gap: 0.3rem; }

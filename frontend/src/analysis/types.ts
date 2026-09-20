@@ -211,3 +211,19 @@ export interface ReactionClass {
   groups_gained: string[]
   guess: string
 }
+
+export interface MechanismSummary {
+  id: string
+  name: string
+  category: string
+  summary: string
+  steps: number
+}
+
+export interface MechanismDetail {
+  id: string
+  name: string
+  category: string
+  summary: string
+  steps: { svg: string; caption: string; arrows: number; half: boolean; smiles: string }[]
+}

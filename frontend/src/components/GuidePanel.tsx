@@ -111,6 +111,13 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Mechanisms',
+    body: [
+      'The Mechanisms tab holds a library of twenty curved arrow mechanisms grouped by type: substitution (SN1, SN2, Williamson), elimination (E1, E2), additions to alkenes, carbonyl chemistry (esterification, ester hydrolysis, cyanohydrin, Grignard, borohydride reduction, imine formation, aldol, amide formation), electrophilic aromatic substitution, the Diels-Alder reaction and radical chlorination.',
+      'Select a mechanism and step through it with Previous and Next or the numbered dots. Each step shows the species involved, the curved arrows for that step and a caption explaining what moves and why. A full arrow moves an electron pair; a fishhook arrow (radical mechanisms) moves a single electron. The last step shows the products and offers to open the main product on the Name tab.',
+    ],
+  },
+  {
     title: 'Batch processing',
     body: [
       'The Batch tab accepts up to 200 names or SMILES strings, one per line. Run produces a table with formula, molecular weight, InChIKey, stereo summary and SMILES for each entry. Lines that cannot be read show the reason and, where possible, a suggested correction that can replace the line with one click.',

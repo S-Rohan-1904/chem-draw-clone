@@ -29,6 +29,7 @@ import { StatsPanel } from './components/StatsPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
 import { ResultExtras } from './analysis/Extras'
+import { MechanismsPanel } from './analysis/Mechanisms'
 import { useTheme } from './theme'
 import type { AuthState, BuildError, ReactionResult, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
 
@@ -39,7 +40,7 @@ export default function App() {
   const [theme, toggleTheme] = useTheme()
   const [input, setInput] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
-  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'assignments' | 'guide' | 'stats'>(() => (SHOW_ASSIGNMENTS && new URLSearchParams(window.location.search).get('assignment') ? 'assignments' : 'name'))
+  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'mechanisms' | 'assignments' | 'guide' | 'stats'>(() => (SHOW_ASSIGNMENTS && new URLSearchParams(window.location.search).get('assignment') ? 'assignments' : 'name'))
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [recent, setRecent] = useState<RecentItem[]>(() => loadRecent())
@@ -313,6 +314,7 @@ export default function App() {
         <button type="button" role="tab" aria-selected={mode === 'batch'} className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Batch</button>
         <button type="button" role="tab" aria-selected={mode === 'quiz'} className={mode === 'quiz' ? 'active' : ''} onClick={() => setMode('quiz')}>Quiz</button>
         <button type="button" role="tab" aria-selected={mode === 'isomers'} className={mode === 'isomers' ? 'active' : ''} onClick={() => setMode('isomers')}>Isomers</button>
+        <button type="button" role="tab" aria-selected={mode === 'mechanisms'} className={mode === 'mechanisms' ? 'active' : ''} onClick={() => setMode('mechanisms')}>Mechanisms</button>
         {SHOW_ASSIGNMENTS && (
           <button type="button" role="tab" aria-selected={mode === 'assignments'} className={mode === 'assignments' ? 'active' : ''} onClick={() => setMode('assignments')}>Assignments</button>
         )}
@@ -334,10 +336,11 @@ export default function App() {
       {mode === 'guide' && <GuidePanel />}
       {mode === 'stats' && auth && isAdmin && <StatsPanel auth={auth} onOpen={pick} />}
       {mode === 'isomers' && <Isomers onOpen={pick} />}
+      {mode === 'mechanisms' && <MechanismsPanel onOpen={pick} />}
       {SHOW_ASSIGNMENTS && mode === 'assignments' && <Assignments auth={auth} onOpen={pick} onLogin={() => setShowAuth(true)} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
-      <div className="layout" hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'assignments' || mode === 'stats'}>
+      <div className="layout" hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'mechanisms' || mode === 'assignments' || mode === 'stats'}>
         <aside className="side">
           <Gallery onPick={pick} />
           <Recent items={recent} onPick={pick} onClear={() => setRecent(clearRecent())} />

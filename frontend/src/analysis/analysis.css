@@ -45,3 +45,21 @@
 @media (max-width: 720px) {
   .rxn-row { grid-template-columns: 1fr; }
 }
+.mech-layout { display: grid; grid-template-columns: 280px 1fr; gap: 1rem; margin-top: 1rem; align-items: start; }
+.mech-list h2 { margin: 0 0 0.5rem; }
+.mech-group h3 { margin: 0.6rem 0 0.2rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.mech-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.mech-item { width: 100%; display: flex; justify-content: space-between; gap: 0.5rem; text-align: left; padding: 0.35rem 0.5rem; border-radius: 6px; background: none; border: 1px solid transparent; cursor: pointer; color: var(--text); }
+.mech-item:hover { background: var(--paper); }
+.mech-item.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.mech-main { min-height: 400px; display: flex; flex-direction: column; gap: 0.6rem; }
+.mech-steps { display: flex; gap: 0.3rem; }
+.mech-dot { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--paper); cursor: pointer; font-size: 0.8rem; }
+.mech-dot.done { background: var(--accent-soft); color: var(--accent); }
+.mech-dot.active { background: var(--accent); color: white; border-color: var(--accent); }
+.mech-svg { min-height: 300px; }
+.mech-svg svg { width: 100%; max-width: 620px; height: auto; }
+.mech-caption { margin: 0; font-size: 1.02rem; }
+@media (max-width: 900px) {
+  .mech-layout { grid-template-columns: 1fr; }
+}

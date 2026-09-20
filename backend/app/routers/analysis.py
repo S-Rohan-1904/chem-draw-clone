@@ -142,3 +142,20 @@ def classify_reaction(body: ClassifyIn):
         return transforms.classify(body.reactants, body.products)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@router.get("/mechanisms")
+def mechanisms_list():
+    from .. import mechanisms
+
+    return {"mechanisms": mechanisms.list_mechanisms()}
+
+
+@router.get("/mechanisms/{mech_id}")
+def mechanism_detail(mech_id: str):
+    from .. import mechanisms
+
+    try:
+        return mechanisms.get_mechanism(mech_id)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(e))

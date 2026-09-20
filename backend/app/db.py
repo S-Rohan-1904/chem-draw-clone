@@ -90,10 +90,11 @@ def import_prewarm(path: str | None = None) -> int:
     import sqlite3
 
     path = path or PREWARM_PATH
-    if not os.path.exists(path) or os.path.abspath(path) == os.path.abspath(DB_PATH):
+    live = engine.url.database or DB_PATH
+    if not os.path.exists(path) or os.path.abspath(path) == os.path.abspath(live):
         return 0
     added = 0
-    con = sqlite3.connect(DB_PATH)
+    con = sqlite3.connect(live)
     try:
         con.execute("ATTACH DATABASE ? AS pre", (path,))
         for table in ("name_cache", "molecule_cache"):
@@ -112,7 +113,7 @@ def _backfill_inchikeys() -> None:
     """Rows cached before the inchikey column existed."""
     import json
 
-    with SessionLocal() as db:
+    with Session(engine) as db:
         rows = db.query(MoleculeCache).filter((MoleculeCache.inchikey == "") | (MoleculeCache.inchikey.is_(None))).all()
         for row in rows:
             row.inchikey = json.loads(row.result_json).get("inchikey", "")

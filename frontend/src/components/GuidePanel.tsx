@@ -32,6 +32,21 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Name lookup, resonance and orbitals',
+    body: [
+      'Structures that were drawn or entered as SMILES have no name. Look up name asks PubChem for the IUPAC name and common name when the compound is known there; Use as input loads the name. This needs an internet connection.',
+      'The Resonance forms panel appears when a molecule has more than one Kekule or charge separated form. Every form is drawn on the same layout so only the bonds and charges move.',
+      'Hovering an atom in the 3D view shows its hybridisation, lone pairs and charge. The Orbitals toggle labels every heavy atom. The Surface toggle draws the molecular surface coloured by partial charge, red for negative and blue for positive.',
+      'Compare with... overlays a second molecule on the current one, aligned on their common substructure, and reports the RMSD. Enantiomers and conformers show a clear difference; identical molecules superimpose.',
+    ],
+  },
+  {
+    title: 'Name breakdown',
+    body: [
+      'For molecules built from a name, the Name breakdown panel colours each part of the name: stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey; the name itself was still read correctly.',
+    ],
+  },
+  {
     title: 'Projections',
     body: [
       'For molecules with a suitable single bond, the Projections panel draws a Newman projection along that bond. Choose the bond from the list and use the slider to rotate the rear carbon; the dihedral angle and whether the conformation is staggered or eclipsed are shown.',
@@ -46,6 +61,18 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Isomers',
+    body: [
+      'The Isomers tab lists the constitutional isomers of a molecular formula, for example C4H10O. It handles formulas with up to eight heavy atoms, the elements C, H, N, O and halogens, at most two heteroatoms, and either no double bond or one. Rings and stereoisomers are not enumerated, and enol or gem-diol tautomers are omitted. Select any isomer to open it in the viewer.',
+    ],
+  },
+  {
+    title: 'Reactions',
+    body: [
+      'A reaction SMILES such as CC(=O)O.CCO>>CC(=O)OCC.O, entered in the Name tab, draws the reaction with reactants, agents and products, lists each component with its formula, and reports whether the atoms balance. Components open in the viewer.',
+    ],
+  },
+  {
     title: 'Batch processing',
     body: [
       'The Batch tab accepts up to 200 names or SMILES strings, one per line. Run produces a table with formula, molecular weight, InChIKey, stereo summary and SMILES for each entry. Lines that cannot be read show the reason and, where possible, a suggested correction that can replace the line with one click.',
@@ -57,6 +84,19 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'The Quiz tab shows a structure and asks for its name. Three levels are available: small molecules, molecules with functional groups, and molecules with stereochemistry.',
       'Your answer is checked by structure, not by spelling, so any correct name is accepted. If the skeleton is right but the stereochemistry differs, the feedback says so. Show answer reveals the accepted names, which can be opened in the viewer. Signed in users have their attempts recorded.',
+      'Level 4, Draw it, shows a name and an editor: draw the structure and select Check. Timed mode allows 60 seconds per question and reveals the answer when time runs out. Signed in users see My progress with accuracy, current streak and recent attempts.',
+    ],
+  },
+  {
+    title: 'Assignments',
+    body: [
+      'Any signed in user can create an assignment from a list of names and receives a six character code. Share the code or the link; students open it, build each molecule and tick it off. The owner sees a table of participants and completed items. Assignments can be exported as a worksheet.',
+    ],
+  },
+  {
+    title: 'Worksheets',
+    body: [
+      'Worksheet, available on each saved collection and on assignments, produces a printable PDF with eight structures per page. Choose structures only, with blank lines for names and an answer key on the last page, or structures with names.',
     ],
   },
   {
@@ -71,6 +111,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'Create an account with Log in / Register to save molecules. Save stores the current molecule with a label and an optional collection. Saved molecules appear in the left column grouped by collection; select the pencil icon to add notes or move an entry to another collection.',
       'Share copies a link to the current molecule. Anyone with the link sees the same structure.',
+      'The Recent list under Examples keeps the last twenty molecules built in this browser.',
     ],
   },
   {

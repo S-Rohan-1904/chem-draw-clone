@@ -14,6 +14,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from . import chem
@@ -134,6 +135,11 @@ def get_spectra(db: Session, smiles: str, kind: str, builder) -> dict:
     data, complete = builder(smiles, kind)
     if complete:
         db.merge(SpectraCache(smiles=smiles, kind=kind, result_json=json.dumps(data)))
-        db.commit()
+        try:
+            db.commit()
+        except (IntegrityError, OperationalError):
+            # Two identical requests raced (the UI can fire the same call twice);
+            # the other one stored the row, and this payload is just as good.
+            db.rollback()
     data["cached"] = False
     return data

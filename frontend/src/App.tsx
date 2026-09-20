@@ -17,9 +17,11 @@ import { ResultSkeleton } from './components/Skeleton'
 import { StereoPanel } from './components/StereoPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
+import { useTheme } from './theme'
 import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
 
 export default function App() {
+  const [theme, toggleTheme] = useTheme()
   const [input, setInput] = useState('')
   const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz'>('name')
   const [drawOpened, setDrawOpened] = useState(false)
@@ -252,6 +254,9 @@ export default function App() {
           <p className="muted">2D and 3D structures from IUPAC names</p>
         </div>
         <div className="auth">
+          <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} aria-label="Toggle dark mode">
+            {theme === 'dark' ? '☀' : '☾'}
+          </button>
           {auth ? (
             <>
               <span>Signed in as <b>{auth.username}</b></span>

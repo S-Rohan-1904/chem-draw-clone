@@ -54,9 +54,9 @@
 .mech-item.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
 .mech-main { min-height: 400px; display: flex; flex-direction: column; gap: 0.6rem; }
 .mech-steps { display: flex; gap: 0.3rem; }
-.mech-dot { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border); background: var(--paper); cursor: pointer; font-size: 0.8rem; }
+.mech-dot { width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; line-height: 1; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 0.8rem; }
 .mech-dot.done { background: var(--accent-soft); color: var(--accent); }
-.mech-dot.active { background: var(--accent); color: white; border-color: var(--accent); }
+.mech-dot.active, .mech-dot.active:hover { background: var(--accent); color: white; border-color: var(--accent); }
 .mech-svg { min-height: 300px; }
 .mech-svg svg { width: 100%; max-width: 620px; height: auto; }
 .mech-caption { margin: 0; font-size: 1.02rem; }

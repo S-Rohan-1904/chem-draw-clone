@@ -7,6 +7,7 @@ Unspecified centres are reported as "?" so the UI can warn the user.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
 
@@ -342,6 +343,9 @@ def _cip_labels(mol: Chem.Mol) -> dict[str, str]:
     return labels
 
 
+EMBED_TIMEOUT_S = int(os.environ.get("CHEM_EMBED_TIMEOUT", "20"))
+
+
 def embed_3d(mol: Chem.Mol, max_tries: int = 6) -> Chem.Mol:
     """Embed with ETKDG, optimise, and verify the 3D geometry reproduces the
     input stereo. Retries with different seeds if perception disagrees."""
@@ -355,6 +359,7 @@ def embed_3d(mol: Chem.Mol, max_tries: int = 6) -> Chem.Mol:
         ps = AllChem.ETKDGv3()
         ps.randomSeed = 42 + attempt * 7
         ps.enforceChirality = True
+        ps.timeout = EMBED_TIMEOUT_S
         ps.useRandomCoords = attempt >= 2
         cid = AllChem.EmbedMolecule(mh, ps)
         if cid < 0:
@@ -413,8 +418,15 @@ def compute_properties(mol: Chem.Mol) -> dict:
     }
 
 
+MAX_HEAVY_ATOMS = int(os.environ.get("CHEM_MAX_HEAVY_ATOMS", "150"))
+
+
 def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles") -> MoleculeResult:
     mol = mol_from_smiles(smiles)
+    if mol.GetNumHeavyAtoms() > MAX_HEAVY_ATOMS:
+        raise ChemError(
+            f"Molecule too large: {mol.GetNumHeavyAtoms()} heavy atoms (limit {MAX_HEAVY_ATOMS})."
+        )
     stereo = _stereo_report(mol)
     svg = render_svg(mol)
     mol3d = embed_3d(mol)

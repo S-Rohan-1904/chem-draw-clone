@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, suggest
+from .. import cache, chem, ratelimit, suggest
 from ..db import NameCache, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -37,7 +37,7 @@ def _error_response(text: str, err: chem.ChemError, db: Session) -> JSONResponse
     )
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(ratelimit.check)])
 def molecule(body: MoleculeIn, db: Session = Depends(get_db)):
     try:
         data, cached = cache.get_or_build(db, body.input)
@@ -67,7 +67,7 @@ def suggest_names(q: str = Query(min_length=1, max_length=200), db: Session = De
     return {"names": suggest.autocomplete(q, _known_from_cache(db))}
 
 
-@router.post("/png")
+@router.post("/png", dependencies=[Depends(ratelimit.check)])
 def molecule_png(body: PngIn):
     try:
         mol = chem.mol_from_smiles(body.smiles)

@@ -194,3 +194,13 @@ button.chip { font: inherit; cursor: pointer; }
 .saved-edit textarea { font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
 .saved-edit-actions { display: flex; gap: 0.4rem; }
 .save-form input[list] { width: 160px; }
+
+.batch { display: flex; flex-direction: column; gap: 0.6rem; }
+.batch textarea { font: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; padding: 0.6rem 0.8rem; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+.table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.batch-table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+.batch-table th, .batch-table td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.batch-table th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.batch-table tr:last-child td { border-bottom: none; }
+.row-bad td:first-child { color: var(--error); }
+.batch-table .link { margin-right: 0.5rem; }

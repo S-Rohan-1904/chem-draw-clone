@@ -243,3 +243,13 @@ def test_collections_and_notes():
         assert client.patch(f"/api/saved/{a['id']}", json={"notes": "x"}, headers=other).status_code == 404
         rows = client.get("/api/saved", headers=headers).json()
         assert rows[0]["collection"] == "Alcohols"
+
+
+def test_batch_endpoint():
+    with client:
+        r = client.post("/api/molecule/batch", json={"inputs": ["ethanol", "", "(2R)-butan-2-ol", "not a name", "CCO"]})
+        assert r.status_code == 200
+        rows = r.json()["rows"]
+        assert [x["ok"] for x in rows] == [True, True, False, True]
+        assert rows[1]["stereo"].endswith(":R") and rows[0]["formula"] == "C2H6O"
+        assert rows[2]["error"] and "suggestions" in rows[2]

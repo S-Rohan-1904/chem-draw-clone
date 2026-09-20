@@ -32,6 +32,10 @@ class VariantIn(BaseModel):
     atom_idx: int | None = None
 
 
+class BatchIn(BaseModel):
+    inputs: list[str] = Field(min_length=1, max_length=200)
+
+
 class PngIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
     width: int = Field(default=1200, ge=200, le=4000)
@@ -129,6 +133,40 @@ def molecule_variant(body: VariantIn, db: Session = Depends(get_db)):
     data["cached"] = cached
     data["source"] = "smiles"
     return data
+
+
+@router.post("/batch", dependencies=[Depends(ratelimit.check)])
+def molecule_batch(body: BatchIn):
+    """Parse-only table for many names: no depiction or 3D, so it stays quick."""
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors, rdMolDescriptors
+
+    rows = []
+    for raw in body.inputs:
+        text = raw.strip()
+        if not text:
+            continue
+        try:
+            resolved = chem.resolve_full(text)
+            smiles = chem.canonical_smiles(resolved.smiles)
+            mol = chem.mol_from_smiles(smiles)
+            stereo = chem._stereo_report(mol)
+            rows.append({
+                "input": text,
+                "ok": True,
+                "smiles": smiles,
+                "formula": rdMolDescriptors.CalcMolFormula(mol),
+                "mw": round(Descriptors.MolWt(mol), 2),
+                "inchikey": Chem.MolToInchiKey(mol),
+                "stereo": " ".join([f"{c.symbol}{c.atom_idx + 1}:{c.label}" for c in stereo.centers] + [f"C=C:{b.label}" for b in stereo.double_bonds]),
+                "unspecified": stereo.unspecified,
+                "warning": " ".join(resolved.warnings),
+                "error": "",
+            })
+        except chem.ChemError as e:
+            diag = suggest.diagnose(chem.normalise_name(text), e.opsin_error, [])
+            rows.append({"input": text, "ok": False, "error": diag.reason, "suggestions": diag.suggestions})
+    return {"rows": rows}
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

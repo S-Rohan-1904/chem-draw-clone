@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError, loadAuth, storeAuth } from './api'
 import { AuthDialog } from './components/AuthDialog'
+import { BatchPanel } from './components/BatchPanel'
 import { Compare } from './components/Compare'
 import { Downloads } from './components/Downloads'
 import { DrawPanel } from './components/DrawPanel'
@@ -18,7 +19,7 @@ import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, Saved
 
 export default function App() {
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'name' | 'draw'>('name')
+  const [mode, setMode] = useState<'name' | 'draw' | 'batch'>('name')
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [mol, setMol] = useState<Molecule | null>(null)
@@ -257,6 +258,7 @@ export default function App() {
       <div className="tabs" role="tablist">
         <button type="button" role="tab" aria-selected={mode === 'name'} className={mode === 'name' ? 'active' : ''} onClick={() => setMode('name')}>Name</button>
         <button type="button" role="tab" aria-selected={mode === 'draw'} className={mode === 'draw' ? 'active' : ''} onClick={openDraw}>Draw</button>
+        <button type="button" role="tab" aria-selected={mode === 'batch'} className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Batch</button>
       </div>
       <div hidden={mode !== 'name'}>
         <NameInput value={input} onChange={setInput} onSubmit={build} loading={loading} showHint={!error} />
@@ -266,6 +268,9 @@ export default function App() {
           <DrawPanel onBuild={build} loading={loading} loadStruct={loadStruct} />
         </div>
       )}
+      <div hidden={mode !== 'batch'}>
+        <BatchPanel onOpen={pick} />
+      </div>
       {error && <ErrorPanel error={error} onPick={pick} />}
 
       <div className="layout">

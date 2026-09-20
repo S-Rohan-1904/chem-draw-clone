@@ -105,3 +105,17 @@ export interface StereoExplanation {
   atoms?: [number, number]
   ends?: { atom_idx: number; substituents: PriorityRow[] }[]
 }
+
+export interface BatchRow {
+  input: string
+  ok: boolean
+  smiles?: string
+  formula?: string
+  mw?: number
+  inchikey?: string
+  stereo?: string
+  unspecified?: boolean
+  warning?: string
+  error?: string
+  suggestions?: string[]
+}

@@ -75,8 +75,8 @@ export interface CheckResult {
   reason?: string
   highlight?: [number, number] | null
   warnings?: string[]
-  source?: 'iupac' | 'smiles'
-  lookup?: boolean
+  source?: 'iupac' | 'smiles' | 'pubchem' | 'cactus'
+  lookup?: boolean // not parseable, but Build will try a database lookup
 }
 
 export interface BuildError {

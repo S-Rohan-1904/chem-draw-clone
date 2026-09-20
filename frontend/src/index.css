@@ -51,13 +51,16 @@ input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color:
 .name-input input.status-bad { border-color: var(--error); }
 .name-input input.status-warn { border-color: var(--warn); }
 .name-input input.status-ok { border-color: var(--green); }
+.name-input input.status-lookup { border-color: var(--muted); }
 .status-icon { position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%); font-weight: 700; pointer-events: none; }
 .status-icon.status-ok { color: var(--green); }
 .status-icon.status-warn { color: var(--warn); }
 .status-icon.status-bad { color: var(--error); }
+.status-icon.status-lookup { color: var(--muted); }
 .hint { flex-basis: 100%; margin: 0; font-size: 0.85rem; }
 .hint-bad { color: var(--error); }
 .hint-warn { color: var(--warn); }
+.hint-lookup { color: var(--muted); }
 .autocomplete { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; margin: 0; padding: 0.3rem 0; list-style: none; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); max-height: 280px; overflow-y: auto; }
 .autocomplete li { padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.95rem; }
 .autocomplete li:hover, .autocomplete li.active { background: var(--accent-soft); }
@@ -216,3 +219,8 @@ button.chip { font: inherit; cursor: pointer; }
 .quiz-feedback.ok { background: var(--green-soft); color: var(--green); }
 .quiz-feedback.warn { background: var(--warn-soft); color: var(--warn); }
 .quiz-feedback.bad { background: var(--error-soft); color: var(--error); }
+
+.projection { display: flex; flex-direction: column; gap: 0.5rem; }
+.projection-svg { min-height: 260px; }
+.projection-svg svg { max-width: 360px; width: 100%; height: auto; }
+.slider input[type=range] { width: 160px; }

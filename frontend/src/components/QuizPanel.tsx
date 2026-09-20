@@ -90,7 +90,7 @@ export function QuizPanel({ auth, onOpen }: Props) {
           <section className="card">
             <header className="card-head">
               <h2>Name this structure</h2>
-              <span className="muted">{q.formula}{q.stereo_count ? ` \u00b7 ${q.stereo_count} stereo element${q.stereo_count > 1 ? 's' : ''}` : ''}</span>
+              <span className="muted">{q.formula}{q.stereo_count ? ` · ${q.stereo_count} stereo element${q.stereo_count > 1 ? 's' : ''}` : ''}</span>
             </header>
             <div className="svg-wrap" dangerouslySetInnerHTML={{ __html: q.svg }} />
           </section>

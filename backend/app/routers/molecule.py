@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, ratelimit, resolver, stereo_explain, suggest
+from .. import cache, chem, projections, ratelimit, resolver, stereo_explain, suggest
 from ..db import NameCache, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -51,7 +51,7 @@ class PngIn(BaseModel):
 
 
 def _known_from_cache(db: Session) -> list[str]:
-    rows = db.scalars(select(NameCache.normalised).where(NameCache.source.in_(("iupac", "pubchem", "cactus")))).all()
+    rows = db.scalars(select(NameCache.normalised).where(NameCache.source.in_(("iupac", *resolver.SOURCES)))).all()
     return [r for r in rows if r]
 
 
@@ -96,7 +96,9 @@ def check(body: MoleculeIn, db: Session = Depends(get_db)):
     key = cache.normalise(body.input)
     row = db.get(NameCache, key)
     if row is not None:
-        return {"ok": True, "warnings": [row.warning] if row.warning else [], "source": row.source}
+        # The "taken from PubChem" note is informational; it is shown on build, not as a typing warning.
+        warnings = [row.warning] if row.warning and row.source not in resolver.SOURCES else []
+        return {"ok": True, "warnings": warnings, "source": row.source}
     try:
         r = chem.resolve_full(body.input, lookup=False)
     except chem.ChemError as e:
@@ -211,11 +213,10 @@ def chair(body: ProjectionIn, db: Session = Depends(get_db)):
         analysis = projections.chair_analysis(_molblock(db, body.smiles), body.ring)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
-    return {
-        **analysis,
-        "svg": projections.chair_svg(analysis, flipped=False),
-        "svg_flipped": projections.chair_svg(analysis, flipped=True),
-    }
+    out = {k: v for k, v in analysis.items() if not k.startswith("_")}
+    out["svg"] = projections.chair_svg(analysis, flipped=False)
+    out["svg_flipped"] = projections.chair_svg(analysis, flipped=True)
+    return out
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

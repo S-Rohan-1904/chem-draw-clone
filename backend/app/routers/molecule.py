@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import cache, chem, projections, ratelimit, resolver, stereo_explain, suggest
-from ..db import NameCache, get_db
+from ..db import NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
 
@@ -87,6 +87,30 @@ def molecule_by_key(inchikey: str, db: Session = Depends(get_db)):
     if data is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No molecule with that key has been built here yet.")
     return data
+
+
+@router.get("/name/{inchikey}")
+def name_lookup(inchikey: str, db: Session = Depends(get_db)):
+    """Names for a structure, from PubChem, cached. Misses are retried after a day."""
+    from datetime import datetime, timedelta, timezone
+
+    key = inchikey.strip().upper()
+    row = db.get(NameLookup, key)
+    fresh = row is not None and (row.found or (datetime.now(timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)) < timedelta(days=1))
+    if not fresh:
+        hit = resolver.name_for_inchikey(key)
+        if row is None:
+            row = NameLookup(inchikey=key)
+            db.add(row)
+        row.found = hit is not None
+        row.iupac = (hit or {}).get("iupac", "")
+        row.title = (hit or {}).get("title", "")
+        row.cid = (hit or {}).get("cid")
+        row.created_at = datetime.now(timezone.utc)
+        db.commit()
+    if not row.found:
+        return {"found": False}
+    return {"found": True, "iupac": row.iupac, "title": row.title, "cid": row.cid, "source": "PubChem"}
 
 
 @router.post("/check")

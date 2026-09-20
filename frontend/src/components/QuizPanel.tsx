@@ -13,6 +13,15 @@ const LEVELS = [
   { n: 3, label: 'Stereochemistry' },
 ]
 
+function QuizName({ id }: { id: string }) {
+  const [name, setName] = useState<string | null>(null)
+  useEffect(() => {
+    setName(null)
+    api.lookupName(id).then((r) => setName(r.found ? [r.title, r.iupac].filter(Boolean).join(' · ') : null)).catch(() => setName(null))
+  }, [id])
+  return name ? <p className="small">PubChem: {name}</p> : null
+}
+
 export function QuizPanel({ auth, onOpen }: Props) {
   const [level, setLevel] = useState(1)
   const [q, setQ] = useState<QuizQuestion | null>(null)
@@ -116,6 +125,7 @@ export function QuizPanel({ auth, onOpen }: Props) {
             {result && (
               <div className={`quiz-feedback ${result.correct ? 'ok' : result.verdict === 'stereo' ? 'warn' : 'bad'}`}>
                 <p>{result.message}</p>
+                {done && <QuizName id={q.id} />}
                 {done && result.accepted.length > 0 && (
                   <p>
                     Accepted: {result.accepted.slice(0, 3).map((n, i) => (

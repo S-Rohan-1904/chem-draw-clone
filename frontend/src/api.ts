@@ -1,4 +1,4 @@
-import type { AuthState, BatchRow, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
+import type { AuthState, BatchRow, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -73,6 +73,7 @@ export const api = {
   newman: (smiles: string, front: number, back: number, rotate: number) =>
     request<NewmanOut>('/api/molecule/newman', { method: 'POST', body: JSON.stringify({ smiles, front, back, rotate }) }),
   chair: (smiles: string, ring: number[]) => request<ChairOut>('/api/molecule/chair', { method: 'POST', body: JSON.stringify({ smiles, ring }) }),
+  lookupName: (inchikey: string) => request<NameLookup>(`/api/molecule/name/${encodeURIComponent(inchikey)}`),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

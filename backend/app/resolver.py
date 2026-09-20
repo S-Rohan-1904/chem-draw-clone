@@ -80,3 +80,24 @@ def lookup(name: str) -> tuple[str, str, str] | None:
     except Exception:  # noqa: BLE001 - lookup is best effort
         return None
     return None
+
+
+PUBCHEM_BY_KEY = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/{}/property/IUPACName,Title/JSON"
+
+
+def name_for_inchikey(inchikey: str) -> dict | None:
+    """Reverse lookup: {'iupac': ..., 'title': ..., 'cid': ...} from PubChem, or None. Never raises."""
+    if not enabled() or not re.fullmatch(r"[A-Z]{14}-[A-Z]{10}-[A-Z]", inchikey or ""):
+        return None
+    try:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
+            r = client.get(PUBCHEM_BY_KEY.format(inchikey))
+            if r.status_code != 200:
+                return None
+            props = r.json().get("PropertyTable", {}).get("Properties", [])
+            if not props:
+                return None
+            p = props[0]
+            return {"iupac": p.get("IUPACName") or "", "title": p.get("Title") or "", "cid": p.get("CID")}
+    except Exception:  # noqa: BLE001
+        return None

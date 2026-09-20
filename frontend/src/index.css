@@ -267,3 +267,4 @@ button.chip { font: inherit; cursor: pointer; }
 .guide-section h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
 .guide-section p { margin: 0 0 0.6rem; line-height: 1.55; }
 .guide-section ul { margin: 0 0 0.6rem; padding-left: 1.2rem; line-height: 1.55; }
+.lookup-result { font-size: 0.9rem; display: inline-flex; gap: 0.3rem; align-items: baseline; flex-wrap: wrap; }

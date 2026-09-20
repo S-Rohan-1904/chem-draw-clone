@@ -10,6 +10,7 @@ import { Gallery } from './components/Gallery'
 import { Groups } from './components/Groups'
 import { GuidePanel } from './components/GuidePanel'
 import { NameInput } from './components/NameInput'
+import { NameLookup } from './components/NameLookup'
 import { Projections } from './components/Projections'
 import { Properties } from './components/Properties'
 import { QuizPanel } from './components/QuizPanel'
@@ -315,6 +316,7 @@ export default function App() {
                 </div>
                 <div className="result-actions">
                   <button type="button" onClick={editStructure}>Copy to editor</button>
+                  {mol.source !== 'iupac' && <NameLookup mol={mol} onUse={pick} />}
                   <button type="button" onClick={() => void share()}>Share</button>
                   {shareMsg && <span className="muted small">{shareMsg}</span>}
                   {saveLabel === null ? (

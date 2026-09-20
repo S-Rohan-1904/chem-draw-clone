@@ -154,3 +154,11 @@ export interface ChairOut {
   svg: string
   svg_flipped: string
 }
+
+export interface NameLookup {
+  found: boolean
+  iupac?: string
+  title?: string
+  cid?: number | null
+  source?: string
+}

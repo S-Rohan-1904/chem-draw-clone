@@ -61,6 +61,19 @@ class QuizAttempt(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class NameLookup(Base):
+    """Reverse lookups (InChIKey -> names) from PubChem; misses cached too."""
+
+    __tablename__ = "name_lookup"
+
+    inchikey: Mapped[str] = mapped_column(String(32), primary_key=True)
+    iupac: Mapped[str] = mapped_column(Text, default="")
+    title: Mapped[str] = mapped_column(Text, default="")
+    cid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    found: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 class NameCache(Base):
     """Normalised input text -> SMILES. Skips the OPSIN JVM call on a hit."""
 

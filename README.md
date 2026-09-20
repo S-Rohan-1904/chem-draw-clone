@@ -49,7 +49,7 @@ Regenerate with `openssl rand -base64 48`. Set `CHEM_DB_PATH` to move the SQLite
 
 The Draw tab opens a Ketcher editor. Draw a structure, use the wedge or hash bond
 tool for stereocentres, then press Build 3D. The result shows the SMILES instead of a
-name (no offline name generation). Edit structure loads any result into the editor.
+name (no offline name generation). Copy to editor loads any result into the editor.
 The editor bundle is loaded only when the tab is first opened.
 
 ## Mistyped names

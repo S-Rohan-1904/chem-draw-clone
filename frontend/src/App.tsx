@@ -306,7 +306,7 @@ export default function App() {
                   {mol.cached && <span className="tag">cached</span>}
                 </div>
                 <div className="result-actions">
-                  <button type="button" onClick={editStructure}>Edit structure</button>
+                  <button type="button" onClick={editStructure}>Copy to editor</button>
                   <button type="button" onClick={() => void share()}>Share</button>
                   {shareMsg && <span className="muted small">{shareMsg}</span>}
                   {saveLabel === null ? (

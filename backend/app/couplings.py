@@ -131,21 +131,66 @@ def pattern(cs: list[dict]) -> tuple[str, list[dict]]:
     return "".join(_LETTERS[m["n"]] for m in merged), merged
 
 
+def _a_value(sub: Chem.Atom, ring_atom: int) -> float:
+    """Conformational free energy (kcal/mol) an axial substituent costs on a
+    cyclohexane, by substituent type (Eliel's A values, rounded)."""
+    z = sub.GetAtomicNum()
+    heavy = [n for n in sub.GetNeighbors() if n.GetAtomicNum() > 1 and n.GetIdx() != ring_atom]
+    if z == 6:
+        if sub.GetIsAromatic():
+            return 2.8
+        if any(b.GetBondType() == Chem.BondType.TRIPLE for b in sub.GetBonds()):
+            return 0.2  # C#N
+        if any(b.GetBondType() == Chem.BondType.DOUBLE and b.GetOtherAtom(sub).GetAtomicNum() == 8 for b in sub.GetBonds()):
+            return 1.3  # COOH / COOR / COR
+        if any(b.GetBondType() == Chem.BondType.DOUBLE for b in sub.GetBonds()):
+            return 1.5  # vinyl
+        return {0: 1.7, 1: 1.75, 2: 2.2}.get(len(heavy), 4.9)
+    if z == 8:
+        return 0.9 if not heavy else 0.6
+    if z == 7:
+        return 1.4
+    if z == 16:
+        return 1.0
+    return {9: 0.25, 17: 0.5, 35: 0.5, 53: 0.5}.get(z, 1.0)
+
+
+def _axial_penalty(mol: Chem.Mol, conf) -> float:
+    """Sum of A values for axial substituents on chair cyclohexanes. MMFF
+    misranks some (it puts chlorocyclohexane's Cl axial), so this decides
+    between conformers before the force-field energy does."""
+    from .conformers import _axial_set, _is_chair, _ring_order
+
+    total = 0.0
+    for ring in mol.GetRingInfo().AtomRings():
+        if len(ring) != 6 or any(mol.GetAtomWithIdx(i).GetAtomicNum() != 6 or mol.GetAtomWithIdx(i).GetHybridization() != Chem.HybridizationType.SP3 for i in ring):
+            continue
+        ordered = _ring_order(mol, list(ring))
+        if not _is_chair(conf, ordered):
+            total += 3.0  # twist-boat: worse than any single axial group
+            continue
+        for sub_idx in _axial_set(mol, conf, ordered):
+            sub = mol.GetAtomWithIdx(sub_idx)
+            ring_atom = next(n.GetIdx() for n in sub.GetNeighbors() if n.GetIdx() in ring)
+            total += _a_value(sub, ring_atom)
+    return total
+
+
 def conformer(mol: Chem.Mol):
-    """The lowest-energy of a few embedded conformers (so a ring substituent
-    sits equatorial where it should), or None if embedding fails."""
+    """The preferred one of a few embedded conformers: fewest axial A values
+    on chair rings first, then the lowest MMFF energy. None if embedding fails."""
     from rdkit.Chem import AllChem
 
     try:
         ps = AllChem.ETKDGv3()
         ps.randomSeed = 11
-        cids = list(AllChem.EmbedMultipleConfs(mol, numConfs=6, params=ps))
+        cids = list(AllChem.EmbedMultipleConfs(mol, numConfs=8, params=ps))
         if not cids:
             return None
         if not AllChem.MMFFHasAllMoleculeParams(mol):
             return mol.GetConformer(cids[0])
         res = AllChem.MMFFOptimizeMoleculeConfs(mol, maxIters=300)
-        best = min(zip(cids, res), key=lambda t: t[1][1])[0]
-        return mol.GetConformer(best)
+        ranked = sorted(zip(cids, res), key=lambda t: (round(_axial_penalty(mol, mol.GetConformer(t[0])), 1), t[1][1]))
+        return mol.GetConformer(ranked[0][0])
     except Exception:  # noqa: BLE001 - fall back to averaged J values
         return None

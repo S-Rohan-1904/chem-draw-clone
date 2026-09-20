@@ -1,6 +1,11 @@
-from rdkit import Chem
+import os
+import tempfile
 
-from app import couplings, msfrag, spectra
+os.environ["CHEM_DB_PATH"] = os.path.join(tempfile.mkdtemp(), "t.db")
+
+from rdkit import Chem  # noqa: E402
+
+from app import couplings, msfrag, spectra  # noqa: E402
 
 
 def _h(smi):
@@ -102,3 +107,35 @@ def test_ms_payload_includes_tree():
     data = spectra.ms_predict(Chem.MolFromSmiles("CC(=O)C"))
     assert data["tree"][0]["formula"] == "C3H6O+•"
     assert any(n["nominal"] == 43 for n in data["tree"])
+
+
+def test_chlorocyclohexane_prefers_equatorial_cl():
+    # MMFF alone ranks the axial chair lowest; the A-value tie-break must win.
+    p = max(_h("ClC1CCCCC1"), key=lambda p: p["shift"])
+    assert p["multiplicity"] == "tt"
+    assert p["couplings"][0]["J"] > 10 and p["couplings"][1]["J"] < 6
+
+
+def test_concurrent_spectra_requests_all_succeed():
+    """Identical requests racing on a cache miss must not 500 (the UI fires the
+    same call twice under StrictMode)."""
+    import threading
+
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    codes: list[int] = []
+    smi = "CCCCC(=O)C"
+    with TestClient(app, raise_server_exceptions=False) as client:
+        client.post("/api/molecule", json={"input": smi})
+
+        def hit():  # every thread misses the spectra cache and tries to insert
+            codes.append(client.post("/api/molecule/spectra", json={"smiles": smi, "kind": "ms"}).status_code)
+
+        threads = [threading.Thread(target=hit) for _ in range(6)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+    assert codes == [200] * 6

@@ -3,10 +3,11 @@ simple atom balance check."""
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 
 from rdkit import Chem
-from rdkit.Chem import AllChem, rdMolDescriptors
+from rdkit.Chem import AllChem, rdDepictor, rdMolDescriptors
 from rdkit.Chem.Draw import rdMolDraw2D
 
 from .chem import ChemError
@@ -25,6 +26,84 @@ def _counts(mols) -> Counter:
     return total
 
 
+_H = 190
+_GAP = 28
+_ARROW = 130
+
+
+def _mol_svg(mol: Chem.Mol, width: int, height: int) -> str:
+    """Inner SVG (no header) of one molecule drawn into width x height."""
+    m = Chem.Mol(mol)
+    rdDepictor.Compute2DCoords(m)
+    drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
+    opts = drawer.drawOptions()
+    opts.clearBackground = False
+    opts.bondLineWidth = 2
+    opts.fixedBondLength = 28
+    drawer.DrawMolecule(m)
+    drawer.FinishDrawing()
+    text = drawer.GetDrawingText()
+    body = text.split("<!-- END OF HEADER -->", 1)[1]
+    return body.rsplit("</svg>", 1)[0]
+
+
+def _width(mol: Chem.Mol) -> int:
+    return max(100, min(300, 40 + 30 * mol.GetNumHeavyAtoms()))
+
+
+def _agent_label(mol: Chem.Mol) -> str:
+    """H+, Cl-, or the molecular formula for anything bigger."""
+    sup = str.maketrans("+-0123456789", "\u207a\u207b\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079")
+    if mol.GetNumHeavyAtoms() == 1:
+        a = mol.GetAtomWithIdx(0)
+        q = a.GetFormalCharge()
+        charge = "" if q == 0 else (("" if abs(q) == 1 else str(abs(q))) + ("+" if q > 0 else "-"))
+        hs = a.GetTotalNumHs()
+        return a.GetSymbol() + ("" if hs == 0 else "H" + ("" if hs == 1 else str(hs))).translate(str.maketrans("0123456789", "\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089")) + charge.translate(sup)
+    formula = rdMolDescriptors.CalcMolFormula(mol)
+    return re.sub(r"(\d+)(?![+-])", lambda m: m.group(1).translate(str.maketrans("0123456789", "\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089")), formula).translate(sup)
+
+
+def draw_reaction(reactants: list[Chem.Mol], agents: list[Chem.Mol], products: list[Chem.Mol]) -> str:
+    """Reactants + ... -> products as one SVG. RDKit's DrawReaction shrinks
+    agents to nothing (and emits NaN paths for single-atom agents), so each
+    molecule is drawn on its own and agents go as labels above the arrow."""
+    parts: list[str] = []
+    x = 10
+
+    def side(mols: list[Chem.Mol]) -> None:
+        nonlocal x
+        for i, m in enumerate(mols):
+            if i:
+                parts.append(f"<text x='{x + _GAP / 2:.1f}' y='{_H / 2 + 8:.1f}' text-anchor='middle' font-size='26' fill='#374151'>+</text>")
+                x += _GAP
+            w = _width(m)
+            parts.append(f"<g transform='translate({x},0)'>{_mol_svg(m, w, _H)}</g>")
+            x += w
+
+    side(reactants)
+    x += _GAP // 2
+    y = _H / 2
+    parts.append(
+        f"<path d='M {x + 10},{y} L {x + _ARROW - 10},{y}' stroke='#111827' stroke-width='2' fill='none'/>"
+        f"<path d='M {x + _ARROW - 20},{y - 6} L {x + _ARROW - 10},{y} L {x + _ARROW - 20},{y + 6}' stroke='#111827' stroke-width='2' fill='none'/>"
+    )
+    if agents:
+        labels = [_agent_label(m) for m in agents]
+        lines = [", ".join(labels)] if len(labels) <= 2 else labels[:4]
+        for j, line in enumerate(lines):
+            ty = y - 14 - 18 * (len(lines) - 1 - j)
+            parts.append(f"<text x='{x + _ARROW / 2:.1f}' y='{ty:.1f}' text-anchor='middle' font-size='15' font-family='sans-serif' fill='#374151'>{line}</text>")
+    x += _ARROW + _GAP // 2
+    side(products)
+    x += 10
+    return (
+        f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {x} {_H}' width='{x}px' height='{_H}px'>"
+        + "".join(parts)
+        + "</svg>"
+    )
+
+
 def parse_reaction(text: str) -> dict:
     try:
         rxn = AllChem.ReactionFromSmarts(text.strip(), useSmiles=True)
@@ -41,17 +120,11 @@ def parse_reaction(text: str) -> dict:
             Chem.SanitizeMol(m)
         except Exception as e:  # noqa: BLE001
             raise ChemError(f"A component of the reaction is not a valid molecule: {e}")
-    rxn.Initialize()
-    drawer = rdMolDraw2D.MolDraw2DSVG(900, 300)
-    opts = drawer.drawOptions()
-    opts.clearBackground = False
-    opts.bondLineWidth = 2
-    drawer.DrawReaction(rxn, highlightByReactant=True)
-    drawer.FinishDrawing()
+    svg = draw_reaction(reactants, agents, products)
     left, right = _counts(reactants), _counts(products)
     diff = {el: right.get(el, 0) - left.get(el, 0) for el in set(left) | set(right) if right.get(el, 0) != left.get(el, 0)}
     return {
-        "svg": drawer.GetDrawingText(),
+        "svg": svg,
         "reactants": [{"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m)} for m in reactants],
         "agents": [{"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m)} for m in agents],
         "products": [{"smiles": Chem.MolToSmiles(m), "formula": rdMolDescriptors.CalcMolFormula(m)} for m in products],

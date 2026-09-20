@@ -26,3 +26,10 @@ def test_is_reaction_and_errors():
         parse_reaction("CCO>>")
     with pytest.raises(ChemError):
         parse_reaction("notasmiles>>CC")
+
+
+def test_single_atom_agents_draw_cleanly():
+    r = parse_reaction("CC(=O)O.OCC>[H+].[Cl-].OCC>CC(=O)OCC")
+    assert "nan" not in r["svg"]
+    assert "H⁺" in r["svg"] and "Cl⁻" in r["svg"] and "C₂H₆O" in r["svg"]
+    assert r["svg"].count("<g transform") == 3  # two reactants, one product

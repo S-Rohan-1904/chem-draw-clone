@@ -28,6 +28,7 @@ import { StereoPanel } from './components/StereoPanel'
 import { StatsPanel } from './components/StatsPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
+import { ResultExtras } from './analysis/Extras'
 import { useTheme } from './theme'
 import type { AuthState, BuildError, ReactionResult, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
 
@@ -432,6 +433,7 @@ export default function App() {
               {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
               <NameBreakdown mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Resonance mol={mol} />
+              <ResultExtras mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <Spectra mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">

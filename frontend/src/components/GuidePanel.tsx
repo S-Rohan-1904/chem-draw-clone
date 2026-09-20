@@ -41,6 +41,19 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Structure and bonding',
+    body: [
+      'The Structure and bonding panel groups several short analyses of the current molecule. Hover a row or a chip to highlight the atoms it refers to.',
+      'Chirality states whether the molecule is chiral, achiral or meso, with the reason. A meso compound shows the pair of equivalent centres that carry opposite descriptors. The verdict is only given when every stereocentre is specified in the name.',
+      'Shapes lists the VSEPR geometry of every atom with two or more neighbours: electron domains, lone pairs, the shape name, the ideal angle and the angle measured in the 3D model.',
+      'Aromaticity examines every ring: the pi electron count with a per atom breakdown, whether the ring is fully conjugated, and the Huckel verdict.',
+      'Unsaturation gives the degrees of unsaturation from the formula and from the structure (rings, double bonds and triple bonds) side by side.',
+      'Oxidation states shows the oxidation number of each heavy atom on the drawing. Select an atom chip to see how the number was obtained.',
+      'Polarity classifies every bond as nonpolar, polar or ionic from the electronegativity difference and marks the negative end. The dipole moment is estimated from partial charges on the 3D model; Show arrow in 3D draws it on the model, pointing to the negative end.',
+      'H-bonding colours hydrogen bond donors and acceptors on the drawing and gives an estimate of water solubility with the reasons behind it.',
+    ],
+  },
+  {
     title: 'Name breakdown',
     body: [
       'For molecules built from a name, the Name breakdown panel colours each part of the name: stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey; the name itself was still read correctly.',

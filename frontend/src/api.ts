@@ -51,7 +51,7 @@ export function describeFailure(e: unknown): string {
   return 'Could not reach the server. Check your connection; if the site was idle it may take a minute to wake up.'
 }
 
-async function request<T>(path: string, init: RequestInit = {}, auth?: AuthState | null): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}, auth?: AuthState | null): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (auth) headers.Authorization = `Bearer ${auth.token}`
   const ctrl = new AbortController()

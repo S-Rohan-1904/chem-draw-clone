@@ -1,0 +1,27 @@
+/* Cards added by the analysis feature set. */
+.bonding-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.bonding-body p { margin: 0; }
+.bonding-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+.bonding-split > div:last-child { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.bonding-svg { min-height: 280px; }
+.bonding-svg svg { max-width: 100%; height: auto; }
+.bonding-title { font-size: 1.05rem; }
+.bonding-table { border-collapse: collapse; font-size: 0.88rem; width: 100%; }
+.bonding-table th, .bonding-table td { text-align: left; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }
+.bonding-table th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.bonding-table tbody tr:hover { background: var(--paper); }
+.bonding-list { margin: 0; padding-left: 1.2rem; }
+.ring-row { padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 0.25rem; }
+.ring-head { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.chir-chiral { background: #dbeafe; color: #1e40af; }
+.chir-achiral { background: #e2e8f0; color: #334155; }
+.chir-meso { background: #ede9fe; color: #5b21b6; }
+.chir-unknown { background: var(--warn-soft); color: var(--warn); }
+.pol-polar { color: #b45309; font-weight: 600; }
+.pol-ionic { color: #b91c1c; font-weight: 600; }
+.pol-nonpolar { color: var(--muted); }
+.dipole-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.swatch-inline { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 3px; margin-right: 0.3em; vertical-align: middle; }
+@media (max-width: 720px) {
+  .bonding-split { grid-template-columns: 1fr; }
+}

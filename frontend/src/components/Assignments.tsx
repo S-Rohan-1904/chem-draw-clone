@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { api, ApiError } from '../api'
+import { api, describeFailure } from '../api'
 import type { Assignment, AssignmentProgress, AuthState } from '../types'
 import { WorksheetButton } from './WorksheetButton'
 
@@ -54,7 +54,7 @@ export function Assignments({ auth, onOpen, onLogin }: Props) {
       setCurrent(a)
       if (a.mine && auth) setProgress(await api.assignmentProgress(auth, a.code))
     } catch (e) {
-      setMsg(e instanceof ApiError ? e.message : 'Request failed')
+      setMsg(describeFailure(e))
     }
   }
 
@@ -72,7 +72,7 @@ export function Assignments({ auth, onOpen, onLogin }: Props) {
       setCurrent(res.assignment)
       setProgress(await api.assignmentProgress(auth, res.assignment.code))
     } catch (err) {
-      setMsg(err instanceof ApiError ? err.message : 'Request failed')
+      setMsg(describeFailure(err))
     } finally {
       setBusy(false)
     }
@@ -95,7 +95,7 @@ export function Assignments({ auth, onOpen, onLogin }: Props) {
       if (res.assignment.mine) setProgress(await api.assignmentProgress(auth, res.assignment.code))
       void reload()
     } catch (e) {
-      setFeedback((f) => ({ ...f, [itemId]: { ok: false, text: e instanceof ApiError ? e.message : 'Request failed' } }))
+      setFeedback((f) => ({ ...f, [itemId]: { ok: false, text: describeFailure(e) } }))
     }
   }
 

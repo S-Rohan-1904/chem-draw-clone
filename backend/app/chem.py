@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from dataclasses import dataclass, field
 
 from rdkit import Chem, RDLogger
@@ -388,6 +389,7 @@ def embed_3d(mol: Chem.Mol, max_tries: int = 6) -> Chem.Mol:
     input stereo. Retries with different seeds if perception disagrees."""
     target = _cip_labels(mol)
     mh = Chem.AddHs(mol)
+    started = time.monotonic()
     last_err = (
         "no valid 3D geometry exists for this combination of stereo descriptors "
         "(e.g. impossible bridgehead configuration)"
@@ -400,6 +402,8 @@ def embed_3d(mol: Chem.Mol, max_tries: int = 6) -> Chem.Mol:
         ps.useRandomCoords = attempt >= 2
         cid = AllChem.EmbedMolecule(mh, ps)
         if cid < 0:
+            if time.monotonic() - started > EMBED_TIMEOUT_S * 2:
+                raise ChemError("Building the 3D model took too long. Try a smaller or less flexible molecule.")
             continue
         try:
             if AllChem.MMFFHasAllMoleculeParams(mh):

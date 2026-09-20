@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { api, ApiError } from '../api'
+import { api, describeFailure } from '../api'
 import type { IsomerResult } from '../types'
 
 const EXAMPLES = ['C4H10', 'C5H12', 'C6H14', 'C4H10O', 'C3H8O', 'C4H9Cl', 'C3H9N', 'C4H8', 'C3H6O']
@@ -17,7 +17,7 @@ export function Isomers({ onOpen }: { onOpen: (smiles: string) => void }) {
       setResult(await api.isomers(f))
     } catch (e) {
       setResult(null)
-      setError(e instanceof ApiError ? e.message : 'Request failed')
+      setError(describeFailure(e))
     } finally {
       setBusy(false)
     }

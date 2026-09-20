@@ -37,10 +37,34 @@ export class ApiError extends Error {
   }
 }
 
+const TIMEOUT_MS = 90_000
+
+/** Plain-language message for failures that are not the user's fault. */
+export function describeFailure(e: unknown): string {
+  if (e instanceof ApiError) {
+    if (e.status === 0) return e.message
+    if (e.status === 429) return 'Too many requests in a short time. Wait a few seconds and try again.'
+    if (e.status === 502 || e.status === 503 || e.status === 504) return 'The server is starting up (this takes about a minute after it has been idle). Try again shortly.'
+    if (e.status >= 500) return 'The server hit an error building this molecule. Try a smaller or simpler input.'
+    return e.message
+  }
+  return 'Could not reach the server. Check your connection; if the site was idle it may take a minute to wake up.'
+}
+
 async function request<T>(path: string, init: RequestInit = {}, auth?: AuthState | null): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (auth) headers.Authorization = `Bearer ${auth.token}`
-  const res = await fetch(path, { ...init, headers: { ...headers, ...(init.headers as Record<string, string>) } })
+  const ctrl = new AbortController()
+  const timer = window.setTimeout(() => ctrl.abort(), TIMEOUT_MS)
+  let res: Response
+  try {
+    res = await fetch(path, { ...init, headers: { ...headers, ...(init.headers as Record<string, string>) }, signal: ctrl.signal })
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') throw new ApiError(0, 'This took too long. The free server is slow for large molecules; try a smaller input or wait and retry.')
+    throw new ApiError(0, 'Could not reach the server. Check your connection; if the site was idle it may take a minute to wake up.')
+  } finally {
+    window.clearTimeout(timer)
+  }
   if (!res.ok) {
     let detail = res.statusText
     let body: ErrorBody = {}

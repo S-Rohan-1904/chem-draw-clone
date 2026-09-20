@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import * as $3Dmol from '3dmol'
-import { api, ApiError } from '../api'
+import { api, describeFailure } from '../api'
 import type { AlignResult, Molecule } from '../types'
 
 interface Props {
@@ -54,7 +54,7 @@ export function Overlay({ mol, onClose }: Props) {
       setRes(await api.align(mol.smiles, b.smiles))
     } catch (err) {
       setRes(null)
-      setError(err instanceof ApiError ? err.message : 'Request failed')
+      setError(describeFailure(err))
     } finally {
       setBusy(false)
     }

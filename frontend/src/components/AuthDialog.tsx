@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { api, ApiError } from '../api'
+import { api, describeFailure } from '../api'
 import type { AuthState } from '../types'
 
 interface Props {
@@ -22,7 +22,7 @@ export function AuthDialog({ onAuth, onClose }: Props) {
       const auth = mode === 'login' ? await api.login(username, password) : await api.register(username, password)
       onAuth(auth)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Request failed')
+      setError(describeFailure(err))
     } finally {
       setBusy(false)
     }

@@ -56,6 +56,8 @@ def _known_from_cache(db: Session) -> list[str]:
 
 
 def _error_response(text: str, err: chem.ChemError, db: Session) -> JSONResponse:
+    if "took too long" in str(err):
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(err), "input": text, "highlight": None, "suggestions": []})
     diag = suggest.diagnose(chem.normalise_name(text), err.opsin_error, _known_from_cache(db))
     detail = diag.reason if err.opsin_error else str(err)
     if err.opsin_error and resolver.enabled():

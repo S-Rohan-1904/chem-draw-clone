@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, ApiError } from '../api'
+import { api, describeFailure } from '../api'
 import type { BatchRow } from '../types'
 
 function csvEscape(v: unknown) {
@@ -21,7 +21,7 @@ export function BatchPanel({ onOpen }: { onOpen: (name: string) => void }) {
     try {
       setRows((await api.batch(inputs.slice(0, 200))).rows)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Request failed')
+      setError(describeFailure(e))
     } finally {
       setBusy(false)
     }

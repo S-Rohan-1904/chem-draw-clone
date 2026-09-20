@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { api, ApiError, loadAuth, storeAuth } from './api'
+import { api, ApiError, describeFailure, loadAuth, storeAuth } from './api'
 import { Assignments } from './components/Assignments'
 import { AuthDialog } from './components/AuthDialog'
 import { BatchPanel } from './components/BatchPanel'
@@ -76,7 +76,7 @@ export default function App() {
         setMol(null)
       } catch (e) {
         setMol(null)
-        setError({ message: e instanceof ApiError ? e.message : 'Could not reach the server.', suggestions: [] })
+        setError({ message: describeFailure(e), suggestions: [] })
       } finally {
         setLoading(false)
       }
@@ -88,10 +88,10 @@ export default function App() {
       setRecent(pushRecent(built))
     } catch (e) {
       setMol(null)
-      if (e instanceof ApiError) {
+      if (e instanceof ApiError && e.status === 400) {
         setError({ message: e.message, input: e.body.input, highlight: e.body.highlight ?? null, suggestions: e.body.suggestions ?? [] })
       } else {
-        setError({ message: 'Could not reach the server.', suggestions: [] })
+        setError({ message: describeFailure(e), suggestions: [] })
       }
     } finally {
       setLoading(false)

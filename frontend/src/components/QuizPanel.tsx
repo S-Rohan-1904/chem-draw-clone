@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import type { EditorHandle } from './KetcherEditor'
-import { api, ApiError } from '../api'
+import { api, describeFailure } from '../api'
 import type { AuthState, QuizAnswer, QuizQuestion, QuizStats } from '../types'
 
 const KetcherEditor = lazy(() => import('./KetcherEditor'))
@@ -83,7 +83,7 @@ export function QuizPanel({ auth, onOpen }: Props) {
       if (lvl === 4) void editor.current?.clear()
     } catch (e) {
       setQ(null)
-      setError(e instanceof ApiError ? e.message : 'Could not load a question.')
+      setError(describeFailure(e))
     } finally {
       setBusy(false)
     }
@@ -105,7 +105,7 @@ export function QuizPanel({ auth, onOpen }: Props) {
         setRefresh((n) => n + 1)
       } else if (res.verdict !== 'unparsed') setAttempt((a) => a + 1)
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Request failed')
+      setError(describeFailure(err))
     } finally {
       setBusy(false)
     }

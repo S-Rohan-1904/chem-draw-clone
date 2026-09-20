@@ -187,3 +187,10 @@ button.chip { font: inherit; cursor: pointer; }
 
 .viewer3d.measuring { cursor: crosshair; border-color: var(--warn); }
 .measure-bar { margin: 0.5rem 0 0; font-size: 0.88rem; display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+
+.collection-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0.6rem 0 0.2rem; }
+.list-item { display: flex; flex-direction: column; }
+.saved-edit { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.4rem 0.6rem 0.6rem; }
+.saved-edit textarea { font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+.saved-edit-actions { display: flex; gap: 0.4rem; }
+.save-form input[list] { width: 160px; }

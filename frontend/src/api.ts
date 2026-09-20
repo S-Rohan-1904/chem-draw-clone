@@ -82,7 +82,9 @@ export const api = {
     request<AuthState>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   me: (auth: AuthState) => request<{ id: number; username: string }>('/api/auth/me', {}, auth),
   listSaved: (auth: AuthState) => request<SavedMolecule[]>('/api/saved', {}, auth),
-  save: (auth: AuthState, body: { label: string; input_text: string; smiles: string }) =>
+  save: (auth: AuthState, body: { label: string; input_text: string; smiles: string; collection?: string; notes?: string }) =>
     request<SavedMolecule>('/api/saved', { method: 'POST', body: JSON.stringify(body) }, auth),
+  updateSaved: (auth: AuthState, id: number, body: { label?: string; collection?: string; notes?: string }) =>
+    request<SavedMolecule>(`/api/saved/${id}`, { method: 'PATCH', body: JSON.stringify(body) }, auth),
   deleteSaved: (auth: AuthState, id: number) => request<void>(`/api/saved/${id}`, { method: 'DELETE' }, auth),
 }

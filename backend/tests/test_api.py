@@ -230,3 +230,16 @@ def test_stale_cache_rows_are_rebuilt():
         again = client.post("/api/molecule", json={"input": "propan-2-ol"}).json()
         assert again["cached"] is False and "groups" in again
         assert client.post("/api/molecule", json={"input": "propan-2-ol"}).json()["cached"] is True
+
+
+def test_collections_and_notes():
+    with client:
+        headers = _auth("carol")
+        a = client.post("/api/saved", json={"label": "A", "input_text": "ethanol", "smiles": "CCO", "collection": "Week 1 "}, headers=headers).json()
+        assert a["collection"] == "Week 1" and a["notes"] == ""
+        p = client.patch(f"/api/saved/{a['id']}", json={"notes": "primary alcohol", "collection": "Alcohols"}, headers=headers)
+        assert p.status_code == 200 and p.json()["notes"] == "primary alcohol" and p.json()["collection"] == "Alcohols"
+        other = _auth("dave")
+        assert client.patch(f"/api/saved/{a['id']}", json={"notes": "x"}, headers=other).status_code == 404
+        rows = client.get("/api/saved", headers=headers).json()
+        assert rows[0]["collection"] == "Alcohols"

@@ -33,6 +33,8 @@ export interface SavedMolecule {
   label: string
   input_text: string
   smiles: string
+  collection: string
+  notes: string
   created_at: string
 }
 

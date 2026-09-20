@@ -43,6 +43,8 @@ class SavedMolecule(Base):
     label: Mapped[str] = mapped_column(String(256))
     input_text: Mapped[str] = mapped_column(Text)
     smiles: Mapped[str] = mapped_column(Text)
+    collection: Mapped[str] = mapped_column(String(128), default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     user: Mapped[User] = relationship(back_populates="molecules")

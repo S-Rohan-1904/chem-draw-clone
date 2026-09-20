@@ -36,6 +36,7 @@ export default function App() {
   const [saved, setSaved] = useState<SavedMolecule[]>([])
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [saveLabel, setSaveLabel] = useState<string | null>(null) // non-null = label form open
+  const [saveColl, setSaveColl] = useState('')
   const [shareMsg, setShareMsg] = useState<string | null>(null)
 
   const build = useCallback(async (text: string) => {
@@ -208,13 +209,24 @@ export default function App() {
   const save = async () => {
     if (!mol || !auth || saveLabel === null) return
     try {
-      const row = await api.save(auth, { label: saveLabel.trim() || mol.input_text, input_text: mol.input_text, smiles: mol.smiles })
+      const row = await api.save(auth, {
+        label: saveLabel.trim() || mol.input_text,
+        input_text: mol.source === 'molfile' ? mol.smiles : mol.input_text,
+        smiles: mol.smiles,
+        collection: saveColl.trim(),
+      })
       setSaved((s) => [row, ...s])
       setSaveMsg('Saved.')
       setSaveLabel(null)
     } catch (e) {
       setSaveMsg(e instanceof ApiError ? e.message : 'Save failed')
     }
+  }
+
+  const updateSaved = async (id: number, patch: { notes?: string; collection?: string; label?: string }) => {
+    if (!auth) return
+    const row = await api.updateSaved(auth, id, patch)
+    setSaved((s) => s.map((x) => (x.id === id ? row : x)))
   }
 
   const remove = async (id: number) => {
@@ -259,7 +271,7 @@ export default function App() {
       <div className="layout">
         <aside className="side">
           <Gallery onPick={pick} />
-          {auth && <SavedList items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} />}
+          {auth && <SavedList items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} onUpdate={updateSaved} />}
         </aside>
 
         <main className="main">
@@ -293,6 +305,7 @@ export default function App() {
                       }}
                     >
                       <input value={saveLabel} onChange={(e) => setSaveLabel(e.target.value)} aria-label="Label" placeholder="Label" autoFocus />
+                      <input list="collections" value={saveColl} onChange={(e) => setSaveColl(e.target.value)} aria-label="Collection" placeholder="Collection (optional)" />
                       <button type="submit" className="primary">Save</button>
                       <button type="button" onClick={() => setSaveLabel(null)}>Cancel</button>
                     </form>

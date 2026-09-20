@@ -38,11 +38,5 @@ def health():
     return {"ok": True}
 
 
-def mount_frontend(target: FastAPI) -> None:
-    """Serve the built frontend at /. Must be the last mount: it catches every path."""
-    if FRONTEND_DIST.is_dir():
-        target.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
-
-
-if not os.environ.get("CHEM_DEFER_FRONTEND"):
-    mount_frontend(app)
+if FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

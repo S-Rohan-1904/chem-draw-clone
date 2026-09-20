@@ -60,35 +60,34 @@ The editor bundle is loaded only when the tab is first opened.
 - The input box checks validity while typing and offers autocomplete from the example list, names built before, and `backend/app/data/common_names.txt`.
 - OPSIN runs as one long-lived process per mode (strict, ignore-bad-stereo) instead of one JVM per request.
 
-## Deploy (free): Hugging Face Spaces
+## Deploy (free): Render
 
-Free Spaces allow the Gradio SDK, not Docker, so `app.py` at the repo root serves the
-FastAPI app (with a placeholder Gradio page at `/gradio`), `requirements.txt` lists the
-Python deps and `packages.txt` pulls in a JRE for OPSIN. The frontend must be prebuilt,
-which the GitHub Action `.github/workflows/deploy-hf.yml` does on every push to `main`
-before pushing to the Space.
+Hugging Face Spaces only offer static hosting for free, so the backend runs on a
+Render free web service instead (Docker, 512 MB RAM, no card). It sleeps after 15
+minutes without traffic and wakes on the next visit in about a minute. New molecules
+are slow on the small CPU; repeats are served from the cache.
 
-One-time setup:
+`render.yaml` describes the service. Free instances have no persistent disk, so
+saved molecules and accounts are mirrored to a private Hugging Face dataset
+(free with an HF account): the app restores `data.db` from it at startup and uploads
+a snapshot whenever it changed (every `HF_SYNC_SECONDS`, default 120) and on shutdown.
+Without `HF_TOKEN` and `HF_DATASET_REPO` the app still runs, with a throwaway database.
 
-1. Hugging Face account: https://huggingface.co/join (no card).
-2. Write token: https://huggingface.co/settings/tokens, type Write.
-3. New Space: https://huggingface.co/new-space, SDK **Gradio**, hardware **CPU basic (free)**, public.
-4. Space settings, Variables and secrets, add secrets:
-   - `SECRET_KEY`: output of `openssl rand -base64 48`
-   - `HF_TOKEN`: the token from step 2
-   - `HF_DATASET_REPO`: `<user>/chem-draw-data` (created automatically, private)
-5. GitHub repo settings, Secrets and variables, Actions:
-   - secret `HF_TOKEN`: same token
-   - variable `HF_SPACE`: `<user>/<space-name>`
-6. Push to `main` (or run the workflow manually). The Space builds in a few minutes.
+Setup:
 
-Free Spaces have no persistent disk, so accounts and saved molecules would vanish on
-restart. With `HF_TOKEN` and `HF_DATASET_REPO` set, the app restores `data.db` from that
-dataset at startup and uploads a snapshot whenever it changed (every `HF_SYNC_SECONDS`,
-default 120) and on shutdown. The Space sleeps after 48 h without visitors; the first
-visit afterwards takes about a minute.
+1. Hugging Face account (https://huggingface.co/join) and a **Write** token
+   (https://huggingface.co/settings/tokens).
+2. Render account (https://render.com, sign in with GitHub).
+3. Render dashboard, New, Blueprint, pick this repo. Render reads `render.yaml`.
+4. When prompted, fill `HF_TOKEN` with the token and `HF_DATASET_REPO` with
+   `<hf-user>/chem-draw-data`. `SECRET_KEY` is generated.
+5. Deploy. First build takes about 10 minutes.
 
-`Dockerfile` and `docker-compose.yml` remain for any host that runs containers.
+Local container run:
+
+```bash
+SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
+```
 
 ## API
 

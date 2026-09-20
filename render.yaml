@@ -1,0 +1,16 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: chem-draw
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CHEM_DB_PATH
+        value: /data/data.db
+      - key: HF_DATASET_REPO
+        sync: false
+      - key: HF_TOKEN
+        sync: false

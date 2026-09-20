@@ -21,6 +21,7 @@ def names(smiles):
         ("Nc1ccccc1", {"Aniline N", "Aromatic ring"}, {"Amine"}),
         ("CC#N", {"Nitrile"}, set()),
         ("C[N+](=O)[O-]", {"Nitro"}, set()),
+        ("[O-][N+](=O)c1ccccc1", {"Nitro", "Aromatic ring"}, {"Aniline N", "Amine"}),
         ("CCCl", {"Alkyl halide"}, {"Aryl halide"}),
         ("Clc1ccccc1", {"Aryl halide"}, {"Alkyl halide"}),
         ("C=CC#C", {"Alkene", "Alkyne"}, set()),

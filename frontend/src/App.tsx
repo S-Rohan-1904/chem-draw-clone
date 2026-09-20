@@ -12,6 +12,7 @@ import { GuidePanel } from './components/GuidePanel'
 import { NameInput } from './components/NameInput'
 import { NameLookup } from './components/NameLookup'
 import { Projections } from './components/Projections'
+import { Resonance } from './components/Resonance'
 import { Properties } from './components/Properties'
 import { QuizPanel } from './components/QuizPanel'
 import { SavedList } from './components/SavedList'
@@ -366,6 +367,7 @@ export default function App() {
                 <Properties mol={mol} />
               </div>
               {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
+              <Resonance mol={mol} />
               <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">
                 <Groups mol={mol} active={group?.name ?? null} onSelect={selectGroup} />

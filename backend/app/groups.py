@@ -24,7 +24,7 @@ GROUPS: list[tuple[str, str, str]] = [
     ("Alcohol", "[CX4][OX2H1]", "#0284c7"),
     ("Ether", "[#6][OX2;!$(O-C=O)][#6]", "#0ea5e9"),
     ("Amine", "[NX3;H2,H1,H0;!$(NC=O);!$(N-[a]);!$(N=*);!$(N#*)][#6]", "#2563eb"),
-    ("Aniline N", "[NX3;!$(NC=O)]c", "#1d4ed8"),
+    ("Aniline N", "[NX3+0;!$(NC=O)]c", "#1d4ed8"),
     ("Imine", "[CX3]=[NX2]", "#4f46e5"),
     ("Alkyl halide", "[CX4][F,Cl,Br,I]", "#16a34a"),
     ("Aryl halide", "c[F,Cl,Br,I]", "#15803d"),

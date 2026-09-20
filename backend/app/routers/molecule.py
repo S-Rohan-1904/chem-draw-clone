@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, projections, ratelimit, resolver, stereo_explain, suggest
+from .. import cache, chem, projections, ratelimit, resolver, resonance, stereo_explain, suggest
 from ..db import NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -111,6 +111,18 @@ def name_lookup(inchikey: str, db: Session = Depends(get_db)):
     if not row.found:
         return {"found": False}
     return {"found": True, "iupac": row.iupac, "title": row.title, "cid": row.cid, "source": "PubChem"}
+
+
+class SmilesIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+
+
+@router.post("/resonance")
+def molecule_resonance(body: SmilesIn):
+    try:
+        return {"forms": resonance.resonance_svgs(body.smiles)}
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
 
 @router.post("/check")

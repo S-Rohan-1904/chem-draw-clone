@@ -39,6 +39,11 @@ export default function KetcherEditor({ onReady, onError }: Props) {
           getMolfile: () => k.getMolfile('v2000'),
           setMolecule: async (s) => {
             await k.setMolecule(s)
+            // onInit can fire for an instance Ketcher has already replaced
+            // (StrictMode remounts): its setMolecule resolves but draws
+            // nothing, and getSmiles throws. Fail so the caller retries on
+            // the live instance.
+            if (s && !(await k.getSmiles())) throw new Error('Editor not ready.')
           },
           clear: async () => {
             await k.setMolecule('')

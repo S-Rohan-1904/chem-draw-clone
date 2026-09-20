@@ -16,20 +16,27 @@ export function DrawPanel({ onBuild, loading, loadStruct }: Props) {
   const [msg, setMsg] = useState<string | null>(null)
   const pending = useRef<string | null>(null)
 
-  const onReady = useCallback((h: EditorHandle) => {
-    handle.current = h
-    setReady(true)
-    if (pending.current) {
-      void h.setMolecule(pending.current)
-      pending.current = null
+  // Keep the structure pending until an editor instance actually takes it.
+  const load = useCallback(async (h: EditorHandle, value: string) => {
+    pending.current = null
+    try {
+      await h.setMolecule(value)
+    } catch {
+      pending.current ??= value
     }
   }, [])
 
+  const onReady = useCallback((h: EditorHandle) => {
+    handle.current = h
+    setReady(true)
+    if (pending.current) void load(h, pending.current)
+  }, [load])
+
   useEffect(() => {
     if (!loadStruct) return
-    if (handle.current) void handle.current.setMolecule(loadStruct.value)
+    if (handle.current) void load(handle.current, loadStruct.value)
     else pending.current = loadStruct.value
-  }, [loadStruct])
+  }, [loadStruct, load])
 
   const build = async () => {
     if (!handle.current) return

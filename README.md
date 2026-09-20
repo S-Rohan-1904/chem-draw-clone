@@ -62,33 +62,33 @@ The editor bundle is loaded only when the tab is first opened.
 
 ## Deploy (free): Hugging Face Spaces
 
-The repo ships a `Dockerfile` that serves the whole app on port 7860.
+Free Spaces allow the Gradio SDK, not Docker, so `app.py` at the repo root serves the
+FastAPI app (with a placeholder Gradio page at `/gradio`), `requirements.txt` lists the
+Python deps and `packages.txt` pulls in a JRE for OPSIN. The frontend must be prebuilt,
+which the GitHub Action `.github/workflows/deploy-hf.yml` does on every push to `main`
+before pushing to the Space.
 
-1. Create a Space at https://huggingface.co/new-space, SDK **Docker**, hardware **CPU basic** (free).
-2. Push this repo to the Space:
-   ```bash
-   git remote add hf https://huggingface.co/spaces/<user>/<space>
-   git push hf main
-   ```
-3. In the Space settings, add secrets:
+One-time setup:
+
+1. Hugging Face account: https://huggingface.co/join (no card).
+2. Write token: https://huggingface.co/settings/tokens, type Write.
+3. New Space: https://huggingface.co/new-space, SDK **Gradio**, hardware **CPU basic (free)**, public.
+4. Space settings, Variables and secrets, add secrets:
    - `SECRET_KEY`: output of `openssl rand -base64 48`
-   - `HF_TOKEN`: a Hugging Face token with write access (Settings, Access Tokens)
+   - `HF_TOKEN`: the token from step 2
    - `HF_DATASET_REPO`: `<user>/chem-draw-data` (created automatically, private)
+5. GitHub repo settings, Secrets and variables, Actions:
+   - secret `HF_TOKEN`: same token
+   - variable `HF_SPACE`: `<user>/<space-name>`
+6. Push to `main` (or run the workflow manually). The Space builds in a few minutes.
 
 Free Spaces have no persistent disk, so accounts and saved molecules would vanish on
 restart. With `HF_TOKEN` and `HF_DATASET_REPO` set, the app restores `data.db` from that
 dataset at startup and uploads a snapshot whenever it changed (every `HF_SYNC_SECONDS`,
-default 120) and on shutdown. Without those two variables the app runs normally with a
-throwaway database.
+default 120) and on shutdown. The Space sleeps after 48 h without visitors; the first
+visit afterwards takes about a minute.
 
-The Space sleeps after 48 h without visitors; the first visit afterwards takes about a
-minute to wake.
-
-Local container run:
-
-```bash
-SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
-```
+`Dockerfile` and `docker-compose.yml` remain for any host that runs containers.
 
 ## API
 

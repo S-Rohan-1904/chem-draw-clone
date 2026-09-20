@@ -88,15 +88,9 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
-    title: 'Assignments',
-    body: [
-      'Any signed in user can create an assignment from a list of names and receives a six character code. Share the code or the link. Students see each structure without its name or stereo labels and must type the correct name; a correct answer marks the item solved and reveals the name. The owner sees a table of participants, solved items and the number of attempts each took. Assignments can be exported as a worksheet.',
-    ],
-  },
-  {
     title: 'Worksheets',
     body: [
-      'Worksheet, available on each saved collection and on assignments, produces a printable PDF with eight structures per page. Choose structures only, with blank lines for names and an answer key on the last page, or structures with names.',
+      'Worksheet, available on each saved collection, produces a printable PDF with eight structures per page. Choose structures only, with blank lines for names and an answer key on the last page, or structures with names.',
     ],
   },
   {

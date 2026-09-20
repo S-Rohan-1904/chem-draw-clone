@@ -14,6 +14,7 @@ import { Isomers } from './components/Isomers'
 import { NameBreakdown } from './components/NameBreakdown'
 import { NameInput } from './components/NameInput'
 import { NameLookup } from './components/NameLookup'
+import { Overlay } from './components/Overlay'
 import { Projections } from './components/Projections'
 import { Resonance } from './components/Resonance'
 import { Properties } from './components/Properties'
@@ -45,6 +46,7 @@ export default function App() {
   const [stereoSel, setStereoSel] = useState<string | null>(null)
   const [explanation, setExplanation] = useState<StereoExplanation | null>(null)
   const [compare, setCompare] = useState<{ other: Molecule; title: string } | null>(null)
+  const [overlay, setOverlay] = useState(false)
 
   const [auth, setAuth] = useState<AuthState | null>(() => loadAuth())
   const [showAuth, setShowAuth] = useState(false)
@@ -66,6 +68,7 @@ export default function App() {
     setStereoSel(null)
     setExplanation(null)
     setCompare(null)
+    setOverlay(false)
     setRxn(null)
     if (text.includes('>') && !text.includes(' ')) {
       try {
@@ -347,6 +350,7 @@ export default function App() {
                   <button type="button" onClick={editStructure}>Copy to editor</button>
                   {mol.source !== 'iupac' && <NameLookup mol={mol} onUse={pick} />}
                   <button type="button" onClick={() => void share()}>Share</button>
+                  <button type="button" onClick={() => setOverlay((o) => !o)}>Compare with...</button>
                   {shareMsg && <span className="muted small">{shareMsg}</span>}
                   {saveLabel === null ? (
                     <button type="button" className="primary" onClick={openSave}>Save</button>
@@ -394,6 +398,7 @@ export default function App() {
                 />
                 <Properties mol={mol} />
               </div>
+              {overlay && <Overlay mol={mol} onClose={() => setOverlay(false)} />}
               {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
               <NameBreakdown mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Resonance mol={mol} />

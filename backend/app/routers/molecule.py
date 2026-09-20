@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, stereo_explain, suggest
+from .. import align as _align, cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, stereo_explain, suggest
 from ..db import NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -157,6 +157,19 @@ class ReactionIn(BaseModel):
 def molecule_reaction(body: ReactionIn):
     try:
         return reaction.parse_reaction(body.text)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class AlignIn(BaseModel):
+    smiles_a: str = Field(min_length=1, max_length=4000)
+    smiles_b: str = Field(min_length=1, max_length=4000)
+
+
+@router.post("/align", dependencies=[Depends(ratelimit.check)])
+def molecule_align(body: AlignIn, db: Session = Depends(get_db)):
+    try:
+        return _align.align(_molblock(db, body.smiles_a), _molblock(db, body.smiles_b))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 

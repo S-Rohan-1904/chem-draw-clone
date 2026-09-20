@@ -236,3 +236,16 @@ export interface AssignmentProgress {
   items: { id: number; name: string }[]
   participants: { username: string; done: number[]; count: number }[]
 }
+
+export interface AlignResult {
+  rmsd: number
+  common_atoms: number
+  common_bonds: number
+  heavy_a: number
+  heavy_b: number
+  identical_connectivity: boolean
+  molblock_a: string
+  molblock_b: string
+  atoms_a: number[]
+  atoms_b: number[]
+}

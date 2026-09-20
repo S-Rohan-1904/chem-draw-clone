@@ -1,4 +1,4 @@
-import type { Assignment, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
+import type { AlignResult, Assignment, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -94,6 +94,7 @@ export const api = {
     if (!res.ok) throw new ApiError(res.status, 'Worksheet failed')
     return res.blob()
   },
+  align: (a: string, b: string) => request<AlignResult>('/api/molecule/align', { method: 'POST', body: JSON.stringify({ smiles_a: a, smiles_b: b }) }),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

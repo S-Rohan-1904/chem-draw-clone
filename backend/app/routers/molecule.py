@@ -26,6 +26,12 @@ class StereoIn(BaseModel):
     bond_idx: int | None = None
 
 
+class VariantIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    op: str = Field(pattern=r"^(mirror|invert)$")
+    atom_idx: int | None = None
+
+
 class PngIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
     width: int = Field(default=1200, ge=200, le=4000)
@@ -106,6 +112,19 @@ def molecule_stereo(body: StereoIn):
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     raise HTTPException(status.HTTP_400_BAD_REQUEST, "Give atom_idx or bond_idx.")
+
+
+@router.post("/variant", dependencies=[Depends(ratelimit.check)])
+def molecule_variant(body: VariantIn, db: Session = Depends(get_db)):
+    """Build the mirror image or a single-centre inversion of a molecule."""
+    try:
+        smiles = chem.variant_smiles(body.smiles, body.op, body.atom_idx)
+        data, cached = cache.get_or_build(db, smiles)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    data["cached"] = cached
+    data["source"] = "smiles"
+    return data
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

@@ -178,3 +178,9 @@ button.chip { font: inherit; cursor: pointer; }
 .prio { margin: 0 0 0.5rem; padding-left: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; font-size: 0.9rem; }
 .prio-ends { display: flex; flex-direction: column; }
 .steps { margin: 0; padding-left: 1.2rem; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.25rem; }
+
+.viewer3d-compact { height: 300px; }
+.compare-title { margin: 0 0 0.4rem; font-weight: 600; font-size: 0.9rem; }
+.compare-title .muted { font-weight: 400; margin-left: 0.4rem; }
+.compare .svg-wrap { min-height: 300px; }
+.small-btn { margin-top: 0.5rem; font-size: 0.85rem; padding: 0.35rem 0.7rem; }

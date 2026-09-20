@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError, loadAuth, storeAuth } from './api'
 import { AuthDialog } from './components/AuthDialog'
+import { Compare } from './components/Compare'
 import { Downloads } from './components/Downloads'
 import { DrawPanel } from './components/DrawPanel'
 import { ErrorPanel } from './components/ErrorPanel'
@@ -28,6 +29,7 @@ export default function App() {
   const [groupSvg, setGroupSvg] = useState<string | null>(null)
   const [stereoSel, setStereoSel] = useState<string | null>(null)
   const [explanation, setExplanation] = useState<StereoExplanation | null>(null)
+  const [compare, setCompare] = useState<{ other: Molecule; title: string } | null>(null)
 
   const [auth, setAuth] = useState<AuthState | null>(() => loadAuth())
   const [showAuth, setShowAuth] = useState(false)
@@ -47,6 +49,7 @@ export default function App() {
     setHighlight(null)
     setStereoSel(null)
     setExplanation(null)
+    setCompare(null)
     try {
       setMol(await api.molecule(text))
     } catch (e) {
@@ -107,6 +110,27 @@ export default function App() {
         setHighlight({ atoms, colour: ex.kind === 'centre' ? '#2563eb' : '#047857' })
       })
       .catch(() => setExplanation(null))
+  }
+
+  const makeVariant = async (op: 'mirror' | 'invert', atomIdx?: number) => {
+    if (!mol) return
+    try {
+      const other = await api.variant(mol.smiles, op, atomIdx)
+      setCompare({ other, title: op === 'mirror' ? 'Mirror image' : 'Centre flipped' })
+    } catch (e) {
+      setError({ message: e instanceof ApiError ? e.message : 'Could not build the variant.', suggestions: [] })
+    }
+  }
+
+  const useMolecule = (m: Molecule) => {
+    setCompare(null)
+    setGroup(null)
+    setGroupSvg(null)
+    setStereoSel(null)
+    setExplanation(null)
+    setHighlight(null)
+    setInput(m.smiles)
+    setMol(m)
   }
 
   const hoverAtom = (idx: number | null) => {
@@ -292,9 +316,17 @@ export default function App() {
                 <Structure3D mol={mol} highlight={highlight} />
               </div>
               <div className="grid2">
-                <StereoPanel mol={mol} onHover={hoverAtom} onSelect={selectStereo} selected={stereoSel} explanation={explanation} />
+                <StereoPanel
+                  mol={mol}
+                  onHover={hoverAtom}
+                  onSelect={selectStereo}
+                  selected={stereoSel}
+                  explanation={explanation}
+                  onVariant={(op, idx) => void makeVariant(op, idx)}
+                />
                 <Properties mol={mol} />
               </div>
+              {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
               <div className="grid2">
                 <Groups mol={mol} active={group?.name ?? null} onSelect={selectGroup} />
               </div>

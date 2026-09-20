@@ -6,15 +6,19 @@ interface Props {
   onSelect: (sel: { atom_idx?: number; bond_idx?: number } | null) => void
   selected: string | null
   explanation: StereoExplanation | null
+  onVariant: (op: 'mirror' | 'invert', atomIdx?: number) => void
 }
 
-export function StereoPanel({ mol, onHover, onSelect, selected, explanation }: Props) {
+export function StereoPanel({ mol, onHover, onSelect, selected, explanation, onVariant }: Props) {
   const { centers, double_bonds, unspecified } = mol.stereo
   const none = centers.length === 0 && double_bonds.length === 0
   return (
     <section className="card">
       <header className="card-head">
         <h2>Stereochemistry</h2>
+        {centers.some((c) => c.label !== '?') && (
+          <button type="button" onClick={() => onVariant('mirror')} title="Build the enantiomer and compare">Mirror image</button>
+        )}
       </header>
       {none && <p className="muted">None</p>}
       {unspecified && (
@@ -76,6 +80,11 @@ export function StereoPanel({ mol, onHover, onSelect, selected, explanation }: P
           <ol className="steps">
             {explanation.steps.map((st) => <li key={st}>{st}</li>)}
           </ol>
+          {explanation.kind === 'centre' && (
+            <button type="button" className="small-btn" onClick={() => onVariant('invert', explanation.atom_idx)}>
+              Flip this centre and compare
+            </button>
+          )}
         </div>
       )}
       <dl className="props">

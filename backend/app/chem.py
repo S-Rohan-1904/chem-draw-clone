@@ -481,3 +481,32 @@ def build(text: str) -> MoleculeResult:
     result.warnings = r.warnings
     result.normalised_input = r.normalised
     return result
+
+
+_INVERT = {
+    Chem.ChiralType.CHI_TETRAHEDRAL_CW: Chem.ChiralType.CHI_TETRAHEDRAL_CCW,
+    Chem.ChiralType.CHI_TETRAHEDRAL_CCW: Chem.ChiralType.CHI_TETRAHEDRAL_CW,
+}
+
+
+def variant_smiles(smiles: str, op: str, atom_idx: int | None = None) -> str:
+    """'mirror': invert every tetrahedral centre (the enantiomer).
+    'invert': invert one centre (a diastereomer, or the enantiomer if it is the only one)."""
+    mol = mol_from_smiles(smiles)
+    if op == "mirror":
+        targets = [a for a in mol.GetAtoms() if a.GetChiralTag() in _INVERT]
+        if not targets:
+            raise ChemError("This molecule has no stereocentres to mirror.")
+    elif op == "invert":
+        if atom_idx is None or not (0 <= atom_idx < mol.GetNumAtoms()):
+            raise ChemError("No such atom.")
+        a = mol.GetAtomWithIdx(atom_idx)
+        if a.GetChiralTag() not in _INVERT:
+            raise ChemError("That atom is not a specified stereocentre.")
+        targets = [a]
+    else:
+        raise ChemError("Unknown operation.")
+    for a in targets:
+        a.SetChiralTag(_INVERT[a.GetChiralTag()])
+    Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+    return Chem.MolToSmiles(mol, isomericSmiles=True)

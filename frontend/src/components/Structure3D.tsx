@@ -14,6 +14,7 @@ const STYLES: Record<Style, object> = {
 interface Props {
   mol: Molecule
   highlight: Highlight | null
+  compact?: boolean
 }
 
 /** 3D position of the atom with a given (RDKit) index, if loaded. */
@@ -22,7 +23,7 @@ function pos(v: $3Dmol.GLViewer, index: number): { x: number; y: number; z: numb
   return a && a.x !== undefined && a.y !== undefined && a.z !== undefined ? { x: a.x, y: a.y, z: a.z } : null
 }
 
-export function Structure3D({ mol, highlight }: Props) {
+export function Structure3D({ mol, highlight, compact = false }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const viewer = useRef<$3Dmol.GLViewer | null>(null)
   const [style, setStyle] = useState<Style>('ballstick')
@@ -104,6 +105,10 @@ export function Structure3D({ mol, highlight }: Props) {
   useEffect(() => {
     viewer.current?.spin(spin ? 'y' : false)
   }, [spin])
+
+  if (compact) {
+    return <div className="viewer3d viewer3d-compact" ref={box} />
+  }
 
   return (
     <section className="card">

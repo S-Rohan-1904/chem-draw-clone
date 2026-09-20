@@ -62,6 +62,8 @@ export const api = {
     request<{ svg: string }>('/api/molecule/highlight', { method: 'POST', body: JSON.stringify({ smiles, atoms, colour }) }),
   stereo: (smiles: string, sel: { atom_idx?: number; bond_idx?: number }) =>
     request<StereoExplanation>('/api/molecule/stereo', { method: 'POST', body: JSON.stringify({ smiles, ...sel }) }),
+  variant: (smiles: string, op: 'mirror' | 'invert', atom_idx?: number) =>
+    request<Molecule>('/api/molecule/variant', { method: 'POST', body: JSON.stringify({ smiles, op, atom_idx }) }),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

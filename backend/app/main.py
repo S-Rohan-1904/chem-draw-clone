@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import dbsync
 from .db import DB_PATH, init_db
-from .routers import assignments, auth, isomers, molecule, quiz, saved, worksheet
+from .routers import admin, assignments, auth, isomers, molecule, quiz, saved, worksheet
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
@@ -35,6 +35,7 @@ app.include_router(quiz.router)
 app.include_router(isomers.router)
 app.include_router(assignments.router)
 app.include_router(worksheet.router)
+app.include_router(admin.router)
 
 
 @app.get("/api/health")

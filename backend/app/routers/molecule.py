@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import align as _align, cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, stereo_explain, suggest
-from ..db import NameCache, NameLookup, get_db
+from ..db import FailedInput, NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
 
@@ -55,7 +55,24 @@ def _known_from_cache(db: Session) -> list[str]:
     return [r for r in rows if r]
 
 
+def _record_failure(db: Session, text: str, reason: str) -> None:
+    from datetime import datetime, timezone
+
+    key = chem.normalise_name(text)[:300]
+    if not key or chem._is_molfile(text):
+        return
+    row = db.get(FailedInput, key)
+    if row is None:
+        db.add(FailedInput(text=key, count=1, last_reason=reason[:500]))
+    else:
+        row.count += 1
+        row.last_reason = reason[:500]
+        row.last_at = datetime.now(timezone.utc)
+    db.commit()
+
+
 def _error_response(text: str, err: chem.ChemError, db: Session) -> JSONResponse:
+    _record_failure(db, text, str(err))
     if "took too long" in str(err):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(err), "input": text, "highlight": None, "suggestions": []})
     diag = suggest.diagnose(chem.normalise_name(text), err.opsin_error, _known_from_cache(db))

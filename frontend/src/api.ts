@@ -1,4 +1,4 @@
-import type { AlignResult, Assignment, AssignmentAnswer, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
+import type { AdminStats, AlignResult, Assignment, AssignmentAnswer, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -135,7 +135,8 @@ export const api = {
     request<AuthState>('/api/auth/register', { method: 'POST', body: JSON.stringify({ username, password }) }),
   login: (username: string, password: string) =>
     request<AuthState>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
-  me: (auth: AuthState) => request<{ id: number; username: string }>('/api/auth/me', {}, auth),
+  me: (auth: AuthState) => request<{ id: number; username: string; is_admin: boolean }>('/api/auth/me', {}, auth),
+  adminStats: (auth: AuthState, days = 14) => request<AdminStats>(`/api/admin/stats?days=${days}`, {}, auth),
   listSaved: (auth: AuthState) => request<SavedMolecule[]>('/api/saved', {}, auth),
   save: (auth: AuthState, body: { label: string; input_text: string; smiles: string; collection?: string; notes?: string }) =>
     request<SavedMolecule>('/api/saved', { method: 'POST', body: JSON.stringify(body) }, auth),

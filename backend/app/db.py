@@ -86,6 +86,17 @@ class AssignmentProgress(Base):
     done_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class FailedInput(Base):
+    """Inputs the parser rejected, counted without any user information."""
+
+    __tablename__ = "failed_inputs"
+
+    text: Mapped[str] = mapped_column(String(300), primary_key=True)
+    count: Mapped[int] = mapped_column(Integer, default=1)
+    last_reason: Mapped[str] = mapped_column(Text, default="")
+    last_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 class QuizAttempt(Base):
     __tablename__ = "quiz_attempts"
 

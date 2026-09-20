@@ -121,6 +121,12 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     ],
   },
   {
+    title: 'Site statistics',
+    body: [
+      'Accounts listed in the ADMIN_USERS setting see a Stats tab with totals, molecules and quiz attempts per day, the most viewed molecules, and the inputs that failed most often. No individual browsing data is recorded; failed inputs are counted without any user information.',
+    ],
+  },
+  {
     title: 'Appearance',
     body: [
       'The application opens in light mode. Use the sun and moon control in the header to switch to dark mode; the choice is remembered on this device. Structure drawings keep a white background in both modes for legibility.',

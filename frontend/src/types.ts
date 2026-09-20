@@ -260,3 +260,12 @@ export interface AlignResult {
   atoms_a: number[]
   atoms_b: number[]
 }
+
+export interface AdminStats {
+  totals: Record<string, number>
+  new_molecules_per_day: { day: string; count: number }[]
+  quiz_attempts_per_day: { day: string; count: number }[]
+  signups_per_day: { day: string; count: number }[]
+  top_molecules: { smiles: string; hits: number; name: string }[]
+  top_failures: { text: string; count: number; reason: string; last_at: string }[]
+}

@@ -21,6 +21,11 @@ from .db import User, get_db
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+ADMIN_USERS = {u.strip() for u in os.environ.get("ADMIN_USERS", "").split(",") if u.strip()}
+
+
+def is_admin(user: User) -> bool:
+    return user.username in ADMIN_USERS
 if not os.environ.get("SECRET_KEY"):
     warnings.warn("SECRET_KEY not set; using a random key, tokens will not survive restarts", stacklevel=1)
 TOKEN_TTL = timedelta(days=30)
@@ -61,4 +66,10 @@ def current_user(
     user = db.scalar(select(User).where(User.id == int(payload["sub"])))
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User no longer exists")
+    return user
+
+
+def admin_user(user: User = Depends(current_user)) -> User:
+    if not is_admin(user):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin only")
     return user

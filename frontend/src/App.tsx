@@ -24,6 +24,7 @@ import { QuizPanel } from './components/QuizPanel'
 import { SavedList } from './components/SavedList'
 import { ResultSkeleton } from './components/Skeleton'
 import { StereoPanel } from './components/StereoPanel'
+import { StatsPanel } from './components/StatsPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
 import { useTheme } from './theme'
@@ -32,7 +33,8 @@ import type { AuthState, BuildError, ReactionResult, FunctionalGroup, Highlight,
 export default function App() {
   const [theme, toggleTheme] = useTheme()
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'assignments' | 'guide'>(() => (new URLSearchParams(window.location.search).get('assignment') ? 'assignments' : 'name'))
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'assignments' | 'guide' | 'stats'>(() => (new URLSearchParams(window.location.search).get('assignment') ? 'assignments' : 'name'))
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [recent, setRecent] = useState<RecentItem[]>(() => loadRecent())
@@ -199,6 +201,7 @@ export default function App() {
 
   const logout = useCallback(() => {
     setAuth(null)
+    setIsAdmin(false)
     storeAuth(null)
     setSaved([])
   }, [])
@@ -223,7 +226,10 @@ export default function App() {
     if (!auth) return
     api
       .me(auth)
-      .then(() => api.listSaved(auth))
+      .then((me) => {
+        setIsAdmin(!!me.is_admin)
+        return api.listSaved(auth)
+      })
       .then(setSaved)
       .catch((e) => {
         if (e instanceof ApiError && e.status === 401) logout()
@@ -304,6 +310,7 @@ export default function App() {
         <button type="button" role="tab" aria-selected={mode === 'isomers'} className={mode === 'isomers' ? 'active' : ''} onClick={() => setMode('isomers')}>Isomers</button>
         <button type="button" role="tab" aria-selected={mode === 'assignments'} className={mode === 'assignments' ? 'active' : ''} onClick={() => setMode('assignments')}>Assignments</button>
         <button type="button" role="tab" aria-selected={mode === 'guide'} className={mode === 'guide' ? 'active' : ''} onClick={() => setMode('guide')}>Guide</button>
+        {isAdmin && auth && <button type="button" role="tab" aria-selected={mode === 'stats'} className={mode === 'stats' ? 'active' : ''} onClick={() => setMode('stats')}>Stats</button>}
       </div>
       <div hidden={mode !== 'name'}>
         <NameInput value={input} onChange={setInput} onSubmit={build} loading={loading} showHint={!error} />
@@ -318,11 +325,12 @@ export default function App() {
       </div>
       {mode === 'quiz' && <QuizPanel auth={auth} onOpen={pick} />}
       {mode === 'guide' && <GuidePanel />}
+      {mode === 'stats' && auth && isAdmin && <StatsPanel auth={auth} onOpen={pick} />}
       {mode === 'isomers' && <Isomers onOpen={pick} />}
       {mode === 'assignments' && <Assignments auth={auth} onOpen={pick} onLogin={() => setShowAuth(true)} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
-      <div className="layout" hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'assignments'}>
+      <div className="layout" hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'assignments' || mode === 'stats'}>
         <aside className="side">
           <Gallery onPick={pick} />
           <Recent items={recent} onPick={pick} onClear={() => setRecent(clearRecent())} />

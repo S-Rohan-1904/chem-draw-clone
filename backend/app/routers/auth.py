@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import create_token, current_user, hash_password, verify_password
+from ..auth import create_token, current_user, hash_password, is_admin, verify_password
 from ..db import User, get_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -22,6 +22,7 @@ class TokenOut(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
+    is_admin: bool = False
 
 
 @router.post("/register", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
@@ -44,4 +45,4 @@ def login(body: Credentials, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(current_user)):
-    return UserOut(id=user.id, username=user.username)
+    return UserOut(id=user.id, username=user.username, is_admin=is_admin(user))

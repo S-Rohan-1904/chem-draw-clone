@@ -81,7 +81,8 @@ Setup:
 2. Render account (https://render.com, sign in with GitHub).
 3. Render dashboard, New, Blueprint, pick this repo. Render reads `render.yaml`.
 4. When prompted, fill `HF_TOKEN` with the token and `HF_DATASET_REPO` with
-   `<hf-user>/chem-draw-data`. `SECRET_KEY` is generated.
+   `<hf-user>/chem-draw-data`, and `ADMIN_USERS` with the usernames (comma
+   separated) that may open the Stats tab. `SECRET_KEY` is generated.
 5. Deploy. First build takes about 10 minutes.
 
 Cold starts: the image build runs `backend/scripts/prewarm.py`, which caches every name

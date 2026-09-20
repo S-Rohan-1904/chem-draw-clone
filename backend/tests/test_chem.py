@@ -31,7 +31,7 @@ def test_3d_geometry_matches_input_stereo(name, _c, _b):
     mol3d = Chem.MolFromMolBlock(r.molblock, removeHs=False)
     Chem.AssignStereochemistryFrom3D(mol3d, replaceExistingTags=True)
     got = _cip_labels(mol3d)
-    expected = _cip_labels(Chem.MolFromSmiles(resolve(name)[0]))
+    expected = _cip_labels(Chem.MolFromSmiles(r.smiles))
     assert expected and all(got[k] == v for k, v in expected.items())
 
 

@@ -36,7 +36,7 @@ def test_corpus_entry(name, n_centers, n_bonds, category):
     assert mol3d is not None
     Chem.AssignStereochemistryFrom3D(mol3d, replaceExistingTags=True)
     got = _cip_labels(mol3d)
-    expected = _cip_labels(Chem.MolFromSmiles(resolve(name)[0]))
+    expected = _cip_labels(Chem.MolFromSmiles(r.smiles))
     assert all(got.get(k) == v for k, v in expected.items()), f"{name}: 3D {got} != {expected}"
 
     # Heavy-atom count preserved through AddHs/embedding.

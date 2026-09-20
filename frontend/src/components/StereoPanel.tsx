@@ -1,11 +1,14 @@
-import type { Molecule } from '../types'
+import type { Molecule, StereoExplanation } from '../types'
 
 interface Props {
   mol: Molecule
   onHover: (atomIdx: number | null) => void
+  onSelect: (sel: { atom_idx?: number; bond_idx?: number } | null) => void
+  selected: string | null
+  explanation: StereoExplanation | null
 }
 
-export function StereoPanel({ mol, onHover }: Props) {
+export function StereoPanel({ mol, onHover, onSelect, selected, explanation }: Props) {
   const { centers, double_bonds, unspecified } = mol.stereo
   const none = centers.length === 0 && double_bonds.length === 0
   return (
@@ -22,28 +25,59 @@ export function StereoPanel({ mol, onHover }: Props) {
       )}
       <div className="chips">
         {centers.map((c) => (
-          <span
+          <button
+            type="button"
             key={`a${c.atom_idx}`}
-            className={`chip ${c.label === '?' ? 'chip-warn' : 'chip-atom'}`}
+            className={`chip ${c.label === '?' ? 'chip-warn' : 'chip-atom'} ${selected === `a${c.atom_idx}` ? 'active' : ''}`}
             onMouseEnter={() => onHover(c.atom_idx)}
             onMouseLeave={() => onHover(null)}
-            title={`Atom ${c.atom_idx + 1}`}
+            onClick={() => (c.label === '?' ? undefined : onSelect(selected === `a${c.atom_idx}` ? null : { atom_idx: c.atom_idx }))}
+            title={c.label === '?' ? `Atom ${c.atom_idx + 1}` : 'Click to see why'}
           >
             {c.symbol}&nbsp;{c.label}
-          </span>
+          </button>
         ))}
         {double_bonds.map((b) => (
-          <span
+          <button
+            type="button"
             key={`b${b.bond_idx}`}
-            className={`chip ${b.label === '?' ? 'chip-warn' : 'chip-bond'}`}
+            className={`chip ${b.label === '?' ? 'chip-warn' : 'chip-bond'} ${selected === `b${b.bond_idx}` ? 'active' : ''}`}
             onMouseEnter={() => onHover(b.atoms[0])}
             onMouseLeave={() => onHover(null)}
-            title={`Atoms ${b.atoms[0] + 1}, ${b.atoms[1] + 1}`}
+            onClick={() => (b.label === '?' ? undefined : onSelect(selected === `b${b.bond_idx}` ? null : { bond_idx: b.bond_idx }))}
+            title={b.label === '?' ? `Atoms ${b.atoms[0] + 1}, ${b.atoms[1] + 1}` : 'Click to see why'}
           >
             C=C&nbsp;{b.label}
-          </span>
+          </button>
         ))}
       </div>
+      {explanation && (
+        <div className="explain">
+          <h3>Why {explanation.label}?</h3>
+          {explanation.kind === 'centre' && explanation.priorities && (
+            <ol className="prio">
+              {explanation.priorities.map((p) => (
+                <li key={p.priority}><b>{p.priority}</b> {p.group}</li>
+              ))}
+            </ol>
+          )}
+          {explanation.kind === 'bond' && explanation.ends && (
+            <div className="prio-ends">
+              {explanation.ends.map((e, i) => (
+                <ol className="prio" key={e.atom_idx}>
+                  <li className="muted">End {i === 0 ? 'a' : 'b'}</li>
+                  {e.substituents.map((p) => (
+                    <li key={p.priority}><b>{p.priority}{i === 0 ? 'a' : 'b'}</b> {p.group}</li>
+                  ))}
+                </ol>
+              ))}
+            </div>
+          )}
+          <ol className="steps">
+            {explanation.steps.map((st) => <li key={st}>{st}</li>)}
+          </ol>
+        </div>
+      )}
       <dl className="props">
         <dt>Source</dt><dd>{mol.source === 'iupac' ? 'IUPAC name' : mol.source === 'molfile' ? 'Drawn structure' : 'SMILES'}</dd>
         <dt>SMILES</dt><dd><code>{mol.smiles}</code></dd>

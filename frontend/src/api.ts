@@ -1,4 +1,4 @@
-import type { AuthState, CheckResult, Molecule, SavedMolecule } from './types'
+import type { AuthState, CheckResult, Molecule, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -60,6 +60,8 @@ export const api = {
   molecule: (input: string) => request<Molecule>('/api/molecule', { method: 'POST', body: JSON.stringify({ input }) }),
   highlight: (smiles: string, atoms: number[], colour: string) =>
     request<{ svg: string }>('/api/molecule/highlight', { method: 'POST', body: JSON.stringify({ smiles, atoms, colour }) }),
+  stereo: (smiles: string, sel: { atom_idx?: number; bond_idx?: number }) =>
+    request<StereoExplanation>('/api/molecule/stereo', { method: 'POST', body: JSON.stringify({ smiles, ...sel }) }),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

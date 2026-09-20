@@ -35,7 +35,7 @@ def check(entry):
     mol3d = Chem.MolFromMolBlock(r.molblock, removeHs=False)
     Chem.AssignStereochemistryFrom3D(mol3d, replaceExistingTags=True)
     got = _cip_labels(mol3d)
-    expected = _cip_labels(Chem.MolFromSmiles(resolve(name)[0]))
+    expected = _cip_labels(Chem.MolFromSmiles(r.smiles))
     if not all(got.get(k) == v for k, v in expected.items()):
         problems.append(f"3D_MISMATCH {got} != {expected}")
     return name, category, "OK" if not problems else "FAIL", "; ".join(problems) + f" smiles={r.smiles}", time.time() - t

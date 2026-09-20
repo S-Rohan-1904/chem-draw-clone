@@ -448,6 +448,9 @@ MAX_HEAVY_ATOMS = int(os.environ.get("CHEM_MAX_HEAVY_ATOMS", "150"))
 
 
 def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles") -> MoleculeResult:
+    # Canonical order first, so every atom index in the result (stereo report,
+    # groups, mol block, SVG) refers to the returned SMILES.
+    smiles = canonical_smiles(smiles)
     mol = mol_from_smiles(smiles)
     if mol.GetNumHeavyAtoms() > MAX_HEAVY_ATOMS:
         raise ChemError(

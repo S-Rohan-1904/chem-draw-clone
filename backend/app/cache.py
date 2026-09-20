@@ -25,7 +25,7 @@ def normalise(text: str) -> str:
 
 
 # Bump when the serialised result gains fields; older cache rows are rebuilt on read.
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 
 
 def _serialise(result: chem.MoleculeResult) -> dict:

@@ -82,3 +82,23 @@ export interface BuildError {
   highlight?: [number, number] | null
   suggestions: string[]
 }
+
+export interface PriorityRow {
+  priority: number
+  atom_idx: number | null
+  symbol: string
+  group: string
+}
+
+export interface StereoExplanation {
+  kind: 'centre' | 'bond'
+  label: string
+  steps: string[]
+  svg: string
+  atom_idx?: number
+  priorities?: PriorityRow[]
+  has_h?: boolean
+  bond_idx?: number
+  atoms?: [number, number]
+  ends?: { atom_idx: number; substituents: PriorityRow[] }[]
+}

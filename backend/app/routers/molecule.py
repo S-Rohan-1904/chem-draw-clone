@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, ratelimit, suggest
+from .. import cache, chem, ratelimit, stereo_explain, suggest
 from ..db import NameCache, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -18,6 +18,12 @@ class HighlightIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
     atoms: list[int] = Field(max_length=500)
     colour: str = Field(default="#2563eb", pattern=r"^#[0-9a-fA-F]{6}$")
+
+
+class StereoIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    atom_idx: int | None = None
+    bond_idx: int | None = None
 
 
 class PngIn(BaseModel):
@@ -88,6 +94,18 @@ def molecule_highlight(body: HighlightIn):
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     return {"svg": chem.render_svg_highlight(mol, body.atoms, body.colour)}
+
+
+@router.post("/stereo")
+def molecule_stereo(body: StereoIn):
+    try:
+        if body.atom_idx is not None:
+            return stereo_explain.explain_centre(body.smiles, body.atom_idx)
+        if body.bond_idx is not None:
+            return stereo_explain.explain_double_bond(body.smiles, body.bond_idx)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    raise HTTPException(status.HTTP_400_BAD_REQUEST, "Give atom_idx or bond_idx.")
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

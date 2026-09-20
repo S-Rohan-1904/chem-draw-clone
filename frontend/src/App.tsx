@@ -13,7 +13,7 @@ import { ResultSkeleton } from './components/Skeleton'
 import { StereoPanel } from './components/StereoPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
-import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, SavedMolecule } from './types'
+import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, SavedMolecule, StereoExplanation } from './types'
 
 export default function App() {
   const [input, setInput] = useState('')
@@ -26,6 +26,8 @@ export default function App() {
   const [highlight, setHighlight] = useState<Highlight | null>(null)
   const [group, setGroup] = useState<FunctionalGroup | null>(null)
   const [groupSvg, setGroupSvg] = useState<string | null>(null)
+  const [stereoSel, setStereoSel] = useState<string | null>(null)
+  const [explanation, setExplanation] = useState<StereoExplanation | null>(null)
 
   const [auth, setAuth] = useState<AuthState | null>(() => loadAuth())
   const [showAuth, setShowAuth] = useState(false)
@@ -43,6 +45,8 @@ export default function App() {
     setGroup(null)
     setGroupSvg(null)
     setHighlight(null)
+    setStereoSel(null)
+    setExplanation(null)
     try {
       setMol(await api.molecule(text))
     } catch (e) {
@@ -70,6 +74,8 @@ export default function App() {
 
   const selectGroup = (g: FunctionalGroup | null) => {
     setGroup(g)
+    setStereoSel(null)
+    setExplanation(null)
     if (!g || !mol) {
       setGroupSvg(null)
       setHighlight(null)
@@ -83,8 +89,28 @@ export default function App() {
       .catch(() => setGroupSvg(null))
   }
 
+  const selectStereo = (sel: { atom_idx?: number; bond_idx?: number } | null) => {
+    if (!sel || !mol) {
+      setStereoSel(null)
+      setExplanation(null)
+      if (!group) setHighlight(null)
+      return
+    }
+    setGroup(null)
+    setGroupSvg(null)
+    setStereoSel(sel.atom_idx !== undefined ? `a${sel.atom_idx}` : `b${sel.bond_idx}`)
+    api
+      .stereo(mol.smiles, sel)
+      .then((ex) => {
+        setExplanation(ex)
+        const atoms = ex.kind === 'centre' ? [ex.atom_idx as number] : (ex.atoms as number[])
+        setHighlight({ atoms, colour: ex.kind === 'centre' ? '#2563eb' : '#047857' })
+      })
+      .catch(() => setExplanation(null))
+  }
+
   const hoverAtom = (idx: number | null) => {
-    if (group) return // group selection owns the highlight
+    if (group || stereoSel) return // a selection owns the highlight
     setHighlight(idx === null ? null : { atoms: [idx], colour: '#f59e0b' })
   }
 
@@ -258,11 +284,15 @@ export default function App() {
                 <p className="muted small">Interpreted as <code>{mol.normalised_input}</code></p>
               )}
               <div className="grid2">
-                <Structure2D mol={mol} svg={groupSvg} caption={group ? group.name : null} />
+                <Structure2D
+                  mol={mol}
+                  svg={explanation ? explanation.svg : groupSvg}
+                  caption={explanation ? `CIP priorities for ${explanation.label}` : group ? group.name : null}
+                />
                 <Structure3D mol={mol} highlight={highlight} />
               </div>
               <div className="grid2">
-                <StereoPanel mol={mol} onHover={hoverAtom} />
+                <StereoPanel mol={mol} onHover={hoverAtom} onSelect={selectStereo} selected={stereoSel} explanation={explanation} />
                 <Properties mol={mol} />
               </div>
               <div className="grid2">

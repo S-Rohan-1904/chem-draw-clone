@@ -218,7 +218,10 @@ export interface AssignmentItem {
   position: number
   name: string
   smiles: string
+  svg: string
+  formula: string
   done: boolean
+  attempts: number
 }
 
 export interface Assignment {
@@ -234,7 +237,14 @@ export interface Assignment {
 
 export interface AssignmentProgress {
   items: { id: number; name: string }[]
-  participants: { username: string; done: number[]; count: number }[]
+  participants: { username: string; done: number[]; attempts: Record<string, number>; count: number }[]
+}
+
+export interface AssignmentAnswer {
+  correct: boolean
+  verdict: string
+  message: string
+  assignment: Assignment
 }
 
 export interface AlignResult {

@@ -312,13 +312,13 @@ def _same_substituent(center: Chem.Atom, a: Chem.Atom, b: Chem.Atom) -> bool:
     return ranks[a.GetIdx()] == ranks[b.GetIdx()]
 
 
-def render_svg(mol: Chem.Mol, width: int = 480, height: int = 360) -> str:
+def render_svg(mol: Chem.Mol, width: int = 480, height: int = 360, annotate: bool = True) -> str:
     m = Chem.Mol(mol)
     rdDepictor.Compute2DCoords(m)
     Chem.WedgeMolBonds(m, m.GetConformer())
     drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
     opts = drawer.drawOptions()
-    opts.addStereoAnnotation = True
+    opts.addStereoAnnotation = annotate
     opts.clearBackground = False
     opts.bondLineWidth = 2
     drawer.DrawMolecule(m)

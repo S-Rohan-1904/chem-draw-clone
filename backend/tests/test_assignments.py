@@ -29,18 +29,24 @@ def test_assignment_flow():
         a = client.get(f"/api/assignments/{code.lower()}").json()
         assert a["title"] == "Week 1" and a["done_count"] == 0
 
-        item = a["items"][0]["id"]
-        d = client.post(f"/api/assignments/{code}/done/{item}", headers=student).json()
-        assert d["done_count"] == 1 and d["items"][0]["done"] is True
-        assert client.get(f"/api/assignments/{code}/me", headers=student).json()["done_count"] == 1
+        # students see structures, not names, until they answer correctly
+        seen = client.get(f"/api/assignments/{code}/me", headers=student).json()
+        assert seen["items"][0]["name"] == "" and seen["items"][0]["svg"].startswith("<?xml")
+        assert "(R)" not in seen["items"][1]["svg"]  # stereo labels hidden until solved
+        item = seen["items"][0]["id"]
+        wrong = client.post(f"/api/assignments/{code}/answer/{item}", json={"answer": "cholesterol", "attempt": 1}, headers=student).json()
+        assert not wrong["correct"] and wrong["assignment"]["done_count"] == 0
+        right = client.post(f"/api/assignments/{code}/answer/{item}", json={"answer": "ethanol", "attempt": 2}, headers=student).json()
+        assert right["correct"] and right["assignment"]["done_count"] == 1
+        assert right["assignment"]["items"][0]["name"] == "ethanol" and right["assignment"]["items"][0]["attempts"] == 2
         assert client.get("/api/assignments/joined", headers=student).json()[0]["code"] == code
 
         p = client.get(f"/api/assignments/{code}/progress", headers=teacher).json()
         assert p["participants"][0]["username"] == "stud" and p["participants"][0]["count"] == 1
+        assert p["participants"][0]["attempts"][str(item)] == 2
         assert client.get(f"/api/assignments/{code}/progress", headers=student).status_code == 403
-
-        u = client.delete(f"/api/assignments/{code}/done/{item}", headers=student).json()
-        assert u["done_count"] == 0
+        # owner sees names
+        assert client.get(f"/api/assignments/{code}/me", headers=teacher).json()["items"][1]["name"] == "(2R)-butan-2-ol"
         assert client.get("/api/assignments/mine", headers=teacher).json()[0]["code"] == code
         assert client.delete(f"/api/assignments/{code}", headers=student).status_code == 404
         assert client.delete(f"/api/assignments/{code}", headers=teacher).status_code == 204

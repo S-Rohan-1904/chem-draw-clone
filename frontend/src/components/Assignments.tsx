@@ -78,12 +78,25 @@ export function Assignments({ auth, onOpen, onLogin }: Props) {
     }
   }
 
-  const toggle = async (itemId: number, done: boolean) => {
+  const [answers, setAnswers] = useState<Record<number, string>>({})
+  const [attempts, setAttempts] = useState<Record<number, number>>({})
+  const [feedback, setFeedback] = useState<Record<number, { ok: boolean; text: string }>>({})
+
+  const answer = async (itemId: number) => {
     if (!auth || !current) return
-    const updated = await api.markDone(auth, current.code, itemId, done)
-    setCurrent(updated)
-    if (updated.mine) setProgress(await api.assignmentProgress(auth, updated.code))
-    void reload()
+    const text = (answers[itemId] ?? '').trim()
+    if (!text) return
+    const n = (attempts[itemId] ?? 0) + 1
+    setAttempts((a) => ({ ...a, [itemId]: n }))
+    try {
+      const res = await api.answerAssignment(auth, current.code, itemId, text, n)
+      setFeedback((f) => ({ ...f, [itemId]: { ok: res.correct, text: res.message } }))
+      setCurrent(res.assignment)
+      if (res.assignment.mine) setProgress(await api.assignmentProgress(auth, res.assignment.code))
+      void reload()
+    } catch (e) {
+      setFeedback((f) => ({ ...f, [itemId]: { ok: false, text: e instanceof ApiError ? e.message : 'Request failed' } }))
+    }
   }
 
   const remove = async () => {
@@ -161,26 +174,56 @@ export function Assignments({ auth, onOpen, onLogin }: Props) {
               {current.mine && <button type="button" onClick={() => void remove()}>Delete</button>}
             </div>
           </header>
-          <ol className="assignment-items">
-            {current.items.map((it) => (
-              <li key={it.id} className={it.done ? 'done' : ''}>
-                {auth && <input type="checkbox" checked={it.done} onChange={(e) => void toggle(it.id, e.target.checked)} aria-label={`Done: ${it.name}`} />}
-                <button type="button" className="link" onClick={() => onOpen(it.name)}>{it.name}</button>
-              </li>
+          {!current.mine && !auth && <p className="warn">Log in to answer. Your progress is recorded per account.</p>}
+          <div className="assignment-grid">
+            {current.items.map((it, idx) => (
+              <div key={it.id} className={`card assignment-item ${it.done ? 'done' : ''}`}>
+                <header className="card-head">
+                  <h3>{idx + 1}. {current.mine || it.done ? it.name : 'Name this structure'}</h3>
+                  <span className="muted small">{it.formula}{it.done ? ` · solved in ${it.attempts} attempt${it.attempts === 1 ? '' : 's'}` : ''}</span>
+                </header>
+                <div className="svg-wrap assignment-svg" dangerouslySetInnerHTML={{ __html: it.svg }} />
+                {current.mine || it.done ? (
+                  <div className="draw-actions">
+                    <button type="button" className="link" onClick={() => onOpen(it.name)}>Open in viewer</button>
+                  </div>
+                ) : auth ? (
+                  <form
+                    className="draw-actions"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      void answer(it.id)
+                    }}
+                  >
+                    <input
+                      value={answers[it.id] ?? ''}
+                      onChange={(e) => setAnswers((a) => ({ ...a, [it.id]: e.target.value }))}
+                      placeholder="IUPAC name"
+                      aria-label={`Answer ${idx + 1}`}
+                      style={{ flex: '1 1 200px' }}
+                      spellCheck={false}
+                    />
+                    <button type="submit" className="primary" disabled={!(answers[it.id] ?? '').trim()}>Check</button>
+                  </form>
+                ) : null}
+                {feedback[it.id] && !it.done && <p className={`small ${feedback[it.id].ok ? 'hint-ok' : 'hint-bad'}`}>{feedback[it.id].text}</p>}
+                {it.done && <p className="small hint-ok">Correct.</p>}
+              </div>
             ))}
-          </ol>
+          </div>
           {progress && (
             <div className="table-wrap">
               <table className="batch-table">
                 <thead>
                   <tr><th>Student</th>{progress.items.map((i) => <th key={i.id} title={i.name}>{i.name.length > 18 ? i.name.slice(0, 16) + '…' : i.name}</th>)}<th>Done</th></tr>
+                  <tr><td className="muted small" colSpan={progress.items.length + 2}>Ticks show the number of attempts needed.</td></tr>
                 </thead>
                 <tbody>
                   {progress.participants.length === 0 && <tr><td colSpan={progress.items.length + 2} className="muted">No one has started yet.</td></tr>}
                   {progress.participants.map((p) => (
                     <tr key={p.username}>
                       <td>{p.username}</td>
-                      {progress.items.map((i) => <td key={i.id}>{p.done.includes(i.id) ? '✓' : ''}</td>)}
+                      {progress.items.map((i) => <td key={i.id}>{p.done.includes(i.id) ? `✓ (${p.attempts[String(i.id)] ?? 1})` : ''}</td>)}
                       <td>{p.count} / {progress.items.length}</td>
                     </tr>
                   ))}

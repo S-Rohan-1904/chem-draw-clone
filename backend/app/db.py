@@ -82,6 +82,7 @@ class AssignmentProgress(Base):
     assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id"), index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("assignment_items.id"), index=True)
+    attempts: Mapped[int] = mapped_column(Integer, default=1)
     done_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 

@@ -318,11 +318,11 @@ export default function App() {
       </div>
       {mode === 'quiz' && <QuizPanel auth={auth} onOpen={pick} />}
       {mode === 'guide' && <GuidePanel />}
-      {mode === 'isomers' && <Isomers onOpen={openInPlace} />}
-      {mode === 'assignments' && <Assignments auth={auth} onOpen={openInPlace} onLogin={() => setShowAuth(true)} />}
+      {mode === 'isomers' && <Isomers onOpen={pick} />}
+      {mode === 'assignments' && <Assignments auth={auth} onOpen={pick} onLogin={() => setShowAuth(true)} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
-      <div className="layout" hidden={mode === 'quiz' || mode === 'guide'}>
+      <div className="layout" hidden={mode === 'quiz' || mode === 'guide' || mode === 'isomers' || mode === 'assignments'}>
         <aside className="side">
           <Gallery onPick={pick} />
           <Recent items={recent} onPick={pick} onClear={() => setRecent(clearRecent())} />

@@ -131,28 +131,12 @@ def answer(body: AnswerIn, db: Session = Depends(get_db), user: User | None = De
         record(False)
         return AnswerOut(correct=False, verdict="revealed", message="Answer revealed.", accepted=accepted)
 
-    try:
-        resolved = chem.resolve_full(body.answer)
-        mol = chem.mol_from_smiles(resolved.smiles)
-    except chem.ChemError as e:
-        what = "structure" if chem._is_molfile(body.answer) else "name"
-        return AnswerOut(correct=False, verdict="unparsed", message=f"That is not a readable {what}: {str(e).split('.')[0]}.")
+    from ..grading import grade
 
-    from rdkit import Chem
-    from rdkit.Chem import rdMolDescriptors
-
-    key = Chem.MolToInchiKey(mol)
-    formula = rdMolDescriptors.CalcMolFormula(mol)
-    if key == body.id:
+    v = grade(body.answer, body.id, json.loads(target.result_json)["formula"])
+    if v.correct:
         record(True)
-        return AnswerOut(correct=True, verdict="exact", message="Correct.", accepted=accepted, your_formula=formula)
-    if key.split("-")[0] == body.id.split("-")[0]:
-        msg = "Right skeleton, wrong or missing stereochemistry."
-        if resolved.warnings:
-            msg += " " + resolved.warnings[0]
-        return AnswerOut(correct=False, verdict="stereo", message=msg, your_formula=formula)
-    hint = "Same formula, different connectivity." if formula == json.loads(target.result_json)["formula"] else f"Your name gives {formula}."
-    return AnswerOut(correct=False, verdict="wrong", message=f"Not this molecule. {hint}", your_formula=formula)
+    return AnswerOut(correct=v.correct, verdict=v.verdict, message=v.message, accepted=accepted if v.correct else [], your_formula=v.your_formula)
 
 
 @router.get("/stats")

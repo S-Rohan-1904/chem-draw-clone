@@ -90,7 +90,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
   {
     title: 'Assignments',
     body: [
-      'Any signed in user can create an assignment from a list of names and receives a six character code. Share the code or the link; students open it, build each molecule and tick it off. The owner sees a table of participants and completed items. Assignments can be exported as a worksheet.',
+      'Any signed in user can create an assignment from a list of names and receives a six character code. Share the code or the link. Students see each structure without its name or stereo labels and must type the correct name; a correct answer marks the item solved and reveals the name. The owner sees a table of participants, solved items and the number of attempts each took. Assignments can be exported as a worksheet.',
     ],
   },
   {
@@ -123,7 +123,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
   {
     title: 'Appearance',
     body: [
-      'Use the sun and moon control in the header to switch between light and dark mode. The choice is remembered on this device. Structure drawings keep a white background in both modes for legibility.',
+      'The application opens in light mode. Use the sun and moon control in the header to switch to dark mode; the choice is remembered on this device. Structure drawings keep a white background in both modes for legibility.',
     ],
   },
 ]

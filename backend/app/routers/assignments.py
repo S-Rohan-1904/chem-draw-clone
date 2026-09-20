@@ -36,9 +36,12 @@ class AssignmentIn(BaseModel):
 class ItemOut(BaseModel):
     id: int
     position: int
-    name: str
-    smiles: str
+    name: str  # blank for students until they answer correctly
+    smiles: str  # blank for students until they answer correctly
+    svg: str = ""
+    formula: str = ""
     done: bool = False
+    attempts: int = 0
 
 
 class AssignmentOut(BaseModel):
@@ -57,20 +60,38 @@ class CreateOut(BaseModel):
     rejected: list[dict]
 
 
+def _svg_formula(db: Session, smiles: str, annotate: bool = True) -> tuple[str, str]:
+    from .. import cache
+
+    data, _ = cache.get_or_build(db, smiles)
+    if annotate:
+        return data["svg"], data["formula"]
+    # Students get the drawing without R/S and E/Z labels: those are part of the answer.
+    return chem.render_svg(chem.mol_from_smiles(smiles), annotate=False), data["formula"]
+
+
 def _out(a: Assignment, user: User | None, db: Session) -> AssignmentOut:
-    done: set[int] = set()
+    progress: dict[int, int] = {}
     if user is not None:
-        done = set(db.scalars(select(AssignmentProgress.item_id).where(AssignmentProgress.assignment_id == a.id, AssignmentProgress.user_id == user.id)).all())
+        rows = db.scalars(select(AssignmentProgress).where(AssignmentProgress.assignment_id == a.id, AssignmentProgress.user_id == user.id)).all()
+        progress = {r.item_id: r.attempts for r in rows}
     owner = db.get(User, a.owner_id)
+    mine = user is not None and a.owner_id == user.id
+    items = []
+    for i in a.items:
+        done = i.id in progress
+        reveal = mine or done
+        svg, formula = _svg_formula(db, i.smiles, annotate=reveal)
+        items.append(ItemOut(id=i.id, position=i.position, name=i.name if reveal else "", smiles=i.smiles if reveal else "", svg=svg, formula=formula, done=done, attempts=progress.get(i.id, 0)))
     return AssignmentOut(
         id=a.id,
         title=a.title,
         code=a.code,
         owner=owner.username if owner else "",
-        mine=user is not None and a.owner_id == user.id,
+        mine=mine,
         created_at=a.created_at,
-        items=[ItemOut(id=i.id, position=i.position, name=i.name, smiles=i.smiles, done=i.id in done) for i in a.items],
-        done_count=len(done),
+        items=items,
+        done_count=len(progress),
     )
 
 
@@ -130,28 +151,36 @@ def get_with_progress(code: str, user: User = Depends(current_user), db: Session
     return _out(a, user, db)
 
 
-@router.post("/{code}/done/{item_id}", response_model=AssignmentOut)
-def mark_done(code: str, item_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    a = db.scalar(select(Assignment).where(Assignment.code == code.strip().upper()))
-    if a is None or all(i.id != item_id for i in a.items):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
-    exists = db.scalar(select(AssignmentProgress).where(AssignmentProgress.user_id == user.id, AssignmentProgress.item_id == item_id))
-    if exists is None:
-        db.add(AssignmentProgress(assignment_id=a.id, user_id=user.id, item_id=item_id))
-        db.commit()
-    return _out(a, user, db)
+class AssignmentAnswer(BaseModel):
+    answer: str = Field(min_length=1, max_length=200_000)
+    attempt: int = Field(default=1, ge=1, le=50)
 
 
-@router.delete("/{code}/done/{item_id}", response_model=AssignmentOut)
-def mark_undone(code: str, item_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+class AssignmentAnswerOut(BaseModel):
+    correct: bool
+    verdict: str
+    message: str
+    assignment: AssignmentOut
+
+
+@router.post("/{code}/answer/{item_id}", response_model=AssignmentAnswerOut)
+def answer_item(code: str, item_id: int, body: AssignmentAnswer, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Students name (or draw) the structure; a correct answer marks the item done."""
+    from ..grading import grade
+
     a = db.scalar(select(Assignment).where(Assignment.code == code.strip().upper()))
-    if a is None:
+    item = next((i for i in a.items), None) if a else None
+    item = next((i for i in a.items if i.id == item_id), None) if a else None
+    if a is None or item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")
-    row = db.scalar(select(AssignmentProgress).where(AssignmentProgress.user_id == user.id, AssignmentProgress.item_id == item_id))
-    if row is not None:
-        db.delete(row)
-        db.commit()
-    return _out(a, user, db)
+    _, formula = _svg_formula(db, item.smiles)
+    v = grade(body.answer, item.inchikey, formula)
+    if v.correct:
+        exists = db.scalar(select(AssignmentProgress).where(AssignmentProgress.user_id == user.id, AssignmentProgress.item_id == item_id))
+        if exists is None:
+            db.add(AssignmentProgress(assignment_id=a.id, user_id=user.id, item_id=item_id, attempts=body.attempt))
+            db.commit()
+    return AssignmentAnswerOut(correct=v.correct, verdict=v.verdict, message=v.message, assignment=_out(a, user, db))
 
 
 @router.get("/{code}/progress")
@@ -166,11 +195,20 @@ def progress(code: str, user: User = Depends(current_user), db: Session = Depend
     by_user: dict[int, set[int]] = {}
     for r in rows:
         by_user.setdefault(r.user_id, set()).add(r.item_id)
+    attempts = {(r.user_id, r.item_id): r.attempts for r in rows}
     users = {u.id: u.username for u in db.scalars(select(User).where(User.id.in_(by_user.keys()))).all()} if by_user else {}
     return {
         "items": [{"id": i.id, "name": i.name} for i in a.items],
         "participants": sorted(
-            [{"username": users.get(uid, "?"), "done": sorted(items), "count": len(items)} for uid, items in by_user.items()],
+            [
+                {
+                    "username": users.get(uid, "?"),
+                    "done": sorted(items),
+                    "attempts": {str(i): attempts[(uid, i)] for i in items},
+                    "count": len(items),
+                }
+                for uid, items in by_user.items()
+            ],
             key=lambda p: (-p["count"], p["username"]),
         ),
     }

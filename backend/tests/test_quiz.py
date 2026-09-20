@@ -53,3 +53,28 @@ def test_quiz_stats_for_logged_in_user():
         client.post("/api/quiz/answer", json={"id": q["id"], "answer": "x", "reveal": True}, headers=headers)
         s = client.get("/api/quiz/stats", headers=headers).json()
         assert s["total"] == 1 and s["correct"] == 0 and s["recent"][0]["inchikey"] == q["id"]
+
+
+def test_draw_level_and_molfile_answer():
+    from tests.test_chem import _butanol_molfile
+
+    with client:
+        _seed()
+        q = client.get("/api/quiz/question", params={"level": 4}).json()
+        assert q["name"] and not q["svg"]
+        # answer the (R)/(S)-butanol question by drawing, if that is what came up; otherwise a wrong drawing
+        res = client.post("/api/quiz/answer", json={"id": q["id"], "answer": _butanol_molfile(1)}).json()
+        assert res["verdict"] in ("exact", "stereo", "wrong")
+        bad = client.post("/api/quiz/answer", json={"id": q["id"], "answer": "garbage\n\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END\n"}).json()
+        assert bad["verdict"] == "unparsed" and "structure" in bad["message"]
+
+
+def test_stats_have_streak_and_names():
+    with client:
+        _seed()
+        r = client.post("/api/auth/register", json={"username": "streaker", "password": "password123"})
+        headers = {"Authorization": f"Bearer {r.json()['token']}"}
+        q = client.get("/api/quiz/question", params={"level": 1}).json()
+        client.post("/api/quiz/answer", json={"id": q["id"], "answer": "x", "reveal": True}, headers=headers)
+        s = client.get("/api/quiz/stats", headers=headers).json()
+        assert s["streak"] == 0 and s["recent"][0]["name"]

@@ -134,6 +134,7 @@ export interface BatchRow {
 export interface QuizQuestion {
   id: string
   svg: string
+  name: string
   formula: string
   level: number
   stereo_count: number
@@ -203,4 +204,11 @@ export interface ReactionResult {
   balanced: boolean
   imbalance: Record<string, number>
   mapped: boolean
+}
+
+export interface QuizStats {
+  total: number
+  correct: number
+  streak: number
+  recent: { inchikey: string; name: string; correct: boolean; attempts: number; at: string }[]
 }

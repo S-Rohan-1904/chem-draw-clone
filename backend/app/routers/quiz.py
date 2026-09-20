@@ -25,8 +25,13 @@ _bearer = HTTPBearer(auto_error=False)
 _TRIVIAL = re.compile(r"^(?:[DL]-|\(\+\)|\(-\))|^[a-z]+$")
 
 
+_SYSTEMATIC_SUFFIX = ("ane", "ene", "yne", "ol", "al", "one", "oic acid", "amine", "amide", "nitrile", "oate", "ide", "ether", "benzene", "phenol")
+
+
 def _systematic(name: str) -> bool:
-    return bool(re.search(r"\d|-|\(", name)) and not name.startswith(("D-", "L-", "(+)", "(-)"))
+    if name.startswith(("D-", "L-", "(+)", "(-)")):
+        return False
+    return bool(re.search(r"\d|-|\(", name)) or name.lower().endswith(_SYSTEMATIC_SUFFIX)
 
 
 def _level_ok(level: int, data: dict) -> bool:
@@ -39,6 +44,8 @@ def _level_ok(level: int, data: dict) -> bool:
         return heavy <= 8 and stereo == 0
     if level == 2:
         return 6 <= heavy <= 16 and stereo == 0
+    if level == 4:
+        return heavy <= 12
     return stereo >= 1 and heavy <= 20
 
 
@@ -50,7 +57,8 @@ def _answers_for(db: Session, smiles: str) -> list[str]:
 
 class Question(BaseModel):
     id: str  # inchikey
-    svg: str
+    svg: str = ""
+    name: str = ""  # level 4 (draw it): the name to draw instead of a picture
     formula: str
     level: int
     stereo_count: int
@@ -58,7 +66,7 @@ class Question(BaseModel):
 
 @router.get("/question", response_model=Question)
 def question(level: int = 1, exclude: str = "", db: Session = Depends(get_db)):
-    level = max(1, min(3, level))
+    level = max(1, min(4, level))
     skip = set(exclude.split(",")) if exclude else set()
     rows = db.scalars(select(MoleculeCache).where(MoleculeCache.inchikey != "")).all()
     random.shuffle(rows)
@@ -70,21 +78,22 @@ def question(level: int = 1, exclude: str = "", db: Session = Depends(get_db)):
             continue
         if not _level_ok(level, data):
             continue
-        if not _answers_for(db, row.smiles):
+        names = _answers_for(db, row.smiles)
+        if not names:
             continue
-        return Question(
-            id=row.inchikey,
-            svg=data["svg"],
-            formula=data["formula"],
-            level=level,
-            stereo_count=len(data["stereo"]["centers"]) + len(data["stereo"]["double_bonds"]),
-        )
+        stereo_count = len(data["stereo"]["centers"]) + len(data["stereo"]["double_bonds"])
+        if level == 4:
+            systematic = [n for n in names if _systematic(n)]
+            if not systematic:
+                continue
+            return Question(id=row.inchikey, name=systematic[0], formula=data["formula"], level=level, stereo_count=stereo_count)
+        return Question(id=row.inchikey, svg=data["svg"], formula=data["formula"], level=level, stereo_count=stereo_count)
     raise HTTPException(status.HTTP_404_NOT_FOUND, "No questions available at this level yet.")
 
 
 class AnswerIn(BaseModel):
     id: str = Field(min_length=10, max_length=40)
-    answer: str = Field(min_length=1, max_length=500)
+    answer: str = Field(min_length=1, max_length=200_000)  # a name, or a molfile for draw questions
     attempt: int = Field(default=1, ge=1, le=10)
     reveal: bool = False
 
@@ -126,7 +135,8 @@ def answer(body: AnswerIn, db: Session = Depends(get_db), user: User | None = De
         resolved = chem.resolve_full(body.answer)
         mol = chem.mol_from_smiles(resolved.smiles)
     except chem.ChemError as e:
-        return AnswerOut(correct=False, verdict="unparsed", message=f"That is not a readable name: {str(e).split('.')[0]}.")
+        what = "structure" if chem._is_molfile(body.answer) else "name"
+        return AnswerOut(correct=False, verdict="unparsed", message=f"That is not a readable {what}: {str(e).split('.')[0]}.")
 
     from rdkit import Chem
     from rdkit.Chem import rdMolDescriptors
@@ -150,8 +160,22 @@ def stats(user: User = Depends(current_user), db: Session = Depends(get_db)):
     total = db.scalar(select(func.count()).select_from(QuizAttempt).where(QuizAttempt.user_id == user.id)) or 0
     correct = db.scalar(select(func.count()).select_from(QuizAttempt).where(QuizAttempt.user_id == user.id, QuizAttempt.correct.is_(True))) or 0
     recent = db.scalars(select(QuizAttempt).where(QuizAttempt.user_id == user.id).order_by(QuizAttempt.created_at.desc()).limit(20)).all()
+    streak = 0
+    for r in recent:
+        if not r.correct:
+            break
+        streak += 1
+    names: dict[str, str] = {}
+    for r in recent:
+        if r.inchikey in names:
+            continue
+        row = db.scalar(select(MoleculeCache).where(MoleculeCache.inchikey == r.inchikey))
+        if row is not None:
+            ans = _answers_for(db, row.smiles)
+            names[r.inchikey] = ans[0] if ans else row.smiles
     return {
         "total": total,
         "correct": correct,
-        "recent": [{"inchikey": r.inchikey, "correct": r.correct, "attempts": r.attempts, "at": r.created_at} for r in recent],
+        "streak": streak,
+        "recent": [{"inchikey": r.inchikey, "name": names.get(r.inchikey, ""), "correct": r.correct, "attempts": r.attempts, "at": r.created_at} for r in recent],
     }

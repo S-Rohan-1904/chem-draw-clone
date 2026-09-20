@@ -1,0 +1,12 @@
+**/__pycache__/
+.DS_Store
+.claude/
+.pytest_cache/
+backend/*.db
+backend/.env
+backend/.venv/
+backend/__pycache__/
+backend/data.db
+backend/py2opsin_temp_input.txt
+frontend/dist/
+frontend/node_modules/

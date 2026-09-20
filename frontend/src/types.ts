@@ -12,7 +12,7 @@ export interface StereoBond {
 
 export interface Molecule {
   input_text: string
-  source: 'iupac' | 'smiles' | 'molfile'
+  source: 'iupac' | 'smiles' | 'molfile' | 'pubchem' | 'cactus'
   smiles: string
   svg: string
   molblock: string
@@ -74,6 +74,7 @@ export interface CheckResult {
   highlight?: [number, number] | null
   warnings?: string[]
   source?: 'iupac' | 'smiles'
+  lookup?: boolean
 }
 
 export interface BuildError {

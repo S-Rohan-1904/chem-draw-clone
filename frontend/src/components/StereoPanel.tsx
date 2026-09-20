@@ -1,5 +1,13 @@
 import type { Molecule, StereoExplanation } from '../types'
 
+const SOURCE_LABEL: Record<Molecule['source'], string> = {
+  iupac: 'IUPAC name',
+  smiles: 'SMILES',
+  molfile: 'Drawn structure',
+  pubchem: 'Common name (PubChem)',
+  cactus: 'Common name (NCI CACTUS)',
+}
+
 interface Props {
   mol: Molecule
   onHover: (atomIdx: number | null) => void
@@ -12,6 +20,7 @@ interface Props {
 export function StereoPanel({ mol, onHover, onSelect, selected, explanation, onVariant }: Props) {
   const { centers, double_bonds, unspecified } = mol.stereo
   const none = centers.length === 0 && double_bonds.length === 0
+  const looked_up = mol.source === 'pubchem' || mol.source === 'cactus'
   return (
     <section className="card">
       <header className="card-head">
@@ -24,7 +33,11 @@ export function StereoPanel({ mol, onHover, onSelect, selected, explanation, onV
       {unspecified && (
         <p className="warn">
           Unspecified stereocentres marked <b>?</b>.{' '}
-          {mol.source === 'molfile' ? 'Use a wedge or hash bond to set them.' : 'Add descriptors to the name, e.g. (2R) or (E).'}
+          {mol.source === 'molfile'
+            ? 'Use a wedge or hash bond to set them.'
+            : looked_up
+              ? 'The database record leaves them open; paste a SMILES with @ / @@ to set them.'
+              : 'Add descriptors to the name, e.g. (2R) or (E).'}
         </p>
       )}
       <div className="chips">
@@ -88,7 +101,7 @@ export function StereoPanel({ mol, onHover, onSelect, selected, explanation, onV
         </div>
       )}
       <dl className="props">
-        <dt>Source</dt><dd>{mol.source === 'iupac' ? 'IUPAC name' : mol.source === 'molfile' ? 'Drawn structure' : 'SMILES'}</dd>
+        <dt>Source</dt><dd>{SOURCE_LABEL[mol.source]}</dd>
         <dt>SMILES</dt><dd><code>{mol.smiles}</code></dd>
         <dt>InChIKey</dt><dd><code>{mol.inchikey}</code></dd>
       </dl>

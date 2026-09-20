@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from rdkit import Chem, RDLogger
 
 from . import groups as _groups
-from . import opsin
+from . import opsin, resolver
 from rdkit.Chem import AllChem, Descriptors, rdCIPLabeler, rdDepictor, rdMolDescriptors
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
@@ -50,7 +50,7 @@ class ChemError(ValueError):
 @dataclass
 class Resolved:
     smiles: str
-    source: str  # "iupac" | "smiles" | "molfile"
+    source: str  # "iupac" | "smiles" | "molfile" | "pubchem" | "cactus"
     warnings: list[str] = field(default_factory=list)
     normalised: str = ""
 
@@ -84,7 +84,7 @@ class StereoReport:
 @dataclass
 class MoleculeResult:
     input_text: str
-    source: str  # "iupac" | "smiles"
+    source: str  # "iupac" | "smiles" | "molfile" | "pubchem" | "cactus"
     smiles: str
     svg: str
     molblock: str
@@ -129,9 +129,10 @@ def resolve_molfile(text: str) -> Resolved:
     return Resolved(Chem.MolToSmiles(mol, isomericSmiles=True), "molfile", [], "")
 
 
-def resolve_full(text: str) -> Resolved:
+def resolve_full(text: str, lookup: bool = True) -> Resolved:
     """Name, SMILES or molfile -> Resolved. OPSIN strict first, then OPSIN
-    ignoring bad stereo (with a warning), then SMILES."""
+    ignoring bad stereo (with a warning), then SMILES, then (if ``lookup``)
+    PubChem / NCI CACTUS for trivial names OPSIN has no dictionary for."""
     if _is_molfile(text):
         return resolve_molfile(text)
     raw = text.strip()
@@ -151,8 +152,17 @@ def resolve_full(text: str) -> Resolved:
     if _looks_like_smiles(text):
         return Resolved(text, "smiles", [], text)
 
+    not_found = ""
+    if lookup:
+        hit = resolver.lookup(text)
+        if hit:
+            smiles, source, note = hit
+            return Resolved(smiles, source, [note], text)
+        if resolver.enabled():
+            not_found = " Not found in PubChem or NCI CACTUS either."
+
     raise ChemError(
-        f"Could not interpret '{text}' as an IUPAC name or SMILES. {opsin_error}".strip(),
+        f"Could not interpret '{text}' as an IUPAC name or SMILES.{not_found} {opsin_error}".strip(),
         opsin_error,
     )
 

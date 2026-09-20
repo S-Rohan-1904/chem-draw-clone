@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import cache, chem, ratelimit, stereo_explain, suggest
+from .. import cache, chem, ratelimit, resolver, stereo_explain, suggest
 from ..db import NameCache, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -38,16 +38,19 @@ class PngIn(BaseModel):
 
 
 def _known_from_cache(db: Session) -> list[str]:
-    rows = db.scalars(select(NameCache.normalised).where(NameCache.source == "iupac")).all()
+    rows = db.scalars(select(NameCache.normalised).where(NameCache.source.in_(("iupac", "pubchem", "cactus")))).all()
     return [r for r in rows if r]
 
 
 def _error_response(text: str, err: chem.ChemError, db: Session) -> JSONResponse:
     diag = suggest.diagnose(chem.normalise_name(text), err.opsin_error, _known_from_cache(db))
+    detail = diag.reason if err.opsin_error else str(err)
+    if err.opsin_error and resolver.enabled():
+        detail += " It is not in PubChem or NCI CACTUS either; paste a SMILES or draw it."
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
-            "detail": diag.reason if err.opsin_error else str(err),
+            "detail": detail,
             "input": chem.normalise_name(text),
             "highlight": list(diag.highlight) if diag.highlight else None,
             "suggestions": diag.suggestions,
@@ -75,16 +78,17 @@ def molecule_by_key(inchikey: str, db: Session = Depends(get_db)):
 
 @router.post("/check")
 def check(body: MoleculeIn, db: Session = Depends(get_db)):
-    """Parse-only validity check for live feedback while typing."""
+    """Parse-only validity check for live feedback while typing. No database
+    lookup here: that only runs on build, so typing never hits the network."""
     key = cache.normalise(body.input)
     row = db.get(NameCache, key)
     if row is not None:
         return {"ok": True, "warnings": [row.warning] if row.warning else [], "source": row.source}
     try:
-        r = chem.resolve_full(body.input)
+        r = chem.resolve_full(body.input, lookup=False)
     except chem.ChemError as e:
         diag = suggest.diagnose(chem.normalise_name(body.input), e.opsin_error, [])
-        return {"ok": False, "reason": diag.reason, "highlight": list(diag.highlight) if diag.highlight else None}
+        return {"ok": False, "reason": diag.reason, "highlight": list(diag.highlight) if diag.highlight else None, "lookup": resolver.enabled()}
     return {"ok": True, "warnings": r.warnings, "source": r.source}
 
 

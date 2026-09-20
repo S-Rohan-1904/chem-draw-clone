@@ -17,6 +17,30 @@ interface Props {
   compact?: boolean
 }
 
+type Vec = { x: number; y: number; z: number }
+const sub = (a: Vec, b: Vec): Vec => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z })
+const dot = (a: Vec, b: Vec) => a.x * b.x + a.y * b.y + a.z * b.z
+const cross = (a: Vec, b: Vec): Vec => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x })
+const norm = (a: Vec) => Math.sqrt(dot(a, a))
+const mid = (ps: Vec[]): Vec => ({ x: ps.reduce((s, p) => s + p.x, 0) / ps.length, y: ps.reduce((s, p) => s + p.y, 0) / ps.length, z: ps.reduce((s, p) => s + p.z, 0) / ps.length })
+
+/** Distance (2 points), angle (3) or dihedral (4). */
+function measure(ps: Vec[]): string {
+  if (ps.length === 2) return `${norm(sub(ps[0], ps[1])).toFixed(2)} \u00c5`
+  if (ps.length === 3) {
+    const a = sub(ps[0], ps[1]), b = sub(ps[2], ps[1])
+    return `${((Math.acos(dot(a, b) / (norm(a) * norm(b))) * 180) / Math.PI).toFixed(1)}\u00b0`
+  }
+  if (ps.length === 4) {
+    const b1 = sub(ps[1], ps[0]), b2 = sub(ps[2], ps[1]), b3 = sub(ps[3], ps[2])
+    const n1 = cross(b1, b2), n2 = cross(b2, b3)
+    const m1 = cross(n1, { x: b2.x / norm(b2), y: b2.y / norm(b2), z: b2.z / norm(b2) })
+    const x = dot(n1, n2), y = dot(m1, n2)
+    return `${((Math.atan2(y, x) * 180) / Math.PI).toFixed(1)}\u00b0`
+  }
+  return ''
+}
+
 /** 3D position of the atom with a given (RDKit) index, if loaded. */
 function pos(v: $3Dmol.GLViewer, index: number): { x: number; y: number; z: number } | null {
   const a = v.selectedAtoms({ index })[0]
@@ -29,17 +53,25 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
   const [style, setStyle] = useState<Style>('ballstick')
   const [spin, setSpin] = useState(false)
   const [showLabels, setShowLabels] = useState(true)
+  const [measuring, setMeasuring] = useState(false)
+  const [picked, setPicked] = useState<number[]>([])
+  const [reading, setReading] = useState<string | null>(null)
+  const pickedRef = useRef<number[]>([])
+  const measureLabel = useRef<unknown>(null)
 
   useEffect(() => {
     if (!box.current) return
     const v = $3Dmol.createViewer(box.current, { backgroundColor: 'white' })
     viewer.current = v
+    if (!compact) (window as unknown as { viewer3d?: $3Dmol.GLViewer }).viewer3d = v
     const onResize = () => v.resize()
     window.addEventListener('resize', onResize)
+    const el = box.current
     return () => {
       window.removeEventListener('resize', onResize)
       v.clear()
       viewer.current = null
+      el.replaceChildren() // drop the canvases so a remount does not stack a stale one underneath
     }
   }, [])
 
@@ -70,6 +102,8 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
     const v = viewer.current
     if (!v) return
     v.removeAllLabels()
+    measureLabel.current = null
+    if (pickedRef.current.length >= 2) drawMeasure(v, pickedRef.current)
     if (showLabels) {
       for (const c of mol.stereo.centers) {
         const p = pos(v, c.atom_idx)
@@ -102,6 +136,64 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
     v.render()
   }, [showLabels, mol])
 
+  // Draw the current measurement: picked atoms, connecting lines, value label.
+  const drawMeasure = (v: $3Dmol.GLViewer, atoms: number[]) => {
+    v.removeAllShapes()
+    if (measureLabel.current) {
+      v.removeLabel(measureLabel.current as Parameters<$3Dmol.GLViewer['removeLabel']>[0])
+      measureLabel.current = null
+    }
+    const ps = atoms.map((i) => pos(v, i)).filter((p): p is Vec => p !== null)
+    for (let i = 0; i + 1 < ps.length; i++) {
+      v.addCylinder({ start: ps[i], end: ps[i + 1], radius: 0.06, color: '#f59e0b', dashed: true })
+    }
+    ps.forEach((p) => v.addSphere({ center: p, radius: 0.32, color: '#f59e0b', alpha: 0.6 }))
+    const value = measure(ps)
+    if (value) {
+      measureLabel.current = v.addLabel(value, { position: mid(ps), fontSize: 15, fontColor: 'black', backgroundColor: '#fde68a', backgroundOpacity: 0.95, borderThickness: 0, inFront: true })
+    }
+    setReading(value || null)
+  }
+
+  useEffect(() => {
+    const v = viewer.current
+    if (!v) return
+    v.setClickable({}, measuring, (atom: { index?: number }) => {
+      if (atom.index === undefined) return
+      let next = [...pickedRef.current]
+      if (next.length >= 4 || next[next.length - 1] === atom.index) next = []
+      next.push(atom.index)
+      pickedRef.current = next
+      setPicked(next)
+      drawMeasure(v, next)
+      v.render()
+    })
+    v.render() // clickables are only rebuilt on render
+    if (!measuring) {
+      pickedRef.current = []
+      setPicked([])
+      setReading(null)
+      v.removeAllShapes()
+      v.render()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measuring, mol])
+
+  const clearMeasure = () => {
+    const v = viewer.current
+    pickedRef.current = []
+    setPicked([])
+    setReading(null)
+    if (v) {
+      v.removeAllShapes()
+      if (measureLabel.current) {
+        v.removeLabel(measureLabel.current as Parameters<$3Dmol.GLViewer['removeLabel']>[0])
+        measureLabel.current = null
+      }
+      v.render()
+    }
+  }
+
   useEffect(() => {
     viewer.current?.spin(spin ? 'y' : false)
   }, [spin])
@@ -130,9 +222,20 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
           <button type="button" onClick={() => { viewer.current?.zoomTo(); viewer.current?.render() }}>
             Reset
           </button>
+          <button type="button" className={measuring ? 'active' : ''} onClick={() => setMeasuring((m) => !m)} title="Click 2 atoms for a distance, 3 for an angle, 4 for a dihedral">
+            Measure
+          </button>
         </div>
       </header>
-      <div className="viewer3d" ref={box} />
+      <div className={`viewer3d ${measuring ? 'measuring' : ''}`} ref={box} />
+      {measuring && (
+        <p className="measure-bar">
+          {picked.length === 0 && 'Click atoms: 2 for distance, 3 for angle, 4 for dihedral.'}
+          {picked.length === 1 && 'Pick another atom.'}
+          {reading && <b>{picked.length === 2 ? 'Distance' : picked.length === 3 ? 'Angle' : 'Dihedral'}: {reading}</b>}
+          {picked.length > 0 && <button type="button" className="link" onClick={clearMeasure}>Clear</button>}
+        </p>
+      )}
     </section>
   )
 }

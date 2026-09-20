@@ -275,6 +275,7 @@ export default function App() {
                 <div>
                   <b>{mol.source === 'molfile' ? mol.smiles : mol.input_text}</b>
                   {mol.source === 'molfile' && <span className="tag">drawn</span>}
+                  {(mol.source === 'pubchem' || mol.source === 'cactus') && <span className="tag">looked up</span>}
                   {mol.cached && <span className="tag">cached</span>}
                 </div>
                 <div className="result-actions">

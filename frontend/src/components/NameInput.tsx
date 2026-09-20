@@ -70,7 +70,10 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
     }
   }
 
-  const status = value.trim() && check ? (check.ok ? (check.warnings && check.warnings.length ? 'warn' : 'ok') : 'bad') : null
+  const status = value.trim() && check
+    ? check.ok ? (check.warnings && check.warnings.length ? 'warn' : 'ok') : check.lookup ? 'lookup' : 'bad'
+    : null
+  const LOOKUP_HINT = 'Not a systematic IUPAC name. Build will look it up in PubChem.'
 
   return (
     <form className="name-input" onSubmit={submit} autoComplete="off">
@@ -94,8 +97,8 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
           className={status ? `status-${status}` : ''}
         />
         {status && (
-          <span className={`status-icon status-${status}`} title={check?.reason ?? check?.warnings?.[0] ?? 'Looks good'}>
-            {status === 'ok' ? '\u2713' : status === 'warn' ? '!' : '\u2717'}
+          <span className={`status-icon status-${status}`} title={status === 'lookup' ? LOOKUP_HINT : check?.reason ?? check?.warnings?.[0] ?? 'Looks good'}>
+            {status === 'ok' ? '\u2713' : status === 'warn' ? '!' : status === 'lookup' ? '?' : '\u2717'}
           </span>
         )}
         {open && names.length > 0 && (
@@ -122,6 +125,7 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
       </button>
       {showHint && status === 'bad' && check?.reason && <p className="hint hint-bad">{check.reason}</p>}
       {showHint && status === 'warn' && check?.warnings?.[0] && <p className="hint hint-warn">{check.warnings[0]}</p>}
+      {showHint && status === 'lookup' && <p className="hint hint-lookup">{LOOKUP_HINT}</p>}
     </form>
   )
 }

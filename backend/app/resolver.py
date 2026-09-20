@@ -56,6 +56,7 @@ def _cactus(client: httpx.Client, name: str) -> tuple[str, str] | None:
 
 
 _SOURCES = (("pubchem", _pubchem), ("cactus", _cactus))
+SOURCES = tuple(name for name, _ in _SOURCES)
 
 
 def lookup(name: str) -> tuple[str, str, str] | None:

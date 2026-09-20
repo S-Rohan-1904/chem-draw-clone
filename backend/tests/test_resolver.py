@@ -85,3 +85,17 @@ def test_error_mentions_lookup(monkeypatch):
     with pytest.raises(chem.ChemError) as e:
         chem.resolve_full("Turcasarin")
     assert "PubChem" not in str(e.value)
+
+
+def test_check_endpoint_marks_lookup_names_neutral(monkeypatch):
+    from tests.test_api import client
+
+    _mock(monkeypatch, _pubchem_ok)
+    with client:
+        # Unknown to OPSIN, not built yet: not an error, Build will look it up.
+        r = client.post("/api/molecule/check", json={"input": "Protoporphyrin IX"}).json()
+        assert r["ok"] is False and r["lookup"] is True
+        assert client.post("/api/molecule", json={"input": "Protoporphyrin IX"}).json()["source"] == "pubchem"
+        # Built once: cached, valid, and the PubChem note is not a typing warning.
+        r = client.post("/api/molecule/check", json={"input": "Protoporphyrin IX"}).json()
+        assert r == {"ok": True, "warnings": [], "source": "pubchem"}

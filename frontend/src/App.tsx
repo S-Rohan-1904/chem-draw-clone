@@ -331,9 +331,25 @@ export default function App() {
 
         <main className="main">
           {rxn && !loading && <Reaction text={rxn.text} rxn={rxn.result} onOpen={openInPlace} />}
-          {!mol && !rxn && !loading && (
+          {!mol && !rxn && !loading && mode === 'name' && (
+            <section className="card welcome">
+              <h2>Type a name, see the molecule</h2>
+              <p>Enter an IUPAC name such as <code>(2R)-butan-2-ol</code> and the app draws it, builds a 3D model that follows the stereochemistry in the name, and explains every R, S, E and Z label.</p>
+              <div className="welcome-actions">
+                <button type="button" className="primary" onClick={() => pick('(2R)-butan-2-ol')}>Try (2R)-butan-2-ol</button>
+                <button type="button" onClick={() => pick('(2E,4Z)-hexa-2,4-dienoic acid')}>Try an E/Z diene</button>
+                <button type="button" onClick={() => pick('(1R,4R)-1,7,7-trimethylbicyclo[2.2.1]heptan-2-one')}>Try camphor</button>
+              </div>
+              <ul className="welcome-list">
+                <li>Draw a structure instead on the <button type="button" className="link" onClick={openDraw}>Draw</button> tab.</li>
+                <li>Practise naming on the <button type="button" className="link" onClick={() => setMode('quiz')}>Quiz</button> tab.</li>
+                <li>Everything is explained in the <button type="button" className="link" onClick={() => setMode('guide')}>Guide</button>.</li>
+              </ul>
+            </section>
+          )}
+          {!mol && !rxn && !loading && mode !== 'name' && (
             <section className="card empty">
-              <p>Enter a name or pick an example.</p>
+              <p>Results appear here.</p>
             </section>
           )}
           {loading && <ResultSkeleton />}

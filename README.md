@@ -60,6 +60,36 @@ The editor bundle is loaded only when the tab is first opened.
 - The input box checks validity while typing and offers autocomplete from the example list, names built before, and `backend/app/data/common_names.txt`.
 - OPSIN runs as one long-lived process per mode (strict, ignore-bad-stereo) instead of one JVM per request.
 
+## Deploy (free): Hugging Face Spaces
+
+The repo ships a `Dockerfile` that serves the whole app on port 7860.
+
+1. Create a Space at https://huggingface.co/new-space, SDK **Docker**, hardware **CPU basic** (free).
+2. Push this repo to the Space:
+   ```bash
+   git remote add hf https://huggingface.co/spaces/<user>/<space>
+   git push hf main
+   ```
+3. In the Space settings, add secrets:
+   - `SECRET_KEY`: output of `openssl rand -base64 48`
+   - `HF_TOKEN`: a Hugging Face token with write access (Settings, Access Tokens)
+   - `HF_DATASET_REPO`: `<user>/chem-draw-data` (created automatically, private)
+
+Free Spaces have no persistent disk, so accounts and saved molecules would vanish on
+restart. With `HF_TOKEN` and `HF_DATASET_REPO` set, the app restores `data.db` from that
+dataset at startup and uploads a snapshot whenever it changed (every `HF_SYNC_SECONDS`,
+default 120) and on shutdown. Without those two variables the app runs normally with a
+throwaway database.
+
+The Space sleeps after 48 h without visitors; the first visit afterwards takes about a
+minute to wake.
+
+Local container run:
+
+```bash
+SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
+```
+
 ## API
 
 | Method | Path | Body | Notes |

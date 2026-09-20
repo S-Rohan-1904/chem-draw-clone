@@ -84,3 +84,21 @@ def test_molfile_input_via_api():
         assert first["input_text"] == first["smiles"]
         second = client.post("/api/molecule", json={"input": _butanol_molfile(1)}).json()
         assert second["cached"] is True
+
+
+def test_dbsync_snapshot_is_consistent_copy(tmp_path):
+    import sqlite3
+
+    from app import dbsync
+
+    db = tmp_path / "x.db"
+    con = sqlite3.connect(db)
+    con.execute("create table t(a)")
+    con.execute("insert into t values (1)")
+    con.commit()
+    snap = dbsync._snapshot(str(db))
+    try:
+        assert sqlite3.connect(snap).execute("select a from t").fetchall() == [(1,)]
+    finally:
+        os.unlink(snap)
+    assert not dbsync.enabled()  # no HF env in tests

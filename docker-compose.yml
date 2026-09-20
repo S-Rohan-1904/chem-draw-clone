@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY}
+      HF_DATASET_REPO: ${HF_DATASET_REPO:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - data:/data
+volumes:
+  data:

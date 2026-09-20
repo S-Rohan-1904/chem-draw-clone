@@ -9,6 +9,7 @@ import { ErrorPanel } from './components/ErrorPanel'
 import { Gallery } from './components/Gallery'
 import { Groups } from './components/Groups'
 import { GuidePanel } from './components/GuidePanel'
+import { Isomers } from './components/Isomers'
 import { NameInput } from './components/NameInput'
 import { NameLookup } from './components/NameLookup'
 import { Projections } from './components/Projections'
@@ -27,7 +28,7 @@ import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, Saved
 export default function App() {
   const [theme, toggleTheme] = useTheme()
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'guide'>('name')
+  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz' | 'isomers' | 'guide'>('name')
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [recent, setRecent] = useState<RecentItem[]>(() => loadRecent())
@@ -280,6 +281,7 @@ export default function App() {
         <button type="button" role="tab" aria-selected={mode === 'draw'} className={mode === 'draw' ? 'active' : ''} onClick={openDraw}>Draw</button>
         <button type="button" role="tab" aria-selected={mode === 'batch'} className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Batch</button>
         <button type="button" role="tab" aria-selected={mode === 'quiz'} className={mode === 'quiz' ? 'active' : ''} onClick={() => setMode('quiz')}>Quiz</button>
+        <button type="button" role="tab" aria-selected={mode === 'isomers'} className={mode === 'isomers' ? 'active' : ''} onClick={() => setMode('isomers')}>Isomers</button>
         <button type="button" role="tab" aria-selected={mode === 'guide'} className={mode === 'guide' ? 'active' : ''} onClick={() => setMode('guide')}>Guide</button>
       </div>
       <div hidden={mode !== 'name'}>
@@ -295,6 +297,7 @@ export default function App() {
       </div>
       {mode === 'quiz' && <QuizPanel auth={auth} onOpen={pick} />}
       {mode === 'guide' && <GuidePanel />}
+      {mode === 'isomers' && <Isomers onOpen={openInPlace} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
       <div className="layout" hidden={mode === 'quiz' || mode === 'guide'}>

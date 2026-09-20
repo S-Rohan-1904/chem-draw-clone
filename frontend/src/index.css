@@ -274,3 +274,10 @@ button.chip { font: inherit; cursor: pointer; }
 .resonance-thumb.active { border-color: var(--accent); background: var(--paper); }
 .resonance-thumb svg { width: 220px; height: auto; display: block; }
 .legend-bar { display: inline-block; width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, #d62728, #ffffff, #1f77b4); border: 1px solid var(--border); }
+
+.isomers { display: flex; flex-direction: column; gap: 0.7rem; }
+.isomer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.6rem; }
+.isomer-tile { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; padding: 0.4rem; background: var(--paper); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.isomer-tile:hover { border-color: var(--accent); }
+.isomer-tile svg { width: 100%; height: auto; }
+.isomer-tile code { color: #1a1d29; font-size: 0.75rem; }

@@ -173,3 +173,12 @@ export interface NameLookup {
   cid?: number | null
   source?: string
 }
+
+export interface IsomerResult {
+  formula: string
+  count: number
+  unsaturation: number
+  isomers: { smiles: string; svg: string }[]
+  skipped_unstable: number
+  note: string
+}

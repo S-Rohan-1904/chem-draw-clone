@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+import { EditorBoundary } from './EditorBoundary'
 import type { EditorHandle } from './KetcherEditor'
 
 const KetcherEditor = lazy(() => import('./KetcherEditor'))
@@ -52,9 +53,11 @@ export function DrawPanel({ onBuild, loading, loadStruct }: Props) {
   return (
     <div className="draw-panel">
       <div className="editor-wrap">
+        <EditorBoundary>
         <Suspense fallback={<div className="editor-loading">Loading editor...</div>}>
           <KetcherEditor onReady={onReady} onError={(m) => setMsg(m)} />
         </Suspense>
+        </EditorBoundary>
       </div>
       <div className="draw-actions">
         <button type="button" className="primary" onClick={() => void build()} disabled={!ready || loading}>

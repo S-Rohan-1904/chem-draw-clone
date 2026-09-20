@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState, type FormEven
 import type { EditorHandle } from './KetcherEditor'
 import { api, describeFailure } from '../api'
 import type { AuthState, QuizAnswer, QuizQuestion, QuizStats } from '../types'
+import { EditorBoundary } from './EditorBoundary'
 
 const KetcherEditor = lazy(() => import('./KetcherEditor'))
 const TIME_LIMIT = 60
@@ -174,9 +175,11 @@ export function QuizPanel({ auth, onOpen }: Props) {
             <form className="quiz-form" onSubmit={submit}>
               {level === 4 ? (
                 <div className="editor-wrap quiz-editor">
+                  <EditorBoundary>
                   <Suspense fallback={<div className="editor-loading">Loading editor...</div>}>
                     <KetcherEditor onReady={(h) => { editor.current = h; setEditorReady(true) }} onError={() => undefined} />
                   </Suspense>
+                  </EditorBoundary>
                 </div>
               ) : (
               <input

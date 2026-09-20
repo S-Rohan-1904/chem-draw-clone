@@ -192,3 +192,24 @@ def test_missing_column_migration(tmp_path):
         assert "inchikey" in cols
     finally:
         dbmod.engine = old_engine
+
+
+def test_prewarm_import(tmp_path):
+    import json
+    import sqlite3
+
+    from app import db as dbmod
+
+    pre = tmp_path / "pre.db"
+    con = sqlite3.connect(pre)
+    con.execute("create table name_cache(key varchar primary key, smiles text, source varchar, warning text, normalised text, created_at datetime)")
+    con.execute("create table molecule_cache(smiles varchar primary key, result_json text, inchikey varchar, hits integer, created_at datetime, last_used_at datetime)")
+    con.execute("insert into name_cache values ('prewarmed-name', 'CCO', 'iupac', '', 'prewarmed-name', '2026-01-01')")
+    con.execute("insert into molecule_cache values ('CCO', ?, 'LFQSCWFLJHTTHZ-UHFFFAOYSA-N', 0, '2026-01-01', '2026-01-01')", (json.dumps({"inchikey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N", "smiles": "CCO"}),))
+    con.commit(); con.close()
+    with client:
+        added = dbmod.import_prewarm(str(pre))
+        assert added >= 1
+        assert dbmod.import_prewarm(str(pre)) == 0  # idempotent
+        with dbmod.SessionLocal() as s:
+            assert s.get(dbmod.NameCache, "prewarmed-name") is not None

@@ -83,6 +83,12 @@ Setup:
    `<hf-user>/chem-draw-data`. `SECRET_KEY` is generated.
 5. Deploy. First build takes about 10 minutes.
 
+Cold starts: the image build runs `backend/scripts/prewarm.py`, which caches every name
+in `common_names.txt` into `backend/prewarm.db`; at startup rows missing from the live
+database are imported, so common molecules are instant even on the small CPU. To keep
+the free instance from sleeping during class hours, point a free external ping (for
+example cron-job.org) at `https://<your-app>.onrender.com/api/health` every 10 minutes.
+
 Local container run:
 
 ```bash

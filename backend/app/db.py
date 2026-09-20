@@ -74,10 +74,38 @@ class MoleculeCache(Base):
     last_used_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+PREWARM_PATH = os.environ.get("CHEM_PREWARM_PATH", str(Path(__file__).resolve().parent.parent / "prewarm.db"))
+
+
 def init_db() -> None:
     Base.metadata.create_all(engine)
     _add_missing_columns()
     _backfill_inchikeys()
+    import_prewarm()
+
+
+def import_prewarm(path: str | None = None) -> int:
+    """Copy cache rows from a prebuilt database (see scripts/prewarm.py) that
+    the live database does not have yet. Returns rows added."""
+    import sqlite3
+
+    path = path or PREWARM_PATH
+    if not os.path.exists(path) or os.path.abspath(path) == os.path.abspath(DB_PATH):
+        return 0
+    added = 0
+    con = sqlite3.connect(DB_PATH)
+    try:
+        con.execute("ATTACH DATABASE ? AS pre", (path,))
+        for table in ("name_cache", "molecule_cache"):
+            cols = [r[1] for r in con.execute(f"PRAGMA pre.table_info({table})").fetchall()]
+            collist = ", ".join(cols)
+            cur = con.execute(f"INSERT OR IGNORE INTO {table} ({collist}) SELECT {collist} FROM pre.{table}")
+            added += max(cur.rowcount, 0)
+        con.commit()
+        con.execute("DETACH DATABASE pre")
+    finally:
+        con.close()
+    return added
 
 
 def _backfill_inchikeys() -> None:

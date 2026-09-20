@@ -32,8 +32,9 @@ RUN cd backend && uv sync --frozen --no-dev
 COPY --chown=app:app backend/ backend/
 COPY --chown=app:app --from=web /web/dist frontend/dist
 
-# Sanity check: RDKit drawing and OPSIN must both work inside the image.
-RUN cd backend && uv run --no-sync python -c "from app.chem import build; assert build('ethanol').svg"
+# Build the common-names cache into the image (also proves RDKit and OPSIN work here).
+ARG PREWARM_LIMIT=0
+RUN cd backend && uv run --no-sync python scripts/prewarm.py -j 4 --limit ${PREWARM_LIMIT}
 
 EXPOSE 7860
 WORKDIR /app/backend

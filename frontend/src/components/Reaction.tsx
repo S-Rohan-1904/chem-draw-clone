@@ -1,3 +1,4 @@
+import { ReactionClass } from '../analysis/ReactionClass'
 import type { ReactionResult } from '../types'
 
 interface Props {
@@ -39,6 +40,7 @@ export function Reaction({ text, rxn, onOpen }: Props) {
         <Side title="Agents" items={rxn.agents} onOpen={onOpen} />
         <Side title="Products" items={rxn.products} onOpen={onOpen} />
       </div>
+      <ReactionClass rxn={rxn} />
       {rxn.mapped && <p className="muted small">Atom map numbers in the input colour matching atoms on both sides.</p>}
     </section>
   )

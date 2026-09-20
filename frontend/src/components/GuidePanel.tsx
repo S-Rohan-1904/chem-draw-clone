@@ -106,6 +106,8 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     title: 'Reactions',
     body: [
       'A reaction SMILES such as CC(=O)O.CCO>>CC(=O)OCC.O, entered in the Name tab, draws the reaction with reactants, agents and products, lists each component with its formula, and reports whether the atoms balance. Components open in the viewer.',
+      'Under every molecule, the Reactions panel lists the textbook reactions it can undergo (What can it make) with the reagents, the product and the rule that decides the regiochemistry: Markovnikov or anti-Markovnikov additions, Zaitsev or Hofmann eliminations, ortho, para or meta substitution on an aromatic ring. Where can it come from lists one step disconnections: the precursors and the reaction that would make the molecule. Select any product or precursor to load it and continue forwards or backwards.',
+      'When you enter a reaction (reactants>>products) the Reaction panel names the reaction when it matches one of the templates, states the reaction type, and for substitutions and eliminations says whether SN1, SN2, E1 or E2 is expected from the substitution pattern of the reacting carbon.',
     ],
   },
   {

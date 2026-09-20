@@ -107,3 +107,38 @@ def chair_energy(body: ChairEnergyIn, db: Session = Depends(get_db)):
         return conformers.chair_energies(_molblock(db, body.smiles), body.ring)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@router.post("/products", dependencies=[Depends(ratelimit.check)])
+def predict_products(body: SmilesIn):
+    from .. import transforms
+
+    try:
+        return transforms.predict_products(body.smiles)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+@router.post("/retro", dependencies=[Depends(ratelimit.check)])
+def retrosynthesis(body: SmilesIn):
+    from .. import transforms
+
+    try:
+        return transforms.retrosynthesis(body.smiles)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class ClassifyIn(BaseModel):
+    reactants: list[str] = Field(min_length=1, max_length=10)
+    products: list[str] = Field(min_length=1, max_length=10)
+
+
+@router.post("/classify")
+def classify_reaction(body: ClassifyIn):
+    from .. import transforms
+
+    try:
+        return transforms.classify(body.reactants, body.products)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))

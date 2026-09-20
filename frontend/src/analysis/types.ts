@@ -188,3 +188,26 @@ export interface ChairEnergy {
   unit: string
   note: string
 }
+
+export interface PredictedReaction {
+  name: string
+  reagents: string
+  category: string
+  note: string
+  products: { smiles: string[]; svgs: string[]; atoms: number[]; why: string }[]
+}
+
+export interface RetroRoute {
+  name: string
+  reagents: string
+  target_group: string
+  note: string
+  precursors: { smiles: string[]; svgs: string[]; atoms: number[] }[]
+}
+
+export interface ReactionClass {
+  matches: { name: string; reagents: string; category: string; explanation: string; note: string; mechanism_note: string; reactant: string; atoms: number[] }[]
+  groups_lost: string[]
+  groups_gained: string[]
+  guess: string
+}

@@ -433,7 +433,7 @@ export default function App() {
               {compare && <Compare base={mol} other={compare.other} title={compare.title} onClose={() => setCompare(null)} onUse={useMolecule} />}
               <NameBreakdown mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Resonance mol={mol} />
-              <ResultExtras mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
+              <ResultExtras mol={mol} onOpen={openInPlace} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <Spectra mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">

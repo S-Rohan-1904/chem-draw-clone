@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import chem
-from .db import MoleculeCache, NameCache
+from .db import MoleculeCache, NameCache, SpectraCache
 
 
 def normalise(text: str) -> str:
@@ -119,4 +119,21 @@ def get_by_inchikey(db: Session, inchikey: str) -> dict | None:
     data["warnings"] = []
     data["normalised_input"] = ""
     data["cached"] = True
+    return data
+
+
+def get_spectra(db: Session, smiles: str, kind: str, builder) -> dict:
+    """Spectra payload for (canonical smiles, kind). `builder(smiles, kind)`
+    returns (payload, complete); incomplete results (network trouble) are
+    returned but not stored."""
+    row = db.get(SpectraCache, (smiles, kind))
+    if row is not None:
+        data = json.loads(row.result_json)
+        data["cached"] = True
+        return data
+    data, complete = builder(smiles, kind)
+    if complete:
+        db.merge(SpectraCache(smiles=smiles, kind=kind, result_json=json.dumps(data)))
+        db.commit()
+    data["cached"] = False
     return data

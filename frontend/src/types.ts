@@ -269,3 +269,48 @@ export interface AdminStats {
   top_molecules: { smiles: string; hits: number; name: string }[]
   top_failures: { text: string; count: number; reason: string; last_at: string }[]
 }
+
+export interface NmrPeak {
+  shift: number
+  atoms: number[]
+  integration: number
+  multiplicity?: string
+  label: string
+  exchangeable?: boolean
+}
+
+export interface NmrSpectrum {
+  h: { peaks: NmrPeak[] }
+  c: { peaks: NmrPeak[] }
+  source: 'rules' | 'nmrshiftdb2'
+  note: string
+  cached: boolean
+}
+
+export interface IrBand {
+  name: string
+  low: number
+  high: number
+  centre: number
+  intensity: 'strong' | 'medium' | 'weak'
+  shape: 'sharp' | 'broad' | 'very broad'
+  atoms: number[]
+}
+
+export interface IrSpectrum {
+  predicted: IrBand[]
+  experimental: { x: number[]; y: number[]; state: string | null; title: string; url: string } | null
+  note: string
+  cached: boolean
+}
+
+export interface MsSpectrum {
+  formula: string
+  exact_mass: number
+  nominal_mass: number
+  isotopes: { mz: number; nominal: number; rel: number }[]
+  fragments: { mz: number; nominal: number; formula: string; loss: string; atoms: number[]; score: number; why: string }[]
+  experimental: { peaks: { mz: number; rel: number }[]; url: string } | null
+  note: string
+  cached: boolean
+}

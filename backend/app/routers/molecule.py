@@ -1,10 +1,12 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import align as _align, cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, stereo_explain, suggest
+from .. import align as _align, cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, spectra, stereo_explain, suggest
 from ..db import FailedInput, NameCache, NameLookup, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
@@ -43,6 +45,11 @@ class ProjectionIn(BaseModel):
     rotate: float = 0.0
     ring: list[int] | None = None
     flipped: bool = False
+
+
+class SpectraIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    kind: Literal["nmr", "ir", "ms"]
 
 
 class PngIn(BaseModel):
@@ -329,6 +336,16 @@ def chair(body: ProjectionIn, db: Session = Depends(get_db)):
     out["svg"] = projections.chair_svg(analysis, flipped=False)
     out["svg_flipped"] = projections.chair_svg(analysis, flipped=True)
     return out
+
+
+@router.post("/spectra", dependencies=[Depends(ratelimit.check)])
+def molecule_spectra(body: SpectraIn, db: Session = Depends(get_db)):
+    """Predicted (and, when NIST has one, experimental) NMR / IR / MS."""
+    try:
+        smiles = chem.canonical_smiles(body.smiles)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    return cache.get_spectra(db, smiles, body.kind, spectra.build)
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

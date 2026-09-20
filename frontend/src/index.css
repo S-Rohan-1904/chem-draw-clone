@@ -368,3 +368,24 @@ button.chip { font: inherit; cursor: pointer; }
 .bar-fill { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; }
 .bar-label { font-size: 0.6rem; color: var(--muted); margin-top: 2px; white-space: nowrap; }
 .fail-row { display: flex; flex-direction: column; padding: 0.3rem 0.6rem; }
+
+/* Spectra */
+.spectrum svg { width: 100%; height: auto; background: var(--paper); border-radius: 8px; color: #1a1d29; }
+.spectrum .axis line { stroke: #6b7280; stroke-width: 1; }
+.spectrum .axis text { font-size: 10px; fill: #6b7280; }
+.spectrum .axis .unit, .spectrum .unit { font-size: 10px; fill: #6b7280; }
+.spectrum .stick line, .spectrum line.stick { stroke: #1d4ed8; stroke-width: 1.5; }
+.spectrum line.stick.exp { stroke: #9ca3af; stroke-width: 1.2; }
+.spectrum line.stick.frag { stroke: #b45309; stroke-width: 1.5; }
+.spectrum .peak .hit { fill: transparent; cursor: pointer; }
+.spectrum .peak:hover .stick line, .spectrum .peak.sel .stick line, .spectrum .peak:hover line.stick, .spectrum .peak.sel line.stick { stroke: #f59e0b; stroke-width: 2.5; }
+.spectrum .int { font-size: 10px; fill: #374151; }
+.spectrum .band { fill: #f59e0b; opacity: 0.12; cursor: pointer; }
+.spectrum .band:hover, .spectrum .band.sel { opacity: 0.35; }
+.spectrum .curve { fill: none; stroke-width: 1.5; }
+.spectrum .curve.pred { stroke: #1d4ed8; stroke-dasharray: 4 3; }
+.spectrum .curve.exp { stroke: #111827; }
+.peak-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin-top: 0.5rem; }
+.peak-table th, .peak-table td { text-align: left; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }
+.peak-table th { color: var(--muted); font-weight: 600; }
+.peak-table tr.sel td, .peak-table tbody tr:hover td { background: var(--accent-soft); cursor: default; }

@@ -147,6 +147,18 @@ class MoleculeCache(Base):
     last_used_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class SpectraCache(Base):
+    """Canonical SMILES + kind ('nmr' | 'ir' | 'ms') -> spectra payload.
+    Only complete results are stored; a failed lookup is retried next time."""
+
+    __tablename__ = "spectra_cache"
+
+    smiles: Mapped[str] = mapped_column(String(4000), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(8), primary_key=True)
+    result_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 PREWARM_PATH = os.environ.get("CHEM_PREWARM_PATH", str(Path(__file__).resolve().parent.parent / "prewarm.db"))
 
 

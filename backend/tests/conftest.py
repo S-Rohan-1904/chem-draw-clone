@@ -7,3 +7,4 @@ os.environ.setdefault("RATE_LIMIT_PER_MIN", "0")
 os.environ.setdefault("CHEM_NAME_LOOKUP", "0")
 # Do not import the prebuilt cache into test databases.
 os.environ.setdefault("CHEM_PREWARM_PATH", "/nonexistent/prewarm.db")
+os.environ.setdefault("CHEM_SPECTRA_LOOKUP", "0")

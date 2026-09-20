@@ -61,6 +61,26 @@ The editor bundle is loaded only when the tab is first opened.
 - OPSIN runs as one long-lived process per mode (strict, ignore-bad-stereo) instead of one JVM per request.
 - OPSIN only reads systematic nomenclature. A name it cannot parse (protoporphyrin IX, hemin, aspirin) is looked up in PubChem, then NCI CACTUS, on build (not while typing); the result is cached and shown with a "looked up" tag and the record it came from. Trivial names can be ambiguous (PubChem's "rosarin" is a Rhodiola glycoside, not the expanded porphyrin) and some literature names (turcasarin) are in no database: paste a SMILES or draw those. `CHEM_NAME_LOOKUP=0` turns the lookup off, `CHEM_LOOKUP_TIMEOUT` (seconds, default 6) bounds each request.
 
+## Spectra
+
+Every built molecule gets a Spectra card with four tabs. Hovering a peak or band
+highlights the atoms responsible in the 2D drawing.
+
+- **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
+  integration and n+1 multiplicities are computed locally. Shifts come from the
+  nmrshiftdb2 HOSE-code prediction service when reachable, otherwise from additive
+  substituent rules (teaching accuracy only).
+- **IR**: characteristic bands from the functional groups present, drawn as a synthetic
+  transmittance curve, with the experimental spectrum from the NIST Chemistry WebBook
+  overlaid when NIST has one.
+- **Mass spec**: molecular-ion isotope pattern (Cl/Br/S visible), likely fragment cations
+  from single-bond cleavages ranked by stability (acylium, benzylic/allylic, alpha to a
+  heteroatom), and NIST's experimental EI spectrum when available.
+
+Results are cached per molecule. `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no
+nmrshiftdb2 or NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each
+request. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
+
 ## Deploy (free): Render
 
 Hugging Face Spaces only offer static hosting for free, so the backend runs on a

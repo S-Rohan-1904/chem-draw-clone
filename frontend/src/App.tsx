@@ -16,6 +16,7 @@ import { NameInput } from './components/NameInput'
 import { NameLookup } from './components/NameLookup'
 import { Overlay } from './components/Overlay'
 import { Projections } from './components/Projections'
+import { Spectra } from './components/Spectra'
 import { Resonance } from './components/Resonance'
 import { Properties } from './components/Properties'
 import { Reaction } from './components/Reaction'
@@ -432,6 +433,7 @@ export default function App() {
               <NameBreakdown mol={mol} onHighlight={(atoms, colour) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: colour ?? '#f59e0b' } : null) }} />
               <Resonance mol={mol} />
               <Projections mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
+              <Spectra mol={mol} onHighlight={(atoms) => { if (!group && !stereoSel) setHighlight(atoms ? { atoms, colour: '#f59e0b' } : null) }} />
               <div className="grid2">
                 <Groups mol={mol} active={group?.name ?? null} onSelect={selectGroup} />
               </div>

@@ -1,4 +1,4 @@
-import type { AdminStats, AlignResult, Assignment, AssignmentAnswer, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
+import type { AdminStats, IrSpectrum, MsSpectrum, NmrSpectrum, AlignResult, Assignment, AssignmentAnswer, AssignmentProgress, AuthState, BatchRow, IsomerResult, NameBreakdown, QuizStats, ReactionResult, NameLookup, ChairOut, CheckResult, Molecule, NewmanOut, ProjectionInfo, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -97,6 +97,8 @@ export const api = {
   newman: (smiles: string, front: number, back: number, rotate: number) =>
     request<NewmanOut>('/api/molecule/newman', { method: 'POST', body: JSON.stringify({ smiles, front, back, rotate }) }),
   chair: (smiles: string, ring: number[]) => request<ChairOut>('/api/molecule/chair', { method: 'POST', body: JSON.stringify({ smiles, ring }) }),
+  spectra: (smiles: string, kind: 'nmr' | 'ir' | 'ms') =>
+    request<NmrSpectrum | IrSpectrum | MsSpectrum>('/api/molecule/spectra', { method: 'POST', body: JSON.stringify({ smiles, kind }) }),
   lookupName: (inchikey: string) => request<NameLookup>(`/api/molecule/name/${encodeURIComponent(inchikey)}`),
   resonance: (smiles: string) => request<{ forms: { svg: string; smiles: string }[] }>('/api/molecule/resonance', { method: 'POST', body: JSON.stringify({ smiles }) }),
   charges: (smiles: string) => request<{ charges: number[]; min: number; max: number }>('/api/molecule/charges', { method: 'POST', body: JSON.stringify({ smiles }) }),

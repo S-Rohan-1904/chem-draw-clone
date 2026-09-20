@@ -14,6 +14,12 @@ class MoleculeIn(BaseModel):
     input: str = Field(min_length=1, max_length=200_000)
 
 
+class HighlightIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    atoms: list[int] = Field(max_length=500)
+    colour: str = Field(default="#2563eb", pattern=r"^#[0-9a-fA-F]{6}$")
+
+
 class PngIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
     width: int = Field(default=1200, ge=200, le=4000)
@@ -73,6 +79,15 @@ def check(body: MoleculeIn, db: Session = Depends(get_db)):
 @router.get("/suggest")
 def suggest_names(q: str = Query(min_length=1, max_length=200), db: Session = Depends(get_db)):
     return {"names": suggest.autocomplete(q, _known_from_cache(db))}
+
+
+@router.post("/highlight")
+def molecule_highlight(body: HighlightIn):
+    try:
+        mol = chem.mol_from_smiles(body.smiles)
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    return {"svg": chem.render_svg_highlight(mol, body.atoms, body.colour)}
 
 
 @router.post("/png", dependencies=[Depends(ratelimit.check)])

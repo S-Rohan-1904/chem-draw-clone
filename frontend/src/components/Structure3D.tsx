@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as $3Dmol from '3dmol'
-import type { Molecule } from '../types'
+import type { Highlight, Molecule } from '../types'
 
 type Style = 'stick' | 'ballstick' | 'sphere' | 'line'
 
@@ -13,7 +13,7 @@ const STYLES: Record<Style, object> = {
 
 interface Props {
   mol: Molecule
-  highlight: number | null
+  highlight: Highlight | null
 }
 
 /** 3D position of the atom with a given (RDKit) index, if loaded. */
@@ -59,8 +59,8 @@ export function Structure3D({ mol, highlight }: Props) {
     const v = viewer.current
     if (!v) return
     v.setStyle({}, STYLES[style])
-    if (highlight !== null) {
-      v.setStyle({ index: highlight }, { ...STYLES[style], sphere: { scale: 0.4, color: '#f59e0b' } })
+    if (highlight && highlight.atoms.length) {
+      v.setStyle({ index: highlight.atoms }, { ...STYLES[style], sphere: { scale: 0.42, color: highlight.colour } })
     }
     v.render()
   }, [style, highlight, mol])

@@ -5,6 +5,7 @@ import { Downloads } from './components/Downloads'
 import { DrawPanel } from './components/DrawPanel'
 import { ErrorPanel } from './components/ErrorPanel'
 import { Gallery } from './components/Gallery'
+import { Groups } from './components/Groups'
 import { NameInput } from './components/NameInput'
 import { Properties } from './components/Properties'
 import { SavedList } from './components/SavedList'
@@ -12,7 +13,7 @@ import { ResultSkeleton } from './components/Skeleton'
 import { StereoPanel } from './components/StereoPanel'
 import { Structure2D } from './components/Structure2D'
 import { Structure3D } from './components/Structure3D'
-import type { AuthState, BuildError, Molecule, SavedMolecule } from './types'
+import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, SavedMolecule } from './types'
 
 export default function App() {
   const [input, setInput] = useState('')
@@ -22,7 +23,9 @@ export default function App() {
   const [mol, setMol] = useState<Molecule | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<BuildError | null>(null)
-  const [highlight, setHighlight] = useState<number | null>(null)
+  const [highlight, setHighlight] = useState<Highlight | null>(null)
+  const [group, setGroup] = useState<FunctionalGroup | null>(null)
+  const [groupSvg, setGroupSvg] = useState<string | null>(null)
 
   const [auth, setAuth] = useState<AuthState | null>(() => loadAuth())
   const [showAuth, setShowAuth] = useState(false)
@@ -37,6 +40,9 @@ export default function App() {
     setSaveMsg(null)
     setSaveLabel(null)
     if (window.location.pathname.startsWith('/m/')) window.history.replaceState(null, '', '/')
+    setGroup(null)
+    setGroupSvg(null)
+    setHighlight(null)
     try {
       setMol(await api.molecule(text))
     } catch (e) {
@@ -60,6 +66,26 @@ export default function App() {
   const openDraw = () => {
     setMode('draw')
     setDrawOpened(true)
+  }
+
+  const selectGroup = (g: FunctionalGroup | null) => {
+    setGroup(g)
+    if (!g || !mol) {
+      setGroupSvg(null)
+      setHighlight(null)
+      return
+    }
+    const atoms = g.atoms.flat()
+    setHighlight({ atoms, colour: g.colour })
+    api
+      .highlight(mol.smiles, atoms, g.colour)
+      .then((r) => setGroupSvg(r.svg))
+      .catch(() => setGroupSvg(null))
+  }
+
+  const hoverAtom = (idx: number | null) => {
+    if (group) return // group selection owns the highlight
+    setHighlight(idx === null ? null : { atoms: [idx], colour: '#f59e0b' })
   }
 
   const share = async () => {
@@ -232,12 +258,15 @@ export default function App() {
                 <p className="muted small">Interpreted as <code>{mol.normalised_input}</code></p>
               )}
               <div className="grid2">
-                <Structure2D mol={mol} />
+                <Structure2D mol={mol} svg={groupSvg} caption={group ? group.name : null} />
                 <Structure3D mol={mol} highlight={highlight} />
               </div>
               <div className="grid2">
-                <StereoPanel mol={mol} onHover={setHighlight} />
+                <StereoPanel mol={mol} onHover={hoverAtom} />
                 <Properties mol={mol} />
+              </div>
+              <div className="grid2">
+                <Groups mol={mol} active={group?.name ?? null} onSelect={selectGroup} />
               </div>
               <Downloads mol={mol} />
             </>

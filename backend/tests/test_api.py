@@ -213,3 +213,20 @@ def test_prewarm_import(tmp_path):
         assert dbmod.import_prewarm(str(pre)) == 0  # idempotent
         with dbmod.SessionLocal() as s:
             assert s.get(dbmod.NameCache, "prewarmed-name") is not None
+
+
+def test_stale_cache_rows_are_rebuilt():
+    import json
+
+    from app import db as dbmod
+
+    with client:
+        first = client.post("/api/molecule", json={"input": "propan-2-ol"}).json()
+        with dbmod.SessionLocal() as s:
+            row = s.get(dbmod.MoleculeCache, first["smiles"])
+            old = json.loads(row.result_json)
+            old.pop("groups"); old["_v"] = 1
+            row.result_json = json.dumps(old); s.commit()
+        again = client.post("/api/molecule", json={"input": "propan-2-ol"}).json()
+        assert again["cached"] is False and "groups" in again
+        assert client.post("/api/molecule", json={"input": "propan-2-ol"}).json()["cached"] is True

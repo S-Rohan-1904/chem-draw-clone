@@ -163,3 +163,9 @@ input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color:
 .tag-ok { background: var(--green-soft); color: var(--green); }
 .tag-warn { background: var(--warn-soft); color: var(--warn); }
 @media (max-width: 600px) { .props-grid { grid-template-columns: max-content 1fr; } }
+
+.chip-group { display: inline-flex; align-items: center; gap: 0.4rem; background: #fff; border: 1px solid var(--border); color: var(--text); cursor: pointer; }
+.chip-group:hover { border-color: var(--c); }
+.chip-group.active { background: color-mix(in srgb, var(--c) 18%, #fff); border-color: var(--c); }
+.chip-group .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.chip-group .count { font-size: 0.72rem; color: var(--muted); }

@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from rdkit import Chem, RDLogger
 
+from . import groups as _groups
 from . import opsin
 from rdkit.Chem import AllChem, Descriptors, rdCIPLabeler, rdDepictor, rdMolDescriptors
 from rdkit.Chem.Draw import rdMolDraw2D
@@ -95,6 +96,7 @@ class MoleculeResult:
     warnings: list[str] = field(default_factory=list)
     normalised_input: str = ""
     properties: dict = field(default_factory=dict)
+    groups: list[dict] = field(default_factory=list)
 
 
 def _looks_like_smiles(text: str) -> bool:
@@ -313,6 +315,30 @@ def render_svg(mol: Chem.Mol, width: int = 480, height: int = 360) -> str:
     return drawer.GetDrawingText()
 
 
+def render_svg_highlight(mol: Chem.Mol, atoms: list[int], colour: str, width: int = 480, height: int = 360) -> str:
+    """2D depiction with the given atoms (and bonds between them) highlighted."""
+    m = Chem.Mol(mol)
+    rdDepictor.Compute2DCoords(m)
+    Chem.WedgeMolBonds(m, m.GetConformer())
+    atom_set = {a for a in atoms if 0 <= a < m.GetNumAtoms()}
+    bonds = [b.GetIdx() for b in m.GetBonds() if b.GetBeginAtomIdx() in atom_set and b.GetEndAtomIdx() in atom_set]
+    rgb = tuple(int(colour.lstrip("#")[i : i + 2], 16) / 255 for i in (0, 2, 4)) + (0.35,)
+    drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
+    opts = drawer.drawOptions()
+    opts.addStereoAnnotation = True
+    opts.clearBackground = False
+    opts.bondLineWidth = 2
+    drawer.DrawMolecule(
+        m,
+        highlightAtoms=sorted(atom_set),
+        highlightBonds=bonds,
+        highlightAtomColors={a: rgb for a in atom_set},
+        highlightBondColors={b: rgb for b in bonds},
+    )
+    drawer.FinishDrawing()
+    return drawer.GetDrawingText()
+
+
 def render_png(mol: Chem.Mol, width: int = 1200, height: int = 900) -> bytes:
     m = Chem.Mol(mol)
     rdDepictor.Compute2DCoords(m)
@@ -442,6 +468,7 @@ def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles")
         inchi=Chem.MolToInchi(mol),
         inchikey=Chem.MolToInchiKey(mol),
         properties=compute_properties(mol),
+        groups=_groups.find_groups(mol),
     )
 
 

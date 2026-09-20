@@ -163,3 +163,32 @@ def test_dbsync_race_handling(tmp_path, monkeypatch):
     os.utime(local, None)
     dbsync.stop(str(local))
     assert calls["upload"] == 1
+
+
+def test_share_link_lookup():
+    with client:
+        built = client.post("/api/molecule", json={"input": "(2S)-butan-2-ol"}).json()
+        r = client.get(f"/api/molecule/by-key/{built['inchikey']}")
+        assert r.status_code == 200 and r.json()["smiles"] == built["smiles"]
+        assert client.get("/api/molecule/by-key/XXXXXXXXXXXXXXXXXXXXXXXXXX-N").status_code == 404
+
+
+def test_missing_column_migration(tmp_path):
+    import sqlite3
+
+    from sqlalchemy import create_engine, inspect
+
+    from app import db as dbmod
+
+    path = tmp_path / "old.db"
+    con = sqlite3.connect(path)
+    con.execute("create table molecule_cache(smiles varchar primary key, result_json text, hits integer, created_at datetime, last_used_at datetime)")
+    con.commit(); con.close()
+    old_engine = dbmod.engine
+    dbmod.engine = create_engine(f"sqlite:///{path}")
+    try:
+        dbmod.init_db()
+        cols = {c["name"] for c in inspect(dbmod.engine).get_columns("molecule_cache")}
+        assert "inchikey" in cols
+    finally:
+        dbmod.engine = old_engine

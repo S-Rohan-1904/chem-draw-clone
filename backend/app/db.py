@@ -68,6 +68,7 @@ class MoleculeCache(Base):
 
     smiles: Mapped[str] = mapped_column(String(4000), primary_key=True)
     result_json: Mapped[str] = mapped_column(Text)
+    inchikey: Mapped[str] = mapped_column(String(32), default="", index=True)
     hits: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     last_used_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
@@ -75,6 +76,37 @@ class MoleculeCache(Base):
 
 def init_db() -> None:
     Base.metadata.create_all(engine)
+    _add_missing_columns()
+    _backfill_inchikeys()
+
+
+def _backfill_inchikeys() -> None:
+    """Rows cached before the inchikey column existed."""
+    import json
+
+    with SessionLocal() as db:
+        rows = db.query(MoleculeCache).filter((MoleculeCache.inchikey == "") | (MoleculeCache.inchikey.is_(None))).all()
+        for row in rows:
+            row.inchikey = json.loads(row.result_json).get("inchikey", "")
+        if rows:
+            db.commit()
+
+
+def _add_missing_columns() -> None:
+    """Tiny forward-only migration: add columns that exist in the models but
+    not yet in an older SQLite file."""
+    from sqlalchemy import inspect, text
+
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            existing = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name not in existing:
+                    ddl = f'ALTER TABLE {table.name} ADD COLUMN {col.name} {col.type.compile(engine.dialect)}'
+                    if col.default is not None and getattr(col.default, "arg", None) is not None and not callable(col.default.arg):
+                        ddl += f" DEFAULT {col.default.arg!r}"
+                    conn.execute(text(ddl))
 
 
 def get_db():

@@ -47,6 +47,14 @@ def molecule(body: MoleculeIn, db: Session = Depends(get_db)):
     return data
 
 
+@router.get("/by-key/{inchikey}")
+def molecule_by_key(inchikey: str, db: Session = Depends(get_db)):
+    data = cache.get_by_inchikey(db, inchikey.strip().upper())
+    if data is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No molecule with that key has been built here yet.")
+    return data
+
+
 @router.post("/check")
 def check(body: MoleculeIn, db: Session = Depends(get_db)):
     """Parse-only validity check for live feedback while typing."""

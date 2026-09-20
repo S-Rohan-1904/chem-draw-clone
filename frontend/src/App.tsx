@@ -29,12 +29,14 @@ export default function App() {
   const [saved, setSaved] = useState<SavedMolecule[]>([])
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [saveLabel, setSaveLabel] = useState<string | null>(null) // non-null = label form open
+  const [shareMsg, setShareMsg] = useState<string | null>(null)
 
   const build = useCallback(async (text: string) => {
     setLoading(true)
     setError(null)
     setSaveMsg(null)
     setSaveLabel(null)
+    if (window.location.pathname.startsWith('/m/')) window.history.replaceState(null, '', '/')
     try {
       setMol(await api.molecule(text))
     } catch (e) {
@@ -60,6 +62,19 @@ export default function App() {
     setDrawOpened(true)
   }
 
+  const share = async () => {
+    if (!mol) return
+    const url = `${window.location.origin}/m/${mol.inchikey}`
+    window.history.replaceState(null, '', `/m/${mol.inchikey}`)
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareMsg('Link copied')
+    } catch {
+      setShareMsg(url)
+    }
+    window.setTimeout(() => setShareMsg(null), 2500)
+  }
+
   const editStructure = () => {
     if (!mol) return
     openDraw()
@@ -70,6 +85,21 @@ export default function App() {
     setAuth(null)
     storeAuth(null)
     setSaved([])
+  }, [])
+
+  // Shared link: /m/<inchikey>
+  useEffect(() => {
+    const m = window.location.pathname.match(/^\/m\/([A-Z]{14}-[A-Z]{10}-[A-Z])$/i)
+    if (!m) return
+    setLoading(true)
+    api
+      .byKey(m[1])
+      .then((res) => {
+        setMol(res)
+        setInput(res.source === 'molfile' ? res.smiles : res.input_text)
+      })
+      .catch((e) => setError({ message: e instanceof ApiError ? e.message : 'Could not load the shared molecule.', suggestions: [] }))
+      .finally(() => setLoading(false))
   }, [])
 
   // Validate stored token and load saved list.
@@ -173,6 +203,8 @@ export default function App() {
                 </div>
                 <div className="result-actions">
                   <button type="button" onClick={editStructure}>Edit structure</button>
+                  <button type="button" onClick={() => void share()}>Share</button>
+                  {shareMsg && <span className="muted small">{shareMsg}</span>}
                   {saveLabel === null ? (
                     <button type="button" className="primary" onClick={openSave}>Save</button>
                   ) : (

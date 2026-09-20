@@ -39,4 +39,11 @@ def health():
 
 
 if FRONTEND_DIST.is_dir():
+    from fastapi.responses import FileResponse
+
+    @app.get("/m/{inchikey}", include_in_schema=False)
+    def spa_share_route(inchikey: str):
+        # Client-side route: the app reads the key from the URL.
+        return FileResponse(FRONTEND_DIST / "index.html")
+
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

@@ -58,6 +58,7 @@ async function request<T>(path: string, init: RequestInit = {}, auth?: AuthState
 
 export const api = {
   molecule: (input: string) => request<Molecule>('/api/molecule', { method: 'POST', body: JSON.stringify({ input }) }),
+  byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),
   png: async (smiles: string, width = 1600) => {

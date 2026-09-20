@@ -13,6 +13,7 @@ import json
 from dataclasses import asdict
 from datetime import datetime, timezone
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import chem
@@ -37,7 +38,7 @@ def _from_molecule_cache(db: Session, smiles: str, text: str, resolved: chem.Res
         mol_row.last_used_at = datetime.now(timezone.utc)
     else:
         data = _serialise(chem.build_from_smiles(smiles, input_text=smiles, source=resolved.source))
-        db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data)))
+        db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data), inchikey=data["inchikey"]))
     db.commit()
     data["input_text"] = smiles if resolved.source == "molfile" else text.strip()
     data["source"] = resolved.source
@@ -73,7 +74,7 @@ def get_or_build(db: Session, text: str) -> tuple[dict, bool]:
         cached = True
     else:
         data = _serialise(chem.build_from_smiles(smiles, input_text=text.strip(), source=source))
-        db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data)))
+        db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data), inchikey=data["inchikey"]))
         cached = False
 
     if name_row is None:
@@ -86,3 +87,18 @@ def get_or_build(db: Session, text: str) -> tuple[dict, bool]:
     data["warnings"] = warnings
     data["normalised_input"] = normalised
     return data, cached
+
+
+def get_by_inchikey(db: Session, inchikey: str) -> dict | None:
+    """Shared-link lookup. Only molecules built before are known."""
+    row = db.scalar(select(MoleculeCache).where(MoleculeCache.inchikey == inchikey))
+    if row is None:
+        return None
+    data = json.loads(row.result_json)
+    row.hits += 1
+    row.last_used_at = datetime.now(timezone.utc)
+    db.commit()
+    data["warnings"] = []
+    data["normalised_input"] = ""
+    data["cached"] = True
+    return data

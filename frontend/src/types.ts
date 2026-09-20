@@ -119,3 +119,19 @@ export interface BatchRow {
   error?: string
   suggestions?: string[]
 }
+
+export interface QuizQuestion {
+  id: string
+  svg: string
+  formula: string
+  level: number
+  stereo_count: number
+}
+
+export interface QuizAnswer {
+  correct: boolean
+  verdict: 'exact' | 'stereo' | 'wrong' | 'unparsed' | 'revealed'
+  message: string
+  accepted: string[]
+  your_formula?: string | null
+}

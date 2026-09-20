@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, create_engine
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
 
 DB_PATH = os.environ.get("CHEM_DB_PATH", str(Path(__file__).resolve().parent.parent / "data.db"))
@@ -48,6 +48,17 @@ class SavedMolecule(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     user: Mapped[User] = relationship(back_populates="molecules")
+
+
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    inchikey: Mapped[str] = mapped_column(String(32))
+    correct: Mapped[bool] = mapped_column(Boolean, default=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
 class NameCache(Base):

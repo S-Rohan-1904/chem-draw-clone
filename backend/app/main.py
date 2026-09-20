@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import dbsync
 from .db import DB_PATH, init_db
-from .routers import auth, molecule, saved
+from .routers import auth, molecule, quiz, saved
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(molecule.router)
 app.include_router(auth.router)
 app.include_router(saved.router)
+app.include_router(quiz.router)
 
 
 @app.get("/api/health")

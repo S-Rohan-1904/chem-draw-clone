@@ -10,6 +10,7 @@ import { Gallery } from './components/Gallery'
 import { Groups } from './components/Groups'
 import { NameInput } from './components/NameInput'
 import { Properties } from './components/Properties'
+import { QuizPanel } from './components/QuizPanel'
 import { SavedList } from './components/SavedList'
 import { ResultSkeleton } from './components/Skeleton'
 import { StereoPanel } from './components/StereoPanel'
@@ -19,7 +20,7 @@ import type { AuthState, BuildError, FunctionalGroup, Highlight, Molecule, Saved
 
 export default function App() {
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState<'name' | 'draw' | 'batch'>('name')
+  const [mode, setMode] = useState<'name' | 'draw' | 'batch' | 'quiz'>('name')
   const [drawOpened, setDrawOpened] = useState(false)
   const [loadStruct, setLoadStruct] = useState<{ value: string; nonce: number } | null>(null)
   const [mol, setMol] = useState<Molecule | null>(null)
@@ -259,6 +260,7 @@ export default function App() {
         <button type="button" role="tab" aria-selected={mode === 'name'} className={mode === 'name' ? 'active' : ''} onClick={() => setMode('name')}>Name</button>
         <button type="button" role="tab" aria-selected={mode === 'draw'} className={mode === 'draw' ? 'active' : ''} onClick={openDraw}>Draw</button>
         <button type="button" role="tab" aria-selected={mode === 'batch'} className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Batch</button>
+        <button type="button" role="tab" aria-selected={mode === 'quiz'} className={mode === 'quiz' ? 'active' : ''} onClick={() => setMode('quiz')}>Quiz</button>
       </div>
       <div hidden={mode !== 'name'}>
         <NameInput value={input} onChange={setInput} onSubmit={build} loading={loading} showHint={!error} />
@@ -271,9 +273,10 @@ export default function App() {
       <div hidden={mode !== 'batch'}>
         <BatchPanel onOpen={pick} />
       </div>
+      {mode === 'quiz' && <QuizPanel auth={auth} onOpen={pick} />}
       {error && <ErrorPanel error={error} onPick={pick} />}
 
-      <div className="layout">
+      <div className="layout" hidden={mode === 'quiz'}>
         <aside className="side">
           <Gallery onPick={pick} />
           {auth && <SavedList items={saved} onPick={(it) => pick(it.input_text)} onDelete={remove} onUpdate={updateSaved} />}

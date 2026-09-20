@@ -1,4 +1,4 @@
-import type { AuthState, BatchRow, CheckResult, Molecule, SavedMolecule, StereoExplanation } from './types'
+import type { AuthState, BatchRow, CheckResult, Molecule, QuizAnswer, QuizQuestion, SavedMolecule, StereoExplanation } from './types'
 
 const TOKEN_KEY = 'chem.auth'
 
@@ -65,6 +65,10 @@ export const api = {
   variant: (smiles: string, op: 'mirror' | 'invert', atom_idx?: number) =>
     request<Molecule>('/api/molecule/variant', { method: 'POST', body: JSON.stringify({ smiles, op, atom_idx }) }),
   batch: (inputs: string[]) => request<{ rows: BatchRow[] }>('/api/molecule/batch', { method: 'POST', body: JSON.stringify({ inputs }) }),
+  quizQuestion: (level: number, exclude: string[]) =>
+    request<QuizQuestion>(`/api/quiz/question?level=${level}&exclude=${encodeURIComponent(exclude.join(','))}`),
+  quizAnswer: (auth: AuthState | null, body: { id: string; answer: string; attempt: number; reveal?: boolean }) =>
+    request<QuizAnswer>('/api/quiz/answer', { method: 'POST', body: JSON.stringify(body) }, auth),
   byKey: (inchikey: string) => request<Molecule>(`/api/molecule/by-key/${encodeURIComponent(inchikey)}`),
   check: (input: string) => request<CheckResult>('/api/molecule/check', { method: 'POST', body: JSON.stringify({ input }) }),
   suggest: (q: string) => request<{ names: string[] }>(`/api/molecule/suggest?q=${encodeURIComponent(q)}`),

@@ -61,12 +61,12 @@ def test_auth_and_saved_flow():
 
 def test_molecule_cache_hit_and_shared_smiles():
     with client:
-        first = client.post("/api/molecule", json={"input": "(2R)-butan-2-ol"}).json()
+        first = client.post("/api/molecule", json={"input": "(2R)-2-chloroheptane"}).json()
         assert first["cached"] is False
-        second = client.post("/api/molecule", json={"input": "  (2r)-BUTAN-2-ol "}).json()
+        second = client.post("/api/molecule", json={"input": "  (2r)-2-CHLOROheptane "}).json()
         assert second["cached"] is True
         assert second["molblock"] == first["molblock"]
-        assert second["input_text"] == "(2r)-BUTAN-2-ol"
+        assert second["input_text"] == "(2r)-2-CHLOROheptane"
         # Same molecule via SMILES reuses the molecule-level entry.
         via_smiles = client.post("/api/molecule", json={"input": first["smiles"]}).json()
         assert via_smiles["cached"] is True and via_smiles["source"] == "smiles"

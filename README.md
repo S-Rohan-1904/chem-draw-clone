@@ -61,6 +61,18 @@ The editor bundle is loaded only when the tab is first opened.
 - OPSIN runs as one long-lived process per mode (strict, ignore-bad-stereo) instead of one JVM per request.
 - OPSIN only reads systematic nomenclature. A name it cannot parse (protoporphyrin IX, hemin, aspirin) is looked up in PubChem, then NCI CACTUS, on build (not while typing); the result is cached and shown with a "looked up" tag and the record it came from. Trivial names can be ambiguous (PubChem's "rosarin" is a Rhodiola glycoside, not the expanded porphyrin) and some literature names (turcasarin) are in no database: paste a SMILES or draw those. `CHEM_NAME_LOOKUP=0` turns the lookup off, `CHEM_LOOKUP_TIMEOUT` (seconds, default 6) bounds each request.
 
+## Analysis cards and tabs
+
+Under every built molecule (endpoints under `/api/analysis`, code in `backend/app/{analysis,acidbase,isotopes,sugars,conformers,transforms}.py`, UI in `frontend/src/analysis/`):
+
+- **Structure and bonding**: chiral / achiral / meso with the reason, VSEPR shapes with ideal and measured angles, ring aromaticity with the Huckel count, degrees of unsaturation from formula and structure, oxidation states, bond polarity with a dipole estimate drawn on the 3D model, hydrogen bond sites and an ESOL solubility estimate.
+- **Acids and bases**: rule-based pKa sites, pH slider with the dominant species drawn, net charge and isoelectric point. Textbook values per group, not per-molecule predictions.
+- **Isotope labels**: D, T, 13C, 15N, 18O and others, with the isotopic formula and exact mass shift.
+- **Fischer and Haworth**: Fischer projections with D/L for sugars and amino acids; Haworth projections with alpha/beta and D/L, all read from the 3D model.
+- **Conformational energy**: MMFF94 torsion scan around a chosen bond with a linked Newman projection; energies of the two chairs of a substituted ring.
+- **Reactions**: textbook reaction templates applied to the molecule (regiochemistry by Markovnikov, Zaitsev, Hofmann and ortho/para/meta rules) and one-step retrosynthetic disconnections; reaction SMILES inputs are classified and given an SN1/SN2/E1/E2 note.
+- **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
+
 ## Spectra
 
 Every built molecule gets a Spectra card with four tabs. Hovering a peak or band

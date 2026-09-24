@@ -292,8 +292,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div>
-          <h1>IUPAC Structure Viewer</h1>
-          <p className="muted">2D and 3D structures from IUPAC names</p>
+          <h1>Chem Forge</h1>
         </div>
         <div className="auth">
           <button type="button" className="theme-toggle" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} aria-label="Toggle dark mode">

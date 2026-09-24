@@ -1,4 +1,4 @@
-# IUPAC Structure Viewer
+# Chem Forge
 
 Enter an IUPAC name or SMILES to get a 2D drawing and an interactive 3D model.
 Stereo descriptors in the name (R/S, E/Z, cis/trans) are parsed by OPSIN, shown

@@ -21,7 +21,7 @@ async def lifespan(_: FastAPI):
     dbsync.stop(DB_PATH)
 
 
-app = FastAPI(title="IUPAC Structure Viewer", lifespan=lifespan)
+app = FastAPI(title="Chem Forge", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(","),

@@ -1,5 +1,5 @@
 import { request } from '../api'
-import type { AcidBase, Bonding, ChairEnergy, IsotopeLabel, IsotopeResult, Literature, MechanismDetail, MechanismSummary, ReactionClass, RecordedReactions, SugarProjections, TorsionScan } from './types'
+import type { AcidBase, Bonding, ChairEnergy, IsotopeLabel, IsotopeResult, Literature, Manufacture, MechanismDetail, MechanismSummary, ReactionClass, RecordedReactions, SugarProjections, TorsionScan, WikipediaMaking } from './types'
 
 const post = <T,>(path: string, body: unknown) => request<T>(path, { method: 'POST', body: JSON.stringify(body) })
 
@@ -11,6 +11,8 @@ export const analysisApi = {
   chairEnergy: (smiles: string, ring: number[]) => post<ChairEnergy>('/api/analysis/chair-energy', { smiles, ring }),
   reactions: (smiles: string) => post<RecordedReactions>('/api/analysis/reactions', { smiles }),
   literature: (smiles: string, name: string) => post<Literature>('/api/analysis/literature', { smiles, name }),
+  manufacture: (smiles: string) => post<Manufacture>('/api/analysis/manufacture', { smiles }),
+  wikipedia: (smiles: string) => post<WikipediaMaking>('/api/analysis/wikipedia', { smiles }),
   classify: (reactants: string[], products: string[]) => post<ReactionClass>('/api/analysis/classify', { reactants, products }),
   mechanisms: () => request<{ mechanisms: MechanismSummary[] }>('/api/analysis/mechanisms'),
   mechanism: (id: string) => request<MechanismDetail>(`/api/analysis/mechanisms/${encodeURIComponent(id)}`),

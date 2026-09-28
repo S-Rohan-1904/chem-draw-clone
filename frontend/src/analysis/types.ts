@@ -219,6 +219,50 @@ export interface RecordedReactions {
   max_atoms?: number
 }
 
+export interface LinkedCompound {
+  start: number
+  length: number
+  name: string
+  smiles?: string
+}
+
+export interface ManufactureMethod {
+  text: string
+  compounds: LinkedCompound[]
+  reference: string
+}
+
+export interface WikipediaImage {
+  file: string
+  src: string
+  width: number
+  height: number
+  after: number
+  author: string
+  licence: string
+  page: string
+}
+
+export interface WikipediaMaking {
+  available: boolean
+  title: string
+  section: string
+  url: string
+  paragraphs: { text: string; compounds: LinkedCompound[] }[]
+  images: WikipediaImage[]
+  stereo_ignored: boolean
+  licence_url: string
+}
+
+export interface Manufacture {
+  available: boolean
+  methods: ManufactureMethod[]
+  cid: number | null
+  stereo_ignored: boolean
+  url: string
+  source_url: string
+}
+
 export interface Preprint {
   title: string
   authors: string

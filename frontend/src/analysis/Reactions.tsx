@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import type { Molecule } from '../types'
 import { analysisApi } from './api'
-import type { RecordedReaction, RecordedReactions } from './types'
+import type { LinkedCompound, Manufacture, RecordedReaction, RecordedReactions, WikipediaMaking } from './types'
 
 interface Props {
   mol: Molecule
@@ -12,15 +12,26 @@ interface Props {
 /** Recorded reactions for the molecule, from US patent records. */
 export function Reactions({ mol, onOpen, onHighlight }: Props) {
   const [rx, setRx] = useState<RecordedReactions | null>(null)
+  const [made, setMade] = useState<Manufacture | null>(null)
+  const [wiki, setWiki] = useState<WikipediaMaking | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
     setRx(null)
+    setMade(null)
+    setWiki(null)
     setError(null)
     analysisApi.reactions(mol.smiles)
       .then((d) => live && setRx(d))
       .catch((e: Error) => live && setError(e.message))
+    // How the molecule is made (PubChem, Wikipedia) is extra; the card works without it.
+    analysisApi.manufacture(mol.smiles)
+      .then((d) => live && setMade(d))
+      .catch(() => live && setMade(null))
+    analysisApi.wikipedia(mol.smiles)
+      .then((d) => live && setWiki(d))
+      .catch(() => live && setWiki(null))
     return () => { live = false }
   }, [mol.smiles])
 
@@ -31,12 +42,18 @@ export function Reactions({ mol, onOpen, onHighlight }: Props) {
       </header>
       {error && <p className="warn">{error}</p>}
       {!error && !rx && <p className="muted small">Loading…</p>}
-      {rx && <RecordedTab data={rx} onOpen={onOpen} onHighlight={onHighlight} />}
+      {rx && <RecordedTab data={rx} made={made} wiki={wiki} onOpen={onOpen} onHighlight={onHighlight} />}
     </section>
   )
 }
 
-function RecordedTab({ data, onOpen, onHighlight }: { data: RecordedReactions; onOpen: Props['onOpen']; onHighlight: Props['onHighlight'] }) {
+function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
+  data: RecordedReactions
+  made: Manufacture | null
+  wiki: WikipediaMaking | null
+  onOpen: Props['onOpen']
+  onHighlight: Props['onHighlight']
+}) {
   if (!data.available) {
     return <p className="muted">The reaction index is not installed on this server.</p>
   }
@@ -59,7 +76,9 @@ function RecordedTab({ data, onOpen, onHighlight }: { data: RecordedReactions; o
         <p className="muted small">There is no record for this exact stereoisomer, so reactions of the same structure with any stereochemistry are shown.</p>
       )}
       <Section title="Used in" empty="No recorded reactions use this molecule as a starting material." items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
-      <Section title="Made by" empty="No recorded reactions make this molecule." items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
+      <Section title="Made by" empty={made?.methods.length || wiki?.paragraphs.length ? '' : 'No recorded reactions make this molecule.'} items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
+      {made && made.methods.length > 0 && <Methods data={made} onOpen={onOpen} />}
+      {wiki && wiki.paragraphs.length > 0 && <Wikipedia data={wiki} onOpen={onOpen} />}
       {data.enzyme_uses.length > 0 && (
         <Section title="Used in by enzymes" empty="" items={data.enzyme_uses} direction="uses" enzyme onOpen={onOpen} onHighlight={onHighlight} />
       )}
@@ -92,7 +111,7 @@ function Section({ title, empty, items, direction, enzyme = false, onOpen, onHig
   return (
     <>
       <h3>{title}</h3>
-      {items.length === 0 && <p className="muted small">{empty}</p>}
+      {items.length === 0 && empty && <p className="muted small">{empty}</p>}
       <ol className="rxn-rows recorded">
         {items.map((r) => {
           const others = direction === 'uses' ? r.products.slice(0, 1) : r.reactants
@@ -123,5 +142,80 @@ function Section({ title, empty, items, direction, enzyme = false, onOpen, onHig
         })}
       </ol>
     </>
+  )
+}
+
+/** Text with the compounds it names turned into buttons that open them. */
+function LinkedText({ text, compounds, onOpen }: { text: string; compounds: LinkedCompound[]; onOpen: Props['onOpen'] }) {
+  const parts: ReactNode[] = []
+  let at = 0
+  for (const c of [...compounds].sort((a, b) => a.start - b.start)) {
+    if (c.start < at) continue
+    parts.push(text.slice(at, c.start))
+    parts.push(
+      <button key={c.start} type="button" className="link" title={`Open ${c.name}`} onClick={() => onOpen(c.smiles || c.name)}>
+        {text.slice(c.start, c.start + c.length)}
+      </button>,
+    )
+    at = c.start + c.length
+  }
+  parts.push(text.slice(at))
+  return <>{parts}</>
+}
+
+function Methods({ data, onOpen }: { data: Manufacture; onOpen: Props['onOpen'] }) {
+  return (
+    <div className="rxn-methods">
+      <h4>Manufacturing and preparation methods</h4>
+      {data.stereo_ignored && (
+        <p className="muted small">These describe the compound without its stereochemistry, usually made as a mixture of stereoisomers.</p>
+      )}
+      <ul className="lit-list">
+        {data.methods.map((m, i) => (
+          <li key={i}>
+            <span className="small"><LinkedText text={m.text} compounds={m.compounds} onOpen={onOpen} /></span>
+            {m.reference && <span className="muted small">{m.reference}</span>}
+          </li>
+        ))}
+      </ul>
+      <p className="muted small">
+        From <a href={data.url} target="_blank" rel="noopener noreferrer">PubChem</a>, which takes them from the{' '}
+        <a href={data.source_url} target="_blank" rel="noopener noreferrer">Hazardous Substances Data Bank</a> of the U.S. National Library of Medicine.
+        Named compounds open here.
+      </p>
+    </div>
+  )
+}
+
+function Wikipedia({ data, onOpen }: { data: WikipediaMaking; onOpen: Props['onOpen'] }) {
+  const images = (after: number) => data.images.filter((im) => im.after === after).map((im) => (
+    <figure key={im.file} className="wiki-scheme">
+      <a href={im.page || data.url} target="_blank" rel="noopener noreferrer">
+        <img src={im.src} alt={`Reaction scheme from the Wikipedia article ${data.title}`} loading="lazy" />
+      </a>
+      <figcaption className="muted small">
+        {[im.author, im.licence].filter(Boolean).join(', ')}{im.author || im.licence ? ', ' : ''}
+        <a href={im.page} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+      </figcaption>
+    </figure>
+  ))
+  return (
+    <div className="rxn-methods">
+      <h4>From Wikipedia, {data.section}</h4>
+      {data.stereo_ignored && (
+        <p className="muted small">The article covers the compound without this stereochemistry.</p>
+      )}
+      {images(0)}
+      {data.paragraphs.map((p, i) => (
+        <div key={i}>
+          <p className="small wiki-text"><LinkedText text={p.text} compounds={p.compounds} onOpen={onOpen} /></p>
+          {images(i + 1)}
+        </div>
+      ))}
+      <p className="muted small">
+        Text from the Wikipedia article <a href={data.url} target="_blank" rel="noopener noreferrer">{data.title}</a>,{' '}
+        <a href={data.licence_url} target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>. Named compounds open here.
+      </p>
+    </div>
   )
 }

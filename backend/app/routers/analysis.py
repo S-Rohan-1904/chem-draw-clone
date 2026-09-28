@@ -175,6 +175,34 @@ def literature_search(body: LiteratureIn, db: Session = Depends(get_db)):
     return out
 
 
+@router.post("/manufacture", dependencies=[Depends(ratelimit.check)])
+def manufacture_methods(body: SmilesIn, db: Session = Depends(get_db)):
+    """Industrial and laboratory methods of making the molecule (PubChem, from HSDB)."""
+    from .. import manufacture
+
+    try:
+        key = Chem.MolToInchiKey(chem.mol_from_smiles(body.smiles))
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    if not key:
+        return {"available": True, "methods": []}
+    row = cache.lookup_name(db, key)
+    cid = row.cid if row is not None and row.found else None
+    return cache.get_literature(db, key, lambda: manufacture.search(cid, key), kind="manufacture")
+
+
+@router.post("/wikipedia", dependencies=[Depends(ratelimit.check)])
+def wikipedia_making(body: SmilesIn, db: Session = Depends(get_db)):
+    """The production or synthesis section of the molecule's Wikipedia article, found by InChIKey."""
+    from .. import wikipedia
+
+    try:
+        key = Chem.MolToInchiKey(chem.mol_from_smiles(body.smiles))
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    return cache.get_literature(db, key, lambda: wikipedia.search(key), kind="wikipedia") if key else {"available": True, "paragraphs": []}
+
+
 @router.get("/mechanisms")
 def mechanisms_list():
     from .. import mechanisms

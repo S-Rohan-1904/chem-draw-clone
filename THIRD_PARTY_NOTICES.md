@@ -95,6 +95,15 @@ naming the source, and use of each service is subject to its provider's terms.
   are shown; each links to the article or to the preprint on **ChemRxiv**, where the work's
   own licence applies.
 - **Google Patents**: the Reactions and Literature cards link each patent to its page.
+- **PubChem, Hazardous Substances Data Bank (HSDB)**, U.S. National Library of Medicine:
+  the "Methods of Manufacturing" text shown under "Made by", each method with the
+  reference HSDB gives for it, linked to the compound's PubChem page.
+- **Wikidata** and **Wikipedia** (Wikimedia Foundation): the article for a structure is
+  found through its InChIKey on Wikidata (CC0), and the production or synthesis section of
+  the English Wikipedia article is shown under "Made by". Wikipedia text is licensed under
+  CC BY-SA 4.0 (<https://creativecommons.org/licenses/by-sa/4.0/>); the card names the
+  article, links to it and states the licence. Scheme pictures are shown from **Wikimedia
+  Commons** with their author and licence as given on each file's page.
 
 ## Software citations
 

@@ -66,3 +66,10 @@
 }
 .lit-snippet { color: var(--muted); }
 .lit-snippet mark { background: color-mix(in srgb, #f59e0b 30%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+.rxn-methods { margin-top: 0.5rem; }
+.rxn-methods h4 { margin: 0.2rem 0 0.4rem; font-size: 0.95rem; }
+.rxn-methods button.link { padding: 0; font: inherit; }
+.wiki-text { margin: 0.4rem 0; }
+.wiki-scheme { margin: 0.4rem 0; }
+.wiki-scheme img { display: block; max-width: 100%; max-height: 180px; height: auto; background: #fff; border-radius: 6px; padding: 4px; }
+.wiki-scheme figcaption { margin-top: 0.15rem; }

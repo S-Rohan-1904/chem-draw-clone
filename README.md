@@ -91,7 +91,12 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   that use the molecule and five that make it, ranked by the number of distinct reactions,
   each with one example, preferring the simplest that reports a yield (scheme, source link,
   year, yield) and the reacting atoms highlighted. Enzyme reactions are listed separately with
-  their EC numbers. Reaction SMILES inputs get the functional groups lost and gained and a
+  their EC numbers. Under "Made by" the card also shows how the molecule is produced, in
+  text: the manufacturing methods PubChem takes from the Hazardous Substances Data Bank
+  (`backend/app/manufacture.py`), and the production or synthesis section of its English
+  Wikipedia article with the scheme pictures in it (`backend/app/wikipedia.py`, article found
+  by InChIKey through Wikidata, text CC BY-SA 4.0, pictures credited from Wikimedia Commons).
+  Compounds named in either open with a click. Reaction SMILES inputs get the functional groups lost and gained and a
   guess at the reaction type.
 - **Literature** (`backend/app/literature*.py`): a card below Reactions with three lists.
   *ChemRxiv*: up to five preprints found by the molecule's PubChem name (then synonyms), via

@@ -203,7 +203,7 @@ def lookup_name(db: Session, inchikey: str, before_fetch: Callable[[], None] | N
 
 # Literature cache rows: the ChemRxiv search under the bare InChIKey (as before the other
 # sources existed), the others under the key plus a suffix.
-LITERATURE_KINDS = {"chemrxiv": "", "journals": "/j", "patents": "/p"}
+LITERATURE_KINDS = {"chemrxiv": "", "journals": "/j", "patents": "/p", "manufacture": "/m", "wikipedia": "/w"}
 
 
 def cached_literature(db: Session, inchikey: str, kind: str = "chemrxiv") -> dict | None:
@@ -245,6 +245,8 @@ def get_literature(db: Session, inchikey: str, search, kind: str = "chemrxiv") -
 
 
 def literature_version(kind: str = "chemrxiv") -> int:
-    from . import literature, literature_journals, literature_patents
+    from . import literature, literature_journals, literature_patents, manufacture, wikipedia
 
-    return {"chemrxiv": literature, "journals": literature_journals, "patents": literature_patents}[kind].VERSION
+    modules = {"chemrxiv": literature, "journals": literature_journals, "patents": literature_patents,
+               "manufacture": manufacture, "wikipedia": wikipedia}
+    return modules[kind].VERSION

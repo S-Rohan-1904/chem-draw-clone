@@ -99,14 +99,14 @@ COLOURS = {
 }
 
 LEGEND = {
-    "stereo": "Stereo descriptor: configuration at a centre or double bond",
-    "locant": "Locant: position number on the parent chain or ring",
-    "multiplier": "Multiplier: how many of the following group",
-    "substituent": "Substituent: group attached to the parent",
+    "stereo": "Stereo descriptor, the configuration at a centre or double bond",
+    "locant": "Locant, a position number on the parent chain or ring",
+    "multiplier": "Multiplier, how many of the following group",
+    "substituent": "Substituent, a group attached to the parent",
     "cyclo": "Ring prefix",
-    "parent": "Parent: longest chain or ring bearing the principal group",
-    "infix": "Saturation: an = single bonds, en = double bond, yn = triple bond",
-    "suffix": "Suffix: principal functional group",
+    "parent": "Parent, the longest chain or ring bearing the principal group",
+    "infix": "Saturation, where an = single bonds, en = double bond, yn = triple bond",
+    "suffix": "Suffix, the principal functional group",
     "other": "Not recognised by the breakdown (OPSIN may still read it)",
 }
 

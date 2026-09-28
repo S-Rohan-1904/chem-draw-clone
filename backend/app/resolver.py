@@ -75,7 +75,7 @@ def lookup(name: str) -> tuple[str, str, str] | None:
                     continue
                 if hit:
                     smiles, record = hit
-                    note = f"'{name}' is not a systematic IUPAC name; structure taken from {record}."
+                    note = f"'{name}' is not a systematic IUPAC name, so the structure was taken from {record}."
                     return smiles, source, note
     except Exception:  # noqa: BLE001 - lookup is best effort
         return None

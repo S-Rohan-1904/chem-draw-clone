@@ -74,7 +74,7 @@ def torsion_scan(molblock: str, front: int, back: int, step: int = 10) -> dict:
         "minima": [p["angle"] for p in minima],
         "maxima": [p["angle"] for p in maxima],
         "unit": "kcal/mol",
-        "note": "MMFF94 energies, each point relaxed with the dihedral held fixed. Barriers are approximate; the shape of the curve is what to look at.",
+        "note": "MMFF94 energies, each point relaxed with the dihedral held fixed. Barriers are approximate, so look at the shape of the curve.",
     }
 
 
@@ -205,7 +205,7 @@ def chair_energies(molblock: str, ring: list[int], n_conf: int = 30) -> dict:
     if delta is None:
         summary = "Only one chair was found in the conformer search."
     elif abs(delta) < 0.3:
-        summary = "The two chairs are within 0.3 kcal/mol: about a 50:50 mixture at room temperature."
+        summary = "The two chairs are within 0.3 kcal/mol, so they form a roughly equal mixture at room temperature."
     else:
         k = math.exp(-abs(delta) / (0.001987 * 298.15))
         pct = 100.0 / (1.0 + k)
@@ -218,5 +218,5 @@ def chair_energies(molblock: str, ring: list[int], n_conf: int = 30) -> dict:
         "summary": summary,
         "conformers_checked": len(cids),
         "unit": "kcal/mol",
-        "note": "Lowest MMFF94 energy found for each chair among the generated conformers. Textbook A values (methyl 1.7, tert-butyl about 5) are free energies; these are force field energies, so expect differences.",
+        "note": "Lowest MMFF94 energy found for each chair among the generated conformers. Textbook A values (methyl 1.7, tert-butyl about 5) are free energies, while these are force field energies, so expect differences.",
     }

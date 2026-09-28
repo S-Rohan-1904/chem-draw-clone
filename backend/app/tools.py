@@ -85,7 +85,7 @@ def from_sequence(kind: str, sequence: str) -> dict:
     if kind == "helm":
         mol = Chem.MolFromHELM(sequence.strip())
         if mol is None:
-            raise ChemError("Could not read that HELM string. Example: PEPTIDE1{A.G.S}$$$$")
+            raise ChemError("Could not read that HELM string. An example is PEPTIDE1{A.G.S}$$$$")
         seq = sequence.strip()
     else:
         if kind not in _FLAVOUR:
@@ -95,7 +95,7 @@ def from_sequence(kind: str, sequence: str) -> dict:
             raise ChemError("Sequence is empty.")
         bad = sorted({c for c in seq if c not in _ALPHABET[kind]})
         if bad:
-            raise ChemError(f"Not a {kind.upper() if kind != 'peptide' else 'standard amino acid'} code: {', '.join(bad)}.")
+            raise ChemError(f"Not a {kind.upper() if kind != 'peptide' else 'standard amino acid'} code ({', '.join(bad)}).")
         if len(seq) > MAX_RESIDUES:
             raise ChemError(f"Sequences are limited to {MAX_RESIDUES} residues.")
         mol = Chem.MolFromSequence(seq, flavor=_FLAVOUR[kind])
@@ -103,7 +103,7 @@ def from_sequence(kind: str, sequence: str) -> dict:
             raise ChemError("Could not build that sequence.")
     if mol.GetNumHeavyAtoms() > MAX_HEAVY_ATOMS:
         raise ChemError(
-            f"That sequence has {mol.GetNumHeavyAtoms()} heavy atoms; the viewer handles up to {MAX_HEAVY_ATOMS} "
+            f"That sequence has {mol.GetNumHeavyAtoms()} heavy atoms, and the viewer handles up to {MAX_HEAVY_ATOMS} "
             f"(about {MAX_HEAVY_ATOMS // 8} amino acids or {MAX_HEAVY_ATOMS // 21} nucleotides)."
         )
     smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
@@ -182,7 +182,7 @@ def conformers(smiles: str, n: int = 8) -> dict:
         "force_field": field,
         "embedded": len(cids),
         "conformers": rows,
-        "note": f"{len(cids)} starting geometries (ETKDG), each minimised with {field}; duplicates merged. Energies are gas-phase and relative to the lowest conformer; populations assume a Boltzmann distribution at 298 K.",
+        "note": f"{len(cids)} starting geometries (ETKDG), each minimised with {field}, with duplicates merged. Energies are gas-phase and relative to the lowest conformer. Populations assume a Boltzmann distribution at 298 K.",
     }
 
 

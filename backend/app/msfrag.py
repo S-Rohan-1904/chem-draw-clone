@@ -129,7 +129,7 @@ def _mclafferty(mol: Chem.Mol) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
-        out.append(_node(mol, counts, parent=0, loss=_sp._formula(ncounts), why="McLafferty rearrangement: gamma-H to the carbonyl O, alkene lost", atoms=sorted(ion_atoms), charged=_o, radical=True, score=3.5))
+        out.append(_node(mol, counts, parent=0, loss=_sp._formula(ncounts), why="McLafferty rearrangement, gamma-H to the carbonyl O with loss of an alkene", atoms=sorted(ion_atoms), charged=_o, radical=True, score=3.5))
     return out
 
 
@@ -168,7 +168,7 @@ def _secondary(mol: Chem.Mol, node: dict, node_id: int) -> list[dict]:
     elif why == "simple cleavage" and set(counts) <= {"C", "H"} and counts.get("C", 0) >= 3:
         c = _sub(counts, _LOSS_COUNTS["C2H4"])
         if c and c.get("C", 0) >= 2:
-            out.append(_node(mol, c, parent=node_id, loss="C2H4", why="alkyl cation loses ethene (CnH2n+1 series: 29, 43, 57...)", atoms=[], charged=None, radical=False, score=1.5))
+            out.append(_node(mol, c, parent=node_id, loss="C2H4", why="alkyl cation loses ethene (CnH2n+1 series 29, 43, 57...)", atoms=[], charged=None, radical=False, score=1.5))
     return out
 
 
@@ -182,7 +182,7 @@ def tree(mol: Chem.Mol) -> dict:
         charged = bond.GetBeginAtomIdx() if bond.GetBeginAtomIdx() in f["atoms"] else bond.GetEndAtomIdx()
         why = f["why"]
         if "benzylic" in why and f["formula"] == "C7H7+":
-            why += "; rearranges to tropylium"
+            why += ", rearranges to tropylium"
         counts = _sp._element_counts(mol, f["atoms"])
         primary.append(_node(mol, counts, parent=0, loss=f["loss"] + "•", why=why, atoms=f["atoms"], charged=charged, radical=False, score=f["score"]))
     primary += _mclafferty(mol) + _neutral_losses(mol, mcounts)
@@ -212,7 +212,7 @@ def tree(mol: Chem.Mol) -> dict:
             prev = by_formula[sec["formula"]]
             prev["parent"] = sec["parent"]
             prev["loss"] = sec["loss"]
-            prev["why"] = f"{sec['why']}; also by direct cleavage ({prev['why']})"
+            prev["why"] = f"{sec['why']}, also by direct cleavage ({prev['why']})"
         elif added < MAX_SECONDARY:
             nodes.append(sec)
             by_formula[sec["formula"]] = sec

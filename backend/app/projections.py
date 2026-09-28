@@ -52,7 +52,7 @@ def newman_bonds(molblock: str) -> list[dict]:
         heavy2 = sum(1 for n in a2.GetNeighbors() if n.GetAtomicNum() > 1)
         if heavy1 < 2 or heavy2 < 2:
             continue
-        out.append({"atoms": [a1.GetIdx(), a2.GetIdx()], "label": f"{a1.GetSymbol()}{a1.GetIdx() + 1}–{a2.GetSymbol()}{a2.GetIdx() + 1}"})
+        out.append({"atoms": [a1.GetIdx(), a2.GetIdx()], "label": f"{a1.GetSymbol()}{a1.GetIdx() + 1}-{a2.GetSymbol()}{a2.GetIdx() + 1}"})
     return out
 
 
@@ -105,7 +105,7 @@ def newman_svg(molblock: str, front: int, back: int, rotate_deg: float = 0.0, si
         fx, fy = project(front_subs[0], front, 0.0)
         bx, by = project(back_subs[0], back, rotate_deg)
         dihedral = round(math.degrees(math.atan2(fx * by - fy * bx, fx * bx + fy * by)) % 360, 1)
-    parts.append(f"<text x='12' y='{size - 12}' font-size='12' fill='#6b7280' font-family='sans-serif'>front: {mol.GetAtomWithIdx(front).GetSymbol()}{front + 1}, back: {mol.GetAtomWithIdx(back).GetSymbol()}{back + 1}</text>")
+    parts.append(f"<text x='12' y='{size - 12}' font-size='12' fill='#6b7280' font-family='sans-serif'>front {mol.GetAtomWithIdx(front).GetSymbol()}{front + 1}, back {mol.GetAtomWithIdx(back).GetSymbol()}{back + 1}</text>")
     parts.append("</svg>")
     return {"svg": "".join(parts), "dihedral": dihedral, "front_subs": front_subs, "back_subs": back_subs}
 

@@ -24,8 +24,8 @@ export function Properties({ mol }: { mol: Molecule }) {
     <section className="card">
       <header className="card-head">
         <h2>Properties</h2>
-        <span className={`tag ${lip === 0 ? 'tag-ok' : 'tag-warn'}`} title="Rule of five: MW \u2264 500, logP \u2264 5, donors \u2264 5, acceptors \u2264 10">
-          Lipinski: {lip === 0 ? 'passes' : `${lip} violation${lip > 1 ? 's' : ''}`}
+        <span className={`tag ${lip === 0 ? 'tag-ok' : 'tag-warn'}`} title="Rule of five, MW \u2264 500, logP \u2264 5, donors \u2264 5, acceptors \u2264 10">
+          Lipinski {lip === 0 ? 'passes' : `fails (${lip} violation${lip > 1 ? 's' : ''})`}
         </span>
       </header>
       <dl className="props props-grid">

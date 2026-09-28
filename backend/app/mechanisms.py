@@ -34,86 +34,86 @@ class Mechanism:
 
 
 LIBRARY: list[Mechanism] = [
-    Mechanism("sn2", "SN2 substitution", "Substitution", "Bromomethane and hydroxide: one concerted step with inversion.", [
+    Mechanism("sn2", "SN2 substitution", "Substitution", "Bromomethane and hydroxide react in one concerted step with inversion.", [
         Step("[OH-:1].[CH3:2][Br:3]", "The nucleophile attacks the carbon from the side opposite the leaving group while the C-Br bond breaks. One step, no intermediate.", [("a1", "a2"), ("b2-3", "a3")]),
         Step("[CH3:2][OH:1].[Br-:3]", "Methanol and bromide. The carbon is turned inside out (inversion of configuration) when it is a stereocentre."),
     ]),
-    Mechanism("sn1", "SN1 substitution", "Substitution", "tert-Butyl bromide and water: ionisation, capture, deprotonation.", [
-        Step("[CH3:4][C:2]([CH3:5])([CH3:6])[Br:3]", "Slow step: the C-Br bond breaks on its own. Both electrons go to bromine and a tertiary carbocation forms.", [("b2-3", "a3")]),
-        Step("[CH3:4][C+:2]([CH3:5])[CH3:6].[Br-:3].[OH2:1]", "Fast step: water attacks the planar carbocation. Either face is possible, so a stereocentre would be racemised.", [("a1", "a2")]),
+    Mechanism("sn1", "SN1 substitution", "Substitution", "tert-Butyl bromide and water go through ionisation, capture and deprotonation.", [
+        Step("[CH3:4][C:2]([CH3:5])([CH3:6])[Br:3]", "In the slow step the C-Br bond breaks on its own. Both electrons go to bromine and a tertiary carbocation forms.", [("b2-3", "a3")]),
+        Step("[CH3:4][C+:2]([CH3:5])[CH3:6].[Br-:3].[OH2:1]", "In the fast step water attacks the planar carbocation. Either face is possible, so a stereocentre would be racemised.", [("a1", "a2")]),
         Step("[CH3:4][C:2]([CH3:5])([CH3:6])[O+:1]([H:8])[H:9].[OH2:7]", "A second water molecule removes a proton from the oxonium ion.", [("a7", "a8"), ("b1-8", "a1")]),
         Step("[CH3:4][C:2]([CH3:5])([CH3:6])[OH:1].[OH3+:7].[Br-:3]", "tert-Butanol, hydronium and bromide."),
     ]),
-    Mechanism("e2", "E2 elimination", "Elimination", "2-Bromopropane and ethoxide: base removes a proton as the halide leaves.", [
+    Mechanism("e2", "E2 elimination", "Elimination", "With 2-bromopropane and ethoxide, the base removes a proton as the halide leaves.", [
         Step("[CH3:7][CH2:8][O-:1].[H:9][CH2:4][CH:2]([CH3:5])[Br:3]", "The base takes the beta hydrogen, its electrons become the new pi bond, and the C-Br bond breaks, all at once. The H and Br must be anti-periplanar.", [("a1", "a9"), ("b4-9", "b4-2"), ("b2-3", "a3")]),
         Step("[CH3:7][CH2:8][OH:1].[CH2:4]=[CH:2][CH3:5].[Br-:3]", "Propene, ethanol and bromide."),
     ]),
-    Mechanism("e1", "E1 elimination", "Elimination", "tert-Butyl bromide heated in a weak base: ionisation, then loss of a proton.", [
-        Step("[CH3:4][C:2]([CH3:5])([CH3:6])[Br:3]", "Slow step: the leaving group departs and the tertiary carbocation forms (the same first step as SN1).", [("b2-3", "a3")]),
-        Step("[CH3:4][C+:2]([CH3:5])[CH2:6][H:7].[Br-:3].[OH2:8]", "A weak base removes a proton from the carbon next to the cation; the C-H electrons form the pi bond.", [("a8", "a7"), ("b6-7", "b6-2")]),
+    Mechanism("e1", "E1 elimination", "Elimination", "tert-Butyl bromide heated in a weak base ionises, then loses a proton.", [
+        Step("[CH3:4][C:2]([CH3:5])([CH3:6])[Br:3]", "In the slow step the leaving group departs and the tertiary carbocation forms (the same first step as SN1).", [("b2-3", "a3")]),
+        Step("[CH3:4][C+:2]([CH3:5])[CH2:6][H:7].[Br-:3].[OH2:8]", "A weak base removes a proton from the carbon next to the cation, and the C-H electrons form the pi bond.", [("a8", "a7"), ("b6-7", "b6-2")]),
         Step("[CH3:4][C:2]([CH3:5])=[CH2:6].[OH3+:8].[Br-:3]", "2-Methylpropene. With more than one beta carbon the more substituted alkene forms (Zaitsev)."),
     ]),
-    Mechanism("hbr_addition", "HBr addition to an alkene", "Addition", "Propene and HBr: protonation gives the more stable carbocation, then bromide adds.", [
+    Mechanism("hbr_addition", "HBr addition to an alkene", "Addition", "With propene and HBr, protonation gives the more stable carbocation, then bromide adds.", [
         Step("[CH2:1]=[CH:2][CH3:3].[H:4][Br:5]", "The pi bond takes the proton on the terminal carbon, so the positive charge lands on the secondary carbon (Markovnikov).", [("b1-2", "a4"), ("b4-5", "a5")]),
         Step("[CH3:1][CH+:2][CH3:3].[Br-:5]", "Bromide adds to the carbocation.", [("a5", "a2")]),
         Step("[CH3:1][CH:2]([Br:5])[CH3:3]", "2-Bromopropane."),
     ]),
-    Mechanism("hydration", "Acid-catalysed hydration", "Addition", "2-Methylpropene, water and acid: protonation, capture by water, deprotonation.", [
-        Step("[CH2:1]=[C:2]([CH3:3])[CH3:4].[H:5][O+:6]([H])[H]", "Hydronium protonates the alkene at the CH2 end: the tertiary carbocation forms.", [("b1-2", "a5"), ("b5-6", "a6")]),
+    Mechanism("hydration", "Acid-catalysed hydration", "Addition", "2-Methylpropene, water and acid go through protonation, capture by water and deprotonation.", [
+        Step("[CH2:1]=[C:2]([CH3:3])[CH3:4].[H:5][O+:6]([H])[H]", "Hydronium protonates the alkene at the CH2 end, so the tertiary carbocation forms.", [("b1-2", "a5"), ("b5-6", "a6")]),
         Step("[CH3:1][C+:2]([CH3:3])[CH3:4].[OH2:7]", "Water attacks the carbocation.", [("a7", "a2")]),
-        Step("[CH3:1][C:2]([CH3:3])([CH3:4])[O+:7]([H:8])[H].[OH2:9]", "Another water molecule removes the extra proton; the acid catalyst is regenerated.", [("a9", "a8"), ("b7-8", "a7")]),
+        Step("[CH3:1][C:2]([CH3:3])([CH3:4])[O+:7]([H:8])[H].[OH2:9]", "Another water molecule removes the extra proton, and the acid catalyst is regenerated.", [("a9", "a8"), ("b7-8", "a7")]),
         Step("[CH3:1][C:2]([CH3:3])([CH3:4])[OH:7].[OH3+:9]", "tert-Butanol."),
     ]),
-    Mechanism("bromination", "Bromination of an alkene", "Addition", "Ethene and Br2 through a cyclic bromonium ion; anti addition.", [
-        Step("[CH2:1]=[CH2:2].[Br:3][Br:4]", "The pi bond attacks one bromine; that bromine's lone pair bonds back to the other carbon while Br-Br breaks.", [("b1-2", "a3"), ("a3", "a2"), ("b3-4", "a4")]),
+    Mechanism("bromination", "Bromination of an alkene", "Addition", "Ethene and Br2 react through a cyclic bromonium ion, giving anti addition.", [
+        Step("[CH2:1]=[CH2:2].[Br:3][Br:4]", "The pi bond attacks one bromine, and that bromine's lone pair bonds back to the other carbon while Br-Br breaks.", [("b1-2", "a3"), ("a3", "a2"), ("b3-4", "a4")]),
         Step("[CH2:1]1[CH2:2][Br+:3]1.[Br-:4]", "Bromide opens the bromonium ion from the opposite face.", [("a4", "a2"), ("b2-3", "a3")]),
         Step("[Br:3][CH2:1][CH2:2][Br:4]", "1,2-Dibromoethane. On a ring or a stereogenic alkene the two bromines end up anti."),
     ]),
-    Mechanism("esterification", "Fischer esterification", "Carbonyl chemistry", "Acetic acid and methanol with an acid catalyst: six reversible steps.", [
+    Mechanism("esterification", "Fischer esterification", "Carbonyl chemistry", "Acetic acid and methanol with an acid catalyst react in six reversible steps.", [
         Step("[CH3:1][C:2](=[O:3])[OH:4].[H:5][O+:6]([H])[H]", "The carbonyl oxygen is protonated, which makes the carbon more electrophilic.", [("a3", "a5"), ("b5-6", "a6")]),
-        Step("[CH3:1][C:2](=[O+:3][H:5])[OH:4].[OH2:6].[CH3:7][OH:8]", "Methanol attacks the carbonyl carbon; the pi electrons move onto oxygen.", [("a8", "a2"), ("b2-3", "a3")]),
-        Step("[CH3:1][C:2]([O:3][H:5])([OH:4])[O+:8]([H:9])[CH3:7]", "Proton transfer: the oxonium proton moves to the OH that will leave.", [("a4", "a9"), ("b8-9", "a8")]),
+        Step("[CH3:1][C:2](=[O+:3][H:5])[OH:4].[OH2:6].[CH3:7][OH:8]", "Methanol attacks the carbonyl carbon, and the pi electrons move onto oxygen.", [("a8", "a2"), ("b2-3", "a3")]),
+        Step("[CH3:1][C:2]([O:3][H:5])([OH:4])[O+:8]([H:9])[CH3:7]", "In a proton transfer, the oxonium proton moves to the OH that will leave.", [("a4", "a9"), ("b8-9", "a8")]),
         Step("[CH3:1][C:2]([O:3][H:5])([O:8][CH3:7])[O+:4]([H])[H]", "Water leaves as the oxygen lone pair reforms the carbonyl.", [("a3", "b2-3"), ("b2-4", "a4")]),
         Step("[CH3:1][C:2](=[O+:3][H:5])[O:8][CH3:7].[OH2:4]", "Water takes the proton off the carbonyl oxygen.", [("a4", "a5"), ("b3-5", "a3")]),
-        Step("[CH3:1][C:2](=[O:3])[O:8][CH3:7].[OH3+:4]", "Methyl acetate. Every step is reversible: excess alcohol or removal of water drives the equilibrium."),
+        Step("[CH3:1][C:2](=[O:3])[O:8][CH3:7].[OH3+:4]", "Methyl acetate. Every step is reversible, so excess alcohol or removal of water drives the equilibrium."),
     ]),
-    Mechanism("saponification", "Ester hydrolysis with hydroxide", "Carbonyl chemistry", "Methyl acetate and hydroxide: addition, elimination, then an irreversible proton transfer.", [
+    Mechanism("saponification", "Ester hydrolysis with hydroxide", "Carbonyl chemistry", "Methyl acetate and hydroxide react by addition and elimination, then an irreversible proton transfer.", [
         Step("[CH3:1][C:2](=[O:3])[O:4][CH3:5].[OH-:6]", "Hydroxide adds to the carbonyl carbon.", [("a6", "a2"), ("b2-3", "a3")]),
-        Step("[CH3:1][C:2]([O-:3])([OH:6])[O:4][CH3:5]", "The tetrahedral intermediate collapses: the carbonyl reforms and methoxide leaves.", [("a3", "b2-3"), ("b2-4", "a4")]),
+        Step("[CH3:1][C:2]([O-:3])([OH:6])[O:4][CH3:5]", "The tetrahedral intermediate collapses, so the carbonyl reforms and methoxide leaves.", [("a3", "b2-3"), ("b2-4", "a4")]),
         Step("[CH3:1][C:2](=[O:3])[O:6][H:7].[O-:4][CH3:5]", "Methoxide takes the acidic proton of the acid. This step is what makes the whole process irreversible.", [("a4", "a7"), ("b6-7", "a6")]),
         Step("[CH3:1][C:2](=[O:3])[O-:6].[OH:4][CH3:5]", "Acetate and methanol. Acidic workup gives acetic acid."),
     ]),
-    Mechanism("cyanohydrin", "Cyanohydrin formation", "Carbonyl chemistry", "Acetone and cyanide: nucleophilic addition to a ketone.", [
-        Step("[CH3:1][C:2](=[O:3])[CH3:4].[C-:5]#[N:6]", "Cyanide attacks the carbonyl carbon; the pi electrons move to oxygen.", [("a5", "a2"), ("b2-3", "a3")]),
+    Mechanism("cyanohydrin", "Cyanohydrin formation", "Carbonyl chemistry", "Acetone and cyanide show nucleophilic addition to a ketone.", [
+        Step("[CH3:1][C:2](=[O:3])[CH3:4].[C-:5]#[N:6]", "Cyanide attacks the carbonyl carbon, and the pi electrons move to oxygen.", [("a5", "a2"), ("b2-3", "a3")]),
         Step("[CH3:1][C:2]([O-:3])([CH3:4])[C:5]#[N:6].[H:7][C:8]#[N:9]", "The alkoxide takes a proton from HCN, regenerating cyanide.", [("a3", "a7"), ("b7-8", "a8")]),
         Step("[CH3:1][C:2]([OH:3])([CH3:4])[C:5]#[N:6].[C-:8]#[N:9]", "Acetone cyanohydrin."),
     ]),
     Mechanism("grignard", "Grignard addition", "Carbonyl chemistry", "Methylmagnesium bromide and formaldehyde, then aqueous workup.", [
         Step("[CH3:1][Mg:2][Br:3].[CH2:4]=[O:5]", "The polarised C-Mg bond delivers the methyl carbanion to the carbonyl carbon.", [("b1-2", "a4"), ("b4-5", "a5")]),
-        Step("[CH3:1][CH2:4][O-:5].[Mg+:2][Br:3].[H:6][O+:7]([H])[H]", "Workup: the magnesium alkoxide is protonated by aqueous acid.", [("a5", "a6"), ("b6-7", "a7")]),
-        Step("[CH3:1][CH2:4][OH:5].[OH2:7]", "Ethanol. Formaldehyde gives a primary alcohol; other aldehydes give secondary, ketones tertiary."),
+        Step("[CH3:1][CH2:4][O-:5].[Mg+:2][Br:3].[H:6][O+:7]([H])[H]", "In the workup the magnesium alkoxide is protonated by aqueous acid.", [("a5", "a6"), ("b6-7", "a7")]),
+        Step("[CH3:1][CH2:4][OH:5].[OH2:7]", "Ethanol. Formaldehyde gives a primary alcohol, other aldehydes give secondary and ketones tertiary."),
     ]),
-    Mechanism("nabh4", "Reduction with sodium borohydride", "Carbonyl chemistry", "Acetone and NaBH4 in methanol: hydride delivery, then protonation.", [
+    Mechanism("nabh4", "Reduction with sodium borohydride", "Carbonyl chemistry", "Acetone and NaBH4 in methanol react by hydride delivery, then protonation.", [
         Step("[CH3:1][C:2](=[O:3])[CH3:4].[H:5][B-:6]([H])([H])[H]", "A hydride is transferred from boron to the carbonyl carbon.", [("b5-6", "a2"), ("b2-3", "a3")]),
         Step("[CH3:1][CH:2]([O-:3])[CH3:4].[BH3:6].[H:7][O:8][CH3]", "The alkoxide is protonated by the solvent.", [("a3", "a7"), ("b7-8", "a8")]),
         Step("[CH3:1][CH:2]([OH:3])[CH3:4].[O-:8]C", "Propan-2-ol."),
     ]),
-    Mechanism("imine", "Imine formation", "Carbonyl chemistry", "Acetone and methylamine with mild acid: addition, then dehydration.", [
+    Mechanism("imine", "Imine formation", "Carbonyl chemistry", "Acetone and methylamine with mild acid react by addition, then dehydration.", [
         Step("[CH3:1][C:2](=[O:3])[CH3:4].[CH3:5][NH2:6]", "The amine nitrogen attacks the carbonyl carbon.", [("a6", "a2"), ("b2-3", "a3")]),
         Step("[CH3:1][C:2]([O-:3])([CH3:4])[N+:6]([H:7])([H:8])[CH3:5]", "Proton transfer from nitrogen to oxygen gives the carbinolamine.", [("a3", "a7"), ("b6-7", "a6")]),
         Step("[CH3:1][C:2]([O:3][H:7])([CH3:4])[N:6]([H:8])[CH3:5].[H:9][O+:10]([H])[H]", "Acid protonates the OH so it can leave as water.", [("a3", "a9"), ("b9-10", "a10")]),
-        Step("[CH3:1][C:2]([O+:3]([H:7])[H:9])([CH3:4])[N:6]([H:8])[CH3:5]", "The nitrogen lone pair pushes water out: an iminium ion forms.", [("a6", "b2-6"), ("b2-3", "a3")]),
+        Step("[CH3:1][C:2]([O+:3]([H:7])[H:9])([CH3:4])[N:6]([H:8])[CH3:5]", "The nitrogen lone pair pushes water out and an iminium ion forms.", [("a6", "b2-6"), ("b2-3", "a3")]),
         Step("[CH3:1][C:2](=[N+:6]([H:8])[CH3:5])[CH3:4].[OH2:3].[OH2:10]", "Water removes the N-H proton.", [("a10", "a8"), ("b6-8", "a6")]),
-        Step("[CH3:1][C:2](=[N:6][CH3:5])[CH3:4].[OH3+:10].[OH2:3]", "The imine (Schiff base). Fastest near pH 5: enough acid to activate the OH, enough free amine to attack."),
+        Step("[CH3:1][C:2](=[N:6][CH3:5])[CH3:4].[OH3+:10].[OH2:3]", "The imine (Schiff base). It forms fastest near pH 5, with enough acid to activate the OH and enough free amine to attack."),
     ]),
-    Mechanism("aldol", "Aldol addition", "Carbonyl chemistry", "Acetaldehyde with hydroxide: enolate formation, attack, protonation.", [
-        Step("[OH-:1].[H:2][CH2:3][CH:4]=[O:5]", "Hydroxide removes an alpha hydrogen; the electrons delocalise onto oxygen to give the enolate.", [("a1", "a2"), ("b2-3", "b3-4"), ("b4-5", "a5")]),
+    Mechanism("aldol", "Aldol addition", "Carbonyl chemistry", "Acetaldehyde with hydroxide goes through enolate formation, attack and protonation.", [
+        Step("[OH-:1].[H:2][CH2:3][CH:4]=[O:5]", "Hydroxide removes an alpha hydrogen, and the electrons delocalise onto oxygen to give the enolate.", [("a1", "a2"), ("b2-3", "b3-4"), ("b4-5", "a5")]),
         Step("[CH2:3]=[CH:4][O-:5].[CH3:6][CH:7]=[O:8].[OH2:1]", "The enolate carbon attacks the carbonyl of a second molecule.", [("b3-4", "a7"), ("b7-8", "a8")]),
         Step("[O:5]=[CH:4][CH2:3][CH:7]([O-:8])[CH3:6].[H:9][O:1][H]", "The alkoxide is protonated by water, regenerating hydroxide.", [("a8", "a9"), ("b9-1", "a1")]),
         Step("[O:5]=[CH:4][CH2:3][CH:7]([OH:8])[CH3:6].[OH-:1]", "3-Hydroxybutanal, the aldol. Heating dehydrates it to the conjugated enal."),
     ]),
     Mechanism("eas_bromination", "Bromination of benzene", "Aromatic", "Electrophilic aromatic substitution with Br2 and FeBr3.", [
-        Step("[cH:1]1[cH:2][cH:3][cH:4][cH:5][cH:6]1.[Br:7][Br:8].Br[Fe:9](Br)Br", "The Lewis acid polarises Br2. The ring's pi electrons attack the outer bromine; aromaticity is lost temporarily.", [("b1-2", "a7"), ("b7-8", "a8"), ("a8", "a9")]),
+        Step("[cH:1]1[cH:2][cH:3][cH:4][cH:5][cH:6]1.[Br:7][Br:8].Br[Fe:9](Br)Br", "The Lewis acid polarises Br2. The ring's pi electrons attack the outer bromine, and aromaticity is lost temporarily.", [("b1-2", "a7"), ("b7-8", "a8"), ("a8", "a9")]),
         Step("[Br:7][C:1]1([H:10])[CH:2]=[CH:3][CH:4]=[CH:5][CH+:6]1.[Fe-:9](Br)(Br)(Br)[Br:8]", "The sigma complex (arenium ion). FeBr4- removes the proton and the aromatic ring is restored.", [("a8", "a10"), ("b1-10", "b1-6")]),
         Step("[Br:7][c:1]1[cH:2][cH:3][cH:4][cH:5][cH:6]1.[H:10][Br:8].Br[Fe:9](Br)Br", "Bromobenzene, HBr and the regenerated catalyst."),
     ]),
@@ -124,25 +124,25 @@ LIBRARY: list[Mechanism] = [
         Step("[O-:4][N+:3](=[O:5])[C:9]1([H:15])[CH:10]=[CH:11][CH:12]=[CH:13][CH+:14]1.[OH2:2]", "The sigma complex loses a proton to water and aromaticity returns.", [("a2", "a15"), ("b9-15", "b9-14")]),
         Step("[O-:4][N+:3](=[O:5])[c:9]1[cH:10][cH:11][cH:12][cH:13][cH:14]1.[OH3+:2]", "Nitrobenzene."),
     ]),
-    Mechanism("diels_alder", "Diels-Alder reaction", "Pericyclic", "Buta-1,3-diene and ethene: one concerted step, three arrows.", [
-        Step("[CH2:1]=[CH:2][CH:3]=[CH2:4].[CH2:5]=[CH2:6]", "Six electrons move at once through a cyclic transition state: two new sigma bonds and one new pi bond. No intermediate.", [("b1-2", "b2-3"), ("b3-4", "b4-5"), ("b5-6", "b6-1")]),
-        Step("[CH2:1]1[CH:2]=[CH:3][CH2:4][CH2:5][CH2:6]1", "Cyclohexene. The diene must be s-cis; substituents keep their relative configuration (suprafacial on both partners)."),
+    Mechanism("diels_alder", "Diels-Alder reaction", "Pericyclic", "Buta-1,3-diene and ethene react in one concerted step with three arrows.", [
+        Step("[CH2:1]=[CH:2][CH:3]=[CH2:4].[CH2:5]=[CH2:6]", "Six electrons move at once through a cyclic transition state, forming two new sigma bonds and one new pi bond. There is no intermediate.", [("b1-2", "b2-3"), ("b3-4", "b4-5"), ("b5-6", "b6-1")]),
+        Step("[CH2:1]1[CH:2]=[CH:3][CH2:4][CH2:5][CH2:6]1", "Cyclohexene. The diene must be s-cis, and substituents keep their relative configuration (suprafacial on both partners)."),
     ]),
-    Mechanism("williamson", "Williamson ether synthesis", "Substitution", "Methoxide and iodomethane: an SN2 reaction on the halide.", [
-        Step("[CH3:1][O-:2].[CH3:3][I:4]", "The alkoxide is the nucleophile; iodide leaves in one step.", [("a2", "a3"), ("b3-4", "a4")]),
-        Step("[CH3:1][O:2][CH3:3].[I-:4]", "Dimethyl ether. Use a primary halide: secondary and tertiary halides eliminate instead."),
+    Mechanism("williamson", "Williamson ether synthesis", "Substitution", "Methoxide and iodomethane undergo an SN2 reaction on the halide.", [
+        Step("[CH3:1][O-:2].[CH3:3][I:4]", "The alkoxide is the nucleophile, and iodide leaves in one step.", [("a2", "a3"), ("b3-4", "a4")]),
+        Step("[CH3:1][O:2][CH3:3].[I-:4]", "Dimethyl ether. Use a primary halide, because secondary and tertiary halides eliminate instead."),
     ]),
-    Mechanism("acid_chloride_amide", "Amide from an acid chloride", "Carbonyl chemistry", "Acetyl chloride and ammonia: addition, elimination of chloride, deprotonation.", [
+    Mechanism("acid_chloride_amide", "Amide from an acid chloride", "Carbonyl chemistry", "Acetyl chloride and ammonia react by addition, elimination of chloride and deprotonation.", [
         Step("[CH3:1][C:2](=[O:3])[Cl:4].[NH3:5]", "Ammonia attacks the carbonyl carbon.", [("a5", "a2"), ("b2-3", "a3")]),
         Step("[CH3:1][C:2]([O-:3])([Cl:4])[NH3+:5]", "The carbonyl reforms and chloride, the best leaving group, departs.", [("a3", "b2-3"), ("b2-4", "a4")]),
         Step("[CH3:1][C:2](=[O:3])[N+:5]([H:6])([H])[H].[Cl-:4]", "Chloride (or a second ammonia) removes the N-H proton.", [("a4", "a6"), ("b5-6", "a5")]),
         Step("[CH3:1][C:2](=[O:3])[NH2:5].[H:6][Cl:4]", "Acetamide and HCl. In practice two equivalents of amine are used, one to trap the HCl."),
     ]),
     Mechanism("radical_chlorination", "Radical chlorination of methane", "Radical", "Initiation, two propagation steps, termination. Fishhook arrows move one electron each.", [
-        Step("[Cl:1][Cl:2]", "Initiation: light breaks Cl2 homolytically into two chlorine radicals.", [("b1-2", "a1"), ("b1-2", "a2")], half=True),
-        Step("[Cl:1].[H:3][CH3:4]", "Propagation 1: a chlorine radical abstracts a hydrogen; a methyl radical is left.", [("a1", "a3"), ("b3-4", "a3"), ("b3-4", "a4")], half=True),
-        Step("[H:3][Cl:1].[CH3:4].[Cl:5][Cl:6]", "Propagation 2: the methyl radical takes a chlorine from Cl2 and a new chlorine radical carries the chain.", [("a4", "a5"), ("b5-6", "a5"), ("b5-6", "a6")], half=True),
-        Step("[CH3:4][Cl:5].[Cl:6]", "Chloromethane and a chlorine radical. Termination: any two radicals combine (Cl-Cl, CH3-Cl, CH3-CH3)."),
+        Step("[Cl:1][Cl:2]", "In initiation, light breaks Cl2 homolytically into two chlorine radicals.", [("b1-2", "a1"), ("b1-2", "a2")], half=True),
+        Step("[Cl:1].[H:3][CH3:4]", "In the first propagation step a chlorine radical abstracts a hydrogen, leaving a methyl radical.", [("a1", "a3"), ("b3-4", "a3"), ("b3-4", "a4")], half=True),
+        Step("[H:3][Cl:1].[CH3:4].[Cl:5][Cl:6]", "In the second propagation step the methyl radical takes a chlorine from Cl2 and a new chlorine radical carries the chain.", [("a4", "a5"), ("b5-6", "a5"), ("b5-6", "a6")], half=True),
+        Step("[CH3:4][Cl:5].[Cl:6]", "Chloromethane and a chlorine radical. In termination any two radicals combine (Cl-Cl, CH3-Cl, CH3-CH3)."),
     ]),
 ]
 

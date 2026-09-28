@@ -74,7 +74,7 @@ export function MechanismsPanel({ onOpen }: { onOpen: (smiles: string) => void }
             <div className="toolbar">
               {current.arrows > 0 && (
                 <span className="muted small">
-                  {current.half ? 'Fishhook arrows move one electron each.' : `${current.arrows} curved arrow${current.arrows > 1 ? 's' : ''}: each moves an electron pair from where it starts (a lone pair or a bond) to where it points (a new bond or an atom).`}
+                  {current.half ? 'Fishhook arrows move one electron each.' : `${current.arrows} curved arrow${current.arrows > 1 ? 's' : ''}. Each moves an electron pair from where it starts (a lone pair or a bond) to where it points (a new bond or an atom).`}
                 </span>
               )}
               {step === detail.steps.length - 1 && (

@@ -83,7 +83,7 @@ export function DrawPanel({ onBuild, loading, loadStruct }: Props) {
             </optgroup>
           ))}
         </select>
-        <span className="muted small">Use the wedge or hash bond tool to set stereocentres; the enhanced stereo tool marks racemic (AND) or relative (OR) centres.</span>
+        <span className="muted small">Use the wedge or hash bond tool to set stereocentres. The enhanced stereo tool marks racemic (AND) or relative (OR) centres.</span>
         {msg && <span className="hint-bad small">{msg}</span>}
       </div>
     </div>

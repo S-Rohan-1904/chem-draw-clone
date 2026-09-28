@@ -89,7 +89,7 @@ export function SavedList({ auth, items, onPick, onDelete, onUpdate }: Props) {
       {editErr && <p className="hint-bad small">{editErr}</p>}
       {items.length > 1 && (
         <div className="saved-search">
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by structure: SMILES or SMARTS" aria-label="Structure search" spellCheck={false} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by structure (SMILES or SMARTS)" aria-label="Structure search" spellCheck={false} />
           {result && <span className="muted small">{result.mode === 'substructure' ? `${result.hits.length} containing it` : `${result.hits.length} similar, best first`}</span>}
           {searchErr && <span className="hint-bad small">{searchErr}</span>}
         </div>

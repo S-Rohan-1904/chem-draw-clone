@@ -16,7 +16,7 @@ def align(molblock_a: str, molblock_b: str) -> dict:
     ha, hb = Chem.RemoveHs(ma), Chem.RemoveHs(mb)
     mcs = rdFMCS.FindMCS([ha, hb], timeout=5, ringMatchesRingOnly=True, completeRingsOnly=False, matchValences=False)
     if mcs.numAtoms < 3:
-        raise ChemError("The molecules share fewer than three atoms; nothing to overlay.")
+        raise ChemError("The molecules share fewer than three atoms, so there is nothing to overlay.")
     patt = Chem.MolFromSmarts(mcs.smartsString)
     ia, ib = ha.GetSubstructMatch(patt), hb.GetSubstructMatch(patt)
     # Heavy-atom indices are the first atoms of the H-added mol blocks, so the

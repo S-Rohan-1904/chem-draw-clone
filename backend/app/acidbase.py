@@ -131,7 +131,7 @@ def species_at(mol: Chem.Mol, site_list: list[dict], ph: float) -> Chem.Mol:
     try:
         Chem.SanitizeMol(m)
     except Exception as e:  # noqa: BLE001
-        raise ChemError(f"Could not build the ionised form: {e}")
+        raise ChemError(f"Could not build the ionised form ({e}).")
     return m
 
 
@@ -175,5 +175,5 @@ def analyse(smiles: str, ph: float = 7.4) -> dict:
         "pi": isoelectric_point(site_list, base_charge),
         "strongest_acid": strongest_acid["group"] if strongest_acid else None,
         "strongest_base": strongest_base["group"] if strongest_base else None,
-        "note": "Typical pKa values for each group in water; substituent effects beyond the listed patterns are not modelled, so expect about one unit of error.",
+        "note": "Typical pKa values for each group in water. Substituent effects beyond the listed patterns are not modelled, so expect about one unit of error.",
     }

@@ -39,7 +39,7 @@ def test_falls_back_to_cactus(monkeypatch):
         return httpx.Response(200, text="OC(=O)C\n")
 
     _mock(monkeypatch, handler)
-    assert resolver.lookup("something")[1:] == ("cactus", "'something' is not a systematic IUPAC name; structure taken from NCI CACTUS.")
+    assert resolver.lookup("something")[1:] == ("cactus", "'something' is not a systematic IUPAC name, so the structure was taken from NCI CACTUS.")
     assert resolver.lookup("something")[0] == "OC(=O)C"
 
 

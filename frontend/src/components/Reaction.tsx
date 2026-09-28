@@ -31,7 +31,7 @@ export function Reaction({ text, rxn, onOpen }: Props) {
       <header className="card-head">
         <h2>Reaction</h2>
         <span className={`tag ${rxn.balanced ? 'tag-ok' : 'tag-warn'}`}>
-          {rxn.balanced ? 'atoms balanced' : `unbalanced: ${imbalance.map(([el, n]) => `${el} ${n > 0 ? '+' : ''}${n}`).join(', ')}`}
+          {rxn.balanced ? 'atoms balanced' : `unbalanced (${imbalance.map(([el, n]) => `${el} ${n > 0 ? '+' : ''}${n}`).join(', ')})`}
         </span>
       </header>
       <p className="muted small"><code>{text}</code></p>
@@ -43,7 +43,7 @@ export function Reaction({ text, rxn, onOpen }: Props) {
       </div>
       <Stoichiometry rxn={rxn} />
       <ReactionClass rxn={rxn} />
-      {rxn.mapped && <p className="muted small">Atom map numbers in the input colour matching atoms on both sides; the small number by each atom is its map number.</p>}
+      {rxn.mapped && <p className="muted small">Atom map numbers in the input colour matching atoms on both sides, and the small number by each atom is its map number.</p>}
     </section>
   )
 }

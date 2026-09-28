@@ -97,7 +97,7 @@ def _error_response(text: str, err: chem.ChemError, db: Session) -> JSONResponse
     diag = suggest.diagnose(chem.normalise_name(text), err.opsin_error, _known_from_cache(db))
     detail = diag.reason if err.opsin_error else str(err)
     if err.opsin_error and resolver.enabled():
-        detail += " It is not in PubChem or NCI CACTUS either; paste a SMILES or draw it."
+        detail += " It is not in PubChem or NCI CACTUS either, so paste a SMILES or draw it."
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={

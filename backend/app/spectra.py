@@ -29,7 +29,7 @@ NIST_JCAMP = "https://webbook.nist.gov/cgi/cbook.cgi?JCAMP={}&Type={}&Index={}"
 NIST_PAGE = "https://webbook.nist.gov/cgi/cbook.cgi?ID={}&Units=SI&Type={}"
 
 NMR_NOTE = "Shifts predicted with HOSE codes by nmrshiftdb2 (nmrshiftdb.nmr.uni-koeln.de)."
-RULES_NOTE = "Shifts estimated from additive substituent rules; expect +/- 0.5 ppm (1H) and +/- 10 ppm (13C)."
+RULES_NOTE = "Shifts estimated from additive substituent rules. Expect +/- 0.5 ppm (1H) and +/- 10 ppm (13C)."
 NIST_NOTE = "Experimental spectrum from the NIST Chemistry WebBook, NIST Standard Reference Database 69."
 
 _MULT = {0: "s", 1: "d", 2: "t", 3: "q", 4: "quint", 5: "sext", 6: "sept"}

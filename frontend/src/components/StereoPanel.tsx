@@ -36,7 +36,7 @@ export function StereoPanel({ mol, onHover, onSelect, selected, explanation, onV
           {mol.source === 'molfile'
             ? 'Use a wedge or hash bond to set them.'
             : looked_up
-              ? 'The database record leaves them open; paste a SMILES with @ / @@ to set them.'
+              ? 'The database record leaves them open. Paste a SMILES with @ / @@ to set them.'
               : 'Add descriptors to the name, e.g. (2R) or (E).'}
         </p>
       )}

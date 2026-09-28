@@ -60,7 +60,7 @@ export function Conformers({ mol }: Props) {
       {mini && (
         <p className="small">
           {mini.force_field} energy of the shown model: <b>{mini.before.toFixed(2)}</b> kcal/mol, after minimisation <b>{mini.after.toFixed(2)}</b> kcal/mol
-          {mini.before - mini.after > 0.05 ? ` (lowered by ${(mini.before - mini.after).toFixed(2)})` : ' (already at a minimum)'}{mini.converged ? '' : '; not fully converged'}.
+          {mini.before - mini.after > 0.05 ? ` (lowered by ${(mini.before - mini.after).toFixed(2)})` : ' (already at a minimum)'}{mini.converged ? '' : ', not fully converged'}.
         </p>
       )}
       {err && <p className="error small">{err}</p>}

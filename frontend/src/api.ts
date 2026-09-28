@@ -48,7 +48,7 @@ export function describeFailure(e: unknown): string {
     if (e.status >= 500) return 'The server hit an error building this molecule. Try a smaller or simpler input.'
     return e.message
   }
-  return 'Could not reach the server. Check your connection; if the site was idle it may take a minute to wake up.'
+  return 'Could not reach the server. Check your connection. If the site was idle it may take a minute to wake up.'
 }
 
 export async function request<T>(path: string, init: RequestInit = {}, auth?: AuthState | null): Promise<T> {
@@ -60,8 +60,8 @@ export async function request<T>(path: string, init: RequestInit = {}, auth?: Au
   try {
     res = await fetch(path, { ...init, headers: { ...headers, ...(init.headers as Record<string, string>) }, signal: ctrl.signal })
   } catch (e) {
-    if ((e as Error).name === 'AbortError') throw new ApiError(0, 'This took too long. The free server is slow for large molecules; try a smaller input or wait and retry.')
-    throw new ApiError(0, 'Could not reach the server. Check your connection; if the site was idle it may take a minute to wake up.')
+    if ((e as Error).name === 'AbortError') throw new ApiError(0, 'This took too long. The free server is slow for large molecules, so try a smaller input or wait and retry.')
+    throw new ApiError(0, 'Could not reach the server. Check your connection. If the site was idle it may take a minute to wake up.')
   } finally {
     window.clearTimeout(timer)
   }

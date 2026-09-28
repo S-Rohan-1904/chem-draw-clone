@@ -32,7 +32,7 @@ export function Resonance({ mol }: { mol: Molecule }) {
           </button>
         ))}
       </div>
-      <p className="muted small">Same atoms and layout in every form; only bonds and charges move. Kekulé structures count as separate forms.</p>
+      <p className="muted small">Same atoms and layout in every form, and only bonds and charges move. Kekulé structures count as separate forms.</p>
     </section>
   )
 }

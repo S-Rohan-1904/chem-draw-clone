@@ -45,6 +45,13 @@ def test_dna_rna_helm():
     assert helm["smiles"] == tools.from_sequence("peptide", "AGS")["smiles"]
 
 
+def test_three_letter_codes_need_separators_or_mixed_case():
+    assert tools.from_sequence("peptide", "HIS")["sequence"] == "HIS"  # His-Ile-Ser
+    assert tools.from_sequence("peptide", "His")["sequence"] == "H"
+    assert tools.from_sequence("peptide", "GlySer")["sequence"] == "GS"
+    assert tools.from_sequence("peptide", "GLY SER")["sequence"] == "GS"
+
+
 def test_sequence_rejects_bad_letters_and_length():
     with pytest.raises(chem.ChemError):
         tools.from_sequence("dna", "ACGU")

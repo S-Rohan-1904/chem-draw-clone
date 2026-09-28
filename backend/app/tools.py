@@ -67,9 +67,14 @@ _THREE = {
 
 
 def _one_letter(kind: str, text: str) -> str:
-    """Accept one-letter runs, three-letter codes (Ala-Gly-Ser, ALA GLY), spaces and dashes."""
+    """Accept one-letter runs, three-letter codes, spaces and dashes.
+
+    Three-letter codes need separators (Ala-Gly-Ser, ALA GLY) or mixed case
+    (AlaGlySer). An unbroken run in one case is read as one-letter codes, so
+    HIS is His-Ile-Ser rather than histidine."""
     text = text.strip()
-    if kind.endswith("peptide") and re.fullmatch(r"(?:[A-Za-z]{3}[\s\-]*)+", text) and len(re.sub(r"[\s\-]", "", text)) % 3 == 0:
+    three_letter_style = bool(re.search(r"[\s\-]", text)) or not (text.isupper() or text.islower())
+    if kind.endswith("peptide") and three_letter_style and re.fullmatch(r"(?:[A-Za-z]{3}[\s\-]*)+", text) and len(re.sub(r"[\s\-]", "", text)) % 3 == 0:
         codes = re.findall(r"[A-Za-z]{3}", text)
         if all(c.upper() in _THREE for c in codes):
             return "".join(_THREE[c.upper()] for c in codes)

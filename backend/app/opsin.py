@@ -17,7 +17,13 @@ import threading
 from importlib import resources
 
 OPSIN_JAR = str(resources.files("py2opsin") / "opsin-cli-2.9.0-jar-with-dependencies.jar")
-_BANNER = "Run the jar using"
+# stderr noise that is not about the name: the CLI usage banner, and the JVM
+# echoing JAVA_TOOL_OPTIONS (set in the Dockerfile) every time it starts.
+_NOISE = ("Run the jar using", "Picked up JAVA_TOOL_OPTIONS", "Picked up _JAVA_OPTIONS")
+# Seconds to wait for one name. Generous because the first name after a
+# restart also pays for JVM start up on a slow CPU.
+TIMEOUT_S = float(os.environ.get("CHEM_OPSIN_TIMEOUT", "30"))
+_EOF = None  # put on the stdout queue when the process exits
 
 
 def _java() -> str:
@@ -33,8 +39,10 @@ class OpsinProcess:
         self._lock = threading.Lock()
         self._proc: subprocess.Popen[str] | None = None
         self._errors: queue.Queue[str] = queue.Queue()
+        self._lines: queue.Queue[str | None] = queue.Queue()
 
     def _start(self) -> None:
+        self._kill()
         self._proc = subprocess.Popen(
             self._args,
             stdin=subprocess.PIPE,
@@ -43,18 +51,55 @@ class OpsinProcess:
             text=True,
             bufsize=1,
         )
+        # Fresh queues, so a reader left over from a killed process cannot
+        # feed lines into the new one.
         self._errors = queue.Queue()
-        threading.Thread(target=self._pump_stderr, args=(self._proc,), daemon=True).start()
+        self._lines = queue.Queue()
+        threading.Thread(target=self._pump_stderr, args=(self._proc, self._errors), daemon=True).start()
+        threading.Thread(target=self._pump_stdout, args=(self._proc, self._lines), daemon=True).start()
 
-    def _pump_stderr(self, proc: subprocess.Popen[str]) -> None:
+    @staticmethod
+    def _pump_stderr(proc: subprocess.Popen[str], errors: queue.Queue[str]) -> None:
         assert proc.stderr is not None
         for line in proc.stderr:
             line = line.strip()
-            if line and not line.startswith(_BANNER):
-                self._errors.put(line)
+            if line and not line.startswith(_NOISE):
+                errors.put(line)
+
+    @staticmethod
+    def _pump_stdout(proc: subprocess.Popen[str], lines: queue.Queue[str | None]) -> None:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            lines.put(line)
+        lines.put(_EOF)
 
     def _alive(self) -> bool:
         return self._proc is not None and self._proc.poll() is None
+
+    def _kill(self) -> None:
+        if self._proc is None:
+            return
+        try:
+            self._proc.kill()
+            self._proc.wait(timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        self._proc = None
+
+    def _ask(self, name: str) -> str | None:
+        """One output line for ``name``; None if the process is gone. Raises
+        TimeoutError (after killing the process) if OPSIN does not answer."""
+        assert self._proc and self._proc.stdin
+        try:
+            self._proc.stdin.write(name + "\n")
+            self._proc.stdin.flush()
+        except (BrokenPipeError, OSError):
+            return None
+        try:
+            return self._lines.get(timeout=TIMEOUT_S)
+        except queue.Empty:
+            self._kill()
+            raise TimeoutError from None
 
     def convert(self, name: str) -> tuple[str, str]:
         """Return (smiles, error_text). smiles is '' when OPSIN cannot parse."""
@@ -64,22 +109,18 @@ class OpsinProcess:
         with self._lock:
             if not self._alive():
                 self._start()
-            assert self._proc and self._proc.stdin and self._proc.stdout
             # Drop stale stderr from earlier calls.
             while not self._errors.empty():
                 self._errors.get_nowait()
             try:
-                self._proc.stdin.write(name + "\n")
-                self._proc.stdin.flush()
-                line = self._proc.stdout.readline()
-            except (BrokenPipeError, OSError):
-                line = ""
-            if line == "":  # process died; restart once and retry
-                self._start()
-                assert self._proc and self._proc.stdin and self._proc.stdout
-                self._proc.stdin.write(name + "\n")
-                self._proc.stdin.flush()
-                line = self._proc.stdout.readline()
+                line = self._ask(name)
+                if line is None:  # process died; restart once and retry
+                    self._start()
+                    line = self._ask(name)
+            except TimeoutError:
+                return "", f"OPSIN did not answer within {TIMEOUT_S:g} seconds."
+            if line is None:
+                return "", "OPSIN is not running."
             smiles = line.rstrip("\n").split("\t", 1)[0].strip()
             errors: list[str] = []
             if not smiles:
@@ -98,12 +139,7 @@ class OpsinProcess:
 
     def stop(self) -> None:
         with self._lock:
-            if self._proc is not None:
-                try:
-                    self._proc.kill()
-                except OSError:
-                    pass
-                self._proc = None
+            self._kill()
 
 
 strict = OpsinProcess()

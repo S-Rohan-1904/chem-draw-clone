@@ -376,7 +376,6 @@ def _degree_note(mol: Chem.Mol, atoms: list[int], category: str) -> str:
 def classify(reactant_smiles: list[str], product_smiles: list[str]) -> dict:
     """Try every forward template on each reactant; a hit whose product matches a listed product names the reaction."""
     reactants = [mol_from_smiles(s) for s in reactant_smiles]
-    targets = {Chem.MolToSmiles(mol_from_smiles(s)) for s in product_smiles}
     plain_targets = {Chem.MolToSmiles(mol_from_smiles(s), isomericSmiles=False) for s in product_smiles}
     hits = []
     for mol in reactants:

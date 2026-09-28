@@ -9,14 +9,12 @@ else in the app.
 
 from __future__ import annotations
 
-import math
-
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem, Crippen, Descriptors, Lipinski, rdDepictor, rdMolDescriptors, rdMolTransforms
 from rdkit.Chem.Draw import rdMolDraw2D
 
-from .chem import ChemError, mol_from_smiles
+from .chem import mol_from_smiles
 
 # Pauling electronegativities.
 EN = {
@@ -308,7 +306,7 @@ def unsaturation(mol: Chem.Mol) -> dict:
     aromatic_rings = rdMolDescriptors.CalcNumAromaticRings(mol)
     note = ""
     if aromatic_rings:
-        note = f"Each benzene-type ring counts 4: 1 ring + 3 double bonds."
+        note = "Each benzene-type ring counts 4: 1 ring + 3 double bonds."
     other = {el for el in counts if el not in ("C", "H", "N", "O", "P", "S", *_HALOGENS)}
     if other:
         note = (note + " " if note else "") + f"Formula count ignores {', '.join(sorted(other))}."

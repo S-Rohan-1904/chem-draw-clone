@@ -8,8 +8,6 @@ modelled, so the numbers are good to about one pKa unit.
 
 from __future__ import annotations
 
-import math
-
 from rdkit import Chem
 from rdkit.Chem import rdDepictor
 from rdkit.Chem.Draw import rdMolDraw2D

@@ -4,7 +4,7 @@ elements, embed in 3D, and the 3D geometry must reproduce every label."""
 import pytest
 from rdkit import Chem
 
-from app.chem import ChemError, _cip_labels, build, resolve
+from app.chem import ChemError, _cip_labels, build
 
 from tests.corpus import CORPUS, IMPOSSIBLE_STEREO, INVALID, STEREO_IGNORED, UNSPECIFIED, UNSUPPORTED_NAMES
 

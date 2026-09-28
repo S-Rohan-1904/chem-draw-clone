@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rdkit import Chem  # noqa: E402
 
-from app.chem import ChemError, _cip_labels, build, resolve  # noqa: E402
+from app.chem import ChemError, _cip_labels, build  # noqa: E402
 from tests.corpus import CORPUS  # noqa: E402
 
 

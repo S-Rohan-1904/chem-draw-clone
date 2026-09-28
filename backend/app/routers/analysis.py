@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from rdkit import Chem
 from sqlalchemy.orm import Session
 
-from .. import analysis, cache, chem, ratelimit
+from .. import analysis, cache, chem, ratelimit, resolver
 from ..db import get_db
 
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
@@ -152,10 +152,10 @@ def literature_search(body: LiteratureIn, db: Session = Depends(get_db)):
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     row = cache.lookup_name(db, key) if key else None
-    name = (row.title or row.iupac) if row is not None and row.found else body.name.strip()
-    if not name:
-        return {"available": False, "reason": "No name to search ChemRxiv with: this structure has no PubChem entry.", "query": "", "items": [], "source": ""}
-    return cache.get_literature(db, key, name, literature.search)
+    # PubChem's title first (usually the common name), then what the user typed, then the
+    # systematic name; the stereo-free record's title only if all of those find nothing.
+    names = [n for n in ((row.title if row and row.found else ""), body.name.strip(), (row.iupac if row and row.found else "")) if n]
+    return cache.get_literature(db, key, lambda: literature.search(names, more=lambda: [resolver.title_for_skeleton(key)]))
 
 
 @router.get("/mechanisms")

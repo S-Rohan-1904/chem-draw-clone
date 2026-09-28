@@ -101,3 +101,24 @@ def name_for_inchikey(inchikey: str) -> dict | None:
             return {"iupac": p.get("IUPACName") or "", "title": p.get("Title") or "", "cid": p.get("CID")}
     except Exception:  # noqa: BLE001
         return None
+
+
+PUBCHEM_BY_SKELETON = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/{}/property/Title/JSON"
+
+
+def title_for_skeleton(inchikey: str) -> str:
+    """Name of the oldest PubChem record sharing the structure's connectivity (first
+    InChIKey block), whatever its stereo or isotopes: usually the plain compound,
+    e.g. "1,2-Dimethylcyclohexane" for a cis isomer PubChem has no record of. Never raises."""
+    if not enabled() or not re.fullmatch(r"[A-Z]{14}-[A-Z]{10}-[A-Z]", inchikey or ""):
+        return ""
+    try:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
+            r = client.get(PUBCHEM_BY_SKELETON.format(inchikey[:14]))
+            if r.status_code != 200:
+                return ""
+            props = r.json().get("PropertyTable", {}).get("Properties", [])
+            props = [p for p in props if p.get("Title")]
+            return min(props, key=lambda p: p.get("CID", 1 << 62))["Title"] if props else ""
+    except Exception:  # noqa: BLE001
+        return ""

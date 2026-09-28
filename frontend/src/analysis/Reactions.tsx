@@ -63,14 +63,26 @@ function RecordedTab({ data, onOpen, onHighlight }: { data: RecordedReactions; o
   }
   return (
     <div className="bonding-body">
+      {data.uses.length === 0 && data.makes.length === 0 && (
+        data.heavy_atoms && data.max_atoms && data.heavy_atoms > data.max_atoms ? (
+          <p className="muted small">
+            This molecule has {data.heavy_atoms} heavy atoms, and the reaction index covers molecules up to {data.max_atoms}.
+          </p>
+        ) : (
+          <p className="muted small">
+            This molecule is not in the US patent reaction records (1976 to 2016). They cover mostly drug and
+            fine-chemical synthesis, so simple hydrocarbons and uncommon natural products are often absent.
+          </p>
+        )
+      )}
       {data.stereo_ignored && (
-        <p className="muted small">No record for this exact stereoisomer: showing reactions of the same structure with any stereochemistry.</p>
+        <p className="muted small">There is no record for this exact stereoisomer, so reactions of the same structure with any stereochemistry are shown.</p>
       )}
       <Section title="Used in" empty="No recorded reactions use this molecule as a starting material." items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
       <Section title="Made by" empty="No recorded reactions make this molecule." items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
       <p className="muted small">
-        Reaction types ranked by how many distinct patent reactions show them; one real example each, preferring the simplest one that reports a yield.
-        Source: <a href={data.source.url} target="_blank" rel="noopener noreferrer">{data.source.author}, {data.source.name}</a>, {data.source.licence}.
+        Reaction types are ranked by how many distinct patent reactions show them. Each has one real example, preferring the simplest one that reports a yield.
+        Source <a href={data.source.url} target="_blank" rel="noopener noreferrer">{data.source.author}, {data.source.name}</a>, {data.source.licence}.
         Text-mined from patents, so an occasional entry is wrong.
       </p>
     </div>
@@ -98,7 +110,7 @@ function Section({ title, empty, items, direction, onOpen, onHighlight }: {
                 <b>{r.label}</b>
                 <span className="muted small">seen in {r.count} patent reaction{r.count === 1 ? '' : 's'}</span>
                 <span className="small">
-                  Example: {r.patent_url ? <a href={r.patent_url} target="_blank" rel="noopener noreferrer">{r.patent}</a> : r.patent}
+                  Example {r.patent_url ? <a href={r.patent_url} target="_blank" rel="noopener noreferrer">{r.patent}</a> : r.patent}
                   {r.year ? ` (${r.year})` : ''}
                   {r.yield != null ? `, ${Math.round(r.yield)}% yield` : ''}
                 </span>
@@ -123,6 +135,9 @@ function LiteratureTab({ data }: { data: Literature }) {
   if (!data.available) return <p className="muted">{data.reason}</p>
   return (
     <div className="bonding-body">
+      {data.match === 'fulltext' && data.items.length > 0 && (
+        <p className="muted small">No ChemRxiv title or abstract names “{data.query}”, so these preprints are ones that mention it in the text.</p>
+      )}
       {data.items.length === 0 ? (
         <p className="muted">No ChemRxiv preprints found for “{data.query}”.</p>
       ) : (
@@ -137,7 +152,7 @@ function LiteratureTab({ data }: { data: Literature }) {
           ))}
         </ol>
       )}
-      <p className="muted small">Searched ChemRxiv for “{data.query}”{data.source ? ` via ${data.source}` : ''}. Preprints are not peer reviewed; links open the ChemRxiv page.</p>
+      <p className="muted small">Searched ChemRxiv for “{data.query}”{data.source ? ` via ${data.source}` : ''}. Preprints are not peer reviewed. Links open the ChemRxiv page.</p>
     </div>
   )
 }

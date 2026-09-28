@@ -20,6 +20,8 @@ CHEMRXIV_SOURCE = "S4393918830"  # OpenAlex source id for ChemRxiv
 CHEMRXIV_PREFIX = "10.26434"
 MAILTO = "chem-forge@users.noreply.github.com"
 LIMIT = 5
+MAX_NAMES = 4  # names tried per molecule
+VERSION = 3  # bump when the payload or the search changes; older cache rows are redone
 
 
 def enabled() -> bool:
@@ -56,11 +58,16 @@ def _authors(names: list[str]) -> str:
 _STEREO_PREFIX = re.compile(r"^(?:\((?:[0-9]*[RSEZrs](?:,\s*[0-9]*[RSEZrs])*|[+-]|\+/-|\u00b1)\)|cis|trans|rac|meso|[DL])-", re.I)
 
 
+# The same descriptors written after the name, as catalogues do: "1,2-Dimethylcyclohexane, cis-",
+# "Butan-2-ol, (R)-", "Camphor, (+/-)-".
+_STEREO_SUFFIX = re.compile(r",\s*(?:\([^()]*\)|cis|trans|rac|rel|meso|[DL]{1,2}|[+-]|\u00b1)-?\s*$", re.I)
+
+
 def search_name(name: str) -> str:
-    """The name to search for: stereo prefixes dropped, since papers rarely use them."""
+    """The name to search for: stereo descriptors dropped, since papers rarely use them."""
     name = name.strip().replace('"', "")
     while True:
-        stripped = _STEREO_PREFIX.sub("", name, count=1)
+        stripped = _STEREO_SUFFIX.sub("", _STEREO_PREFIX.sub("", name, count=1)).strip()
         if stripped == name or not stripped:
             return name
         name = stripped
@@ -88,14 +95,14 @@ def _dedupe(items: list[dict]) -> list[dict]:
     return out
 
 
-def _openalex(client: httpx.Client, name: str) -> list[dict] | None:
-    params = {
+def _openalex(client: httpx.Client, name: str, fulltext: bool = False) -> list[dict] | None:
+    if fulltext:
+        # Title, abstract and body text; a plain term, since phrase quotes match nothing here.
+        params = {"search": name, "filter": f"primary_location.source.id:{CHEMRXIV_SOURCE}"}
+    else:
         # Commas separate OpenAlex filters, so they cannot appear inside the term.
-        "filter": f"primary_location.source.id:{CHEMRXIV_SOURCE},title_and_abstract.search:{_term(name.replace(',', ' '))}",
-        "sort": "relevance_score:desc",
-        "per_page": str(LIMIT * 2),
-        "mailto": MAILTO,
-    }
+        params = {"filter": f"primary_location.source.id:{CHEMRXIV_SOURCE},title_and_abstract.search:{_term(name.replace(',', ' '))}"}
+    params.update({"sort": "relevance_score:desc", "per_page": str(LIMIT * 2), "mailto": MAILTO})
     key = os.environ.get("OPENALEX_API_KEY")
     if key:
         params["api_key"] = key
@@ -150,21 +157,58 @@ def _crossref(client: httpx.Client, name: str) -> list[dict] | None:
     return items
 
 
-def search(name: str) -> tuple[dict, bool]:
-    """(payload, complete). Incomplete means both services failed: do not cache."""
-    name = search_name(name)
-    base = {"available": True, "query": name, "items": [], "source": ""}
+def _one(client: httpx.Client, name: str) -> tuple[list[dict] | None, str]:
+    for label, fn in (("OpenAlex", _openalex), ("Crossref", _crossref)):
+        try:
+            items = fn(client, name)
+        except (httpx.HTTPError, ValueError):
+            items = None
+        if items is not None:
+            return _dedupe(items)[:LIMIT], label
+    return None, ""
+
+
+def search(names: list[str], more=None) -> tuple[dict, bool]:
+    """(payload, complete). Tries each name in turn (a molecule's catalogue title
+    is not always what papers call it) and stops at the first with results.
+    `more()` supplies further names, fetched only if these all come back empty.
+    Incomplete means the services failed: do not cache."""
+    tried: list[str] = []
+    base = {"available": True, "query": "", "items": [], "source": "", "_v": VERSION}
     if not enabled():
         return {**base, "available": False, "reason": "Literature lookup is turned off on this server."}, False
+    failed = False
     try:
         with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Forge (mailto:{MAILTO})"}) as client:
-            for label, fn in (("OpenAlex", _openalex), ("Crossref", _crossref)):
-                try:
-                    items = fn(client, name)
-                except (httpx.HTTPError, ValueError):
-                    items = None
-                if items is not None:
-                    return {**base, "items": _dedupe(items)[:LIMIT], "source": label}, True
+            pending = list(names)
+            fetched_more = False
+            while pending or (more is not None and not fetched_more):
+                if not pending:
+                    fetched_more = True
+                    pending = list(more())
+                    continue
+                name = search_name(pending.pop(0))
+                if not name or name.lower() in (t.lower() for t in tried) or len(tried) >= MAX_NAMES:
+                    continue
+                tried.append(name)
+                items, label = _one(client, name)
+                if items is None:
+                    failed = True
+                    continue
+                if items:
+                    return {**base, "query": name, "items": items, "source": label}, True
     except Exception:  # noqa: BLE001 - best effort
-        pass
-    return {**base, "available": False, "reason": "ChemRxiv search is not reachable right now."}, False
+        failed = True
+    if not tried:
+        return {**base, "available": False, "reason": "There is no name to search ChemRxiv with, because PubChem has no entry for this structure."}, True
+    if failed:
+        return {**base, "available": False, "query": tried[0], "reason": "ChemRxiv search is not reachable right now."}, False
+    # No title or abstract names the molecule: fall back to preprints that mention it in the text.
+    try:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Forge (mailto:{MAILTO})"}) as client:
+            items = _openalex(client, tried[0], fulltext=True)
+    except (httpx.HTTPError, ValueError):
+        items = None
+    if items:
+        return {**base, "query": tried[0], "items": _dedupe(items)[:LIMIT], "source": "OpenAlex", "match": "fulltext"}, True
+    return {**base, "query": " / ".join(tried)}, True

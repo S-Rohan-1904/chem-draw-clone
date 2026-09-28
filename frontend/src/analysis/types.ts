@@ -210,6 +210,8 @@ export interface RecordedReactions {
   makes: RecordedReaction[]
   stereo_ignored: boolean
   source: { name: string; author: string; url: string; licence: string }
+  heavy_atoms?: number
+  max_atoms?: number
 }
 
 export interface Preprint {
@@ -227,6 +229,7 @@ export interface Literature {
   query: string
   items: Preprint[]
   source: string
+  match?: 'fulltext'
 }
 
 export interface ReactionClass {

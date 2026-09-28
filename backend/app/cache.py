@@ -201,8 +201,8 @@ def lookup_name(db: Session, inchikey: str, before_fetch: Callable[[], None] | N
     return row
 
 
-def get_literature(db: Session, inchikey: str, name: str, search) -> dict:
-    """ChemRxiv results for a molecule. `search(name)` returns (payload, complete).
+def get_literature(db: Session, inchikey: str, search) -> dict:
+    """ChemRxiv results for a molecule. `search()` returns (payload, complete).
     OpenAlex results with papers are kept 30 days; empty results and the thinner
     Crossref fallback a day, so a better answer replaces them; failures are not kept."""
     row = db.get(LiteratureCache, inchikey)
@@ -210,10 +210,10 @@ def get_literature(db: Session, inchikey: str, name: str, search) -> dict:
         data = json.loads(row.result_json)
         age = datetime.now(timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)
         keep = timedelta(days=30) if data.get("items") and data.get("source") == "OpenAlex" else timedelta(days=1)
-        if age < keep:
+        if age < keep and data.get("_v") == literature_version():
             data["cached"] = True
             return data
-    data, complete = search(name)
+    data, complete = search()
     if complete:
         db.merge(LiteratureCache(inchikey=inchikey, result_json=json.dumps(data), created_at=datetime.now(timezone.utc)))
         try:
@@ -222,3 +222,9 @@ def get_literature(db: Session, inchikey: str, name: str, search) -> dict:
             db.rollback()
     data["cached"] = False
     return data
+
+
+def literature_version() -> int:
+    from . import literature
+
+    return literature.VERSION

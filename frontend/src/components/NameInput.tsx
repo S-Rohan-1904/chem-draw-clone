@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { api } from '../api'
 import type { CheckResult } from '../types'
 
@@ -15,7 +15,6 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
   const [names, setNames] = useState<string[]>([])
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
-  const checked = useRef('')
 
   // Live validity check and autocomplete, debounced.
   useEffect(() => {
@@ -30,21 +29,23 @@ export function NameInput({ value, onChange, onSubmit, loading, showHint = true 
       setNames([])
       return
     }
+    let live = true
     const t = window.setTimeout(() => {
-      if (text !== checked.current) {
-        checked.current = text
-        api.check(text).then(setCheck).catch(() => setCheck(null))
-      }
+      api.check(text).then((c) => live && setCheck(c)).catch(() => live && setCheck(null))
       api
         .suggest(text)
         .then((r) => {
+          if (!live) return
           const list = r.names.filter((n) => n.toLowerCase() !== text.toLowerCase())
           setNames(list)
           setActive(-1)
         })
-        .catch(() => setNames([]))
+        .catch(() => live && setNames([]))
     }, 350)
-    return () => window.clearTimeout(t)
+    return () => {
+      live = false
+      window.clearTimeout(t)
+    }
   }, [value])
 
   const submit = (e: FormEvent) => {

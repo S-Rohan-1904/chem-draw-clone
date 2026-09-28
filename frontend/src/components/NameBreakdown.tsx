@@ -13,7 +13,9 @@ export function NameBreakdown({ mol, onHighlight }: Props) {
   useEffect(() => {
     setData(null)
     if (mol.source !== 'iupac') return
-    api.breakdown(mol.input_text, mol.smiles).then(setData).catch(() => setData(null))
+    let live = true
+    api.breakdown(mol.input_text, mol.smiles).then((d) => live && setData(d)).catch(() => live && setData(null))
+    return () => { live = false }
   }, [mol])
 
   if (!data || mol.source !== 'iupac') return null

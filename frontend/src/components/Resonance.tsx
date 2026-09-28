@@ -7,9 +7,11 @@ export function Resonance({ mol }: { mol: Molecule }) {
   const [i, setI] = useState(0)
 
   useEffect(() => {
+    let live = true
     setForms([])
     setI(0)
-    api.resonance(mol.smiles).then((r) => setForms(r.forms)).catch(() => setForms([]))
+    api.resonance(mol.smiles).then((r) => live && setForms(r.forms)).catch(() => live && setForms([]))
+    return () => { live = false }
   }, [mol.smiles])
 
   if (forms.length < 2) return null

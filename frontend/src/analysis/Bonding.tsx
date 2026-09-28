@@ -69,10 +69,12 @@ export function Bonding({ mol, onHighlight }: Props) {
   const [detail, setDetail] = useState<number | null>(null)
 
   useEffect(() => {
+    let live = true
     setData(null)
     setShowDipole(false)
     setDetail(null)
-    analysisApi.bonding(mol.smiles).then(setData).catch(() => setData(null))
+    analysisApi.bonding(mol.smiles).then((d) => live && setData(d)).catch(() => live && setData(null))
+    return () => { live = false }
   }, [mol.smiles])
 
   useDipoleArrow(data?.polarity.dipole, showDipole && tab === 'polarity')

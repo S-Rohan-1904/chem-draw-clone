@@ -9,7 +9,7 @@ interface Props {
   auth: AuthState
   items: SavedMolecule[]
   onPick: (item: SavedMolecule) => void
-  onDelete: (id: number) => void
+  onDelete: (id: number) => Promise<void>
   onUpdate: (id: number, patch: { notes?: string; collection?: string; label?: string }) => Promise<void>
 }
 
@@ -30,6 +30,7 @@ export function SavedList({ auth, items, onPick, onDelete, onUpdate }: Props) {
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<SearchResult | null>(null)
   const [searchErr, setSearchErr] = useState<string | null>(null)
+  const [editErr, setEditErr] = useState<string | null>(null)
   const collections = [...new Set(items.map((i) => i.collection).filter(Boolean))].sort()
 
   // Structure search over the saved list: substructure when the query is
@@ -63,14 +64,29 @@ export function SavedList({ auth, items, onPick, onDelete, onUpdate }: Props) {
   }
 
   const commit = async (it: SavedMolecule) => {
-    if (draft !== it.notes || collDraft !== it.collection) await onUpdate(it.id, { notes: draft, collection: collDraft })
-    setOpen(null)
+    setEditErr(null)
+    try {
+      if (draft !== it.notes || collDraft !== it.collection) await onUpdate(it.id, { notes: draft, collection: collDraft })
+      setOpen(null)
+    } catch (e) {
+      setEditErr(e instanceof ApiError ? e.message : 'Could not save the change.')
+    }
+  }
+
+  const remove = async (it: SavedMolecule) => {
+    setEditErr(null)
+    try {
+      await onDelete(it.id)
+    } catch (e) {
+      setEditErr(e instanceof ApiError ? e.message : `Could not delete ${it.label}.`)
+    }
   }
 
   return (
     <section className="card">
       <header className="card-head"><h2>Saved</h2><span className="muted small">{items.length}</span></header>
       {items.length === 0 && <p className="muted">Nothing saved yet.</p>}
+      {editErr && <p className="hint-bad small">{editErr}</p>}
       {items.length > 1 && (
         <div className="saved-search">
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by structure: SMILES or SMARTS" aria-label="Structure search" spellCheck={false} />
@@ -94,7 +110,7 @@ export function SavedList({ auth, items, onPick, onDelete, onUpdate }: Props) {
                     <span className="list-sub">{score && result?.mode === 'similarity' ? `${Math.round((score.get(it.id) ?? 0) * 100)}% similar · ` : ''}{it.notes ? it.notes : it.input_text}</span>
                   </button>
                   <button type="button" className="icon" aria-label={`Edit ${it.label}`} title="Notes and collection" onClick={() => expand(it)}>{open === it.id ? '−' : '✎'}</button>
-                  <button type="button" className="icon" aria-label={`Delete ${it.label}`} title="Delete" onClick={() => onDelete(it.id)}>×</button>
+                  <button type="button" className="icon" aria-label={`Delete ${it.label}`} title="Delete" onClick={() => void remove(it)}>×</button>
                 </div>
                 {open === it.id && (
                   <div className="saved-edit">

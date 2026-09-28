@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, describeFailure, loadAuth, storeAuth } from './api'
 import { Assignments } from './components/Assignments'
 import { AuthDialog } from './components/AuthDialog'
@@ -66,7 +66,13 @@ export default function App() {
   const [saveColl, setSaveColl] = useState('')
   const [shareMsg, setShareMsg] = useState<string | null>(null)
 
+  // Only the latest build may update the page: an earlier, slower request
+  // must not replace a newer result.
+  const buildSeq = useRef(0)
+
   const build = useCallback(async (text: string) => {
+    const seq = ++buildSeq.current
+    const latest = () => seq === buildSeq.current
     setLoading(true)
     setError(null)
     setSaveMsg(null)
@@ -82,21 +88,26 @@ export default function App() {
     setRxn(null)
     if (text.includes('>') && !text.includes(' ')) {
       try {
-        setRxn({ text, result: await api.reaction(text) })
+        const result = await api.reaction(text)
+        if (!latest()) return
+        setRxn({ text, result })
         setMol(null)
       } catch (e) {
+        if (!latest()) return
         setMol(null)
         setError({ message: describeFailure(e), suggestions: [] })
       } finally {
-        setLoading(false)
+        if (latest()) setLoading(false)
       }
       return
     }
     try {
       const built = await api.molecule(text)
+      if (!latest()) return
       setMol(built)
       setRecent(pushRecent(built))
     } catch (e) {
+      if (!latest()) return
       setMol(null)
       if (e instanceof ApiError && e.status === 400) {
         setError({ message: e.message, input: e.body.input, highlight: e.body.highlight ?? null, suggestions: e.body.suggestions ?? [] })
@@ -104,7 +115,7 @@ export default function App() {
         setError({ message: describeFailure(e), suggestions: [] })
       }
     } finally {
-      setLoading(false)
+      if (latest()) setLoading(false)
     }
   }, [])
 

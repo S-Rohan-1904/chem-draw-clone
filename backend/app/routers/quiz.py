@@ -4,22 +4,17 @@ cache (the prewarmed common-names list), so no new computation is needed."""
 from __future__ import annotations
 
 import json
-import random
 import re
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .. import chem
-from ..auth import current_user
+from ..auth import current_user, optional_user
 from ..db import MoleculeCache, NameCache, QuizAttempt, User, get_db
 
 router = APIRouter(prefix="/api/quiz", tags=["quiz"])
-_bearer = HTTPBearer(auto_error=False)
 
 # Names that are trivial rather than systematic are poor quiz answers to reveal.
 _TRIVIAL = re.compile(r"^(?:[DL]-|\(\+\)|\(-\))|^[a-z]+$")
@@ -67,15 +62,17 @@ class Question(BaseModel):
 @router.get("/question", response_model=Question)
 def question(level: int = 1, exclude: str = "", db: Session = Depends(get_db)):
     level = max(1, min(4, level))
-    skip = set(exclude.split(",")) if exclude else set()
-    rows = db.scalars(select(MoleculeCache).where(MoleculeCache.inchikey != "")).all()
-    random.shuffle(rows)
-    for row in rows:
-        if row.inchikey in skip:
-            continue
+    skip = [k for k in exclude.split(",") if k][-200:]
+    # Keys only, in random order, and only molecules that have a systematic
+    # name to accept. Full rows (SVG, mol block) are loaded one at a time
+    # until one fits the level.
+    named = select(NameCache.smiles).where(NameCache.source == "iupac")
+    keys = select(MoleculeCache.smiles).where(MoleculeCache.inchikey != "", MoleculeCache.smiles.in_(named))
+    if skip:
+        keys = keys.where(MoleculeCache.inchikey.not_in(skip))
+    for smiles in db.scalars(keys.order_by(func.random())).all():
+        row = db.get(MoleculeCache, smiles)
         data = json.loads(row.result_json)
-        if data.get("source") != "iupac" and not _answers_for(db, row.smiles):
-            continue
         if not _level_ok(level, data):
             continue
         names = _answers_for(db, row.smiles)
@@ -106,17 +103,8 @@ class AnswerOut(BaseModel):
     your_formula: str | None = None
 
 
-def _optional_user(creds: HTTPAuthorizationCredentials | None = Depends(_bearer), db: Session = Depends(get_db)) -> User | None:
-    if creds is None:
-        return None
-    try:
-        return current_user(creds, db)
-    except HTTPException:
-        return None
-
-
 @router.post("/answer", response_model=AnswerOut)
-def answer(body: AnswerIn, db: Session = Depends(get_db), user: User | None = Depends(_optional_user)):
+def answer(body: AnswerIn, db: Session = Depends(get_db), user: User | None = Depends(optional_user)):
     target = db.scalar(select(MoleculeCache).where(MoleculeCache.inchikey == body.id))
     if target is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown question.")

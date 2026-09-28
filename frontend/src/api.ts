@@ -110,7 +110,7 @@ export const api = {
     request<{ assignment: Assignment; rejected: { name: string; reason: string }[] }>('/api/assignments', { method: 'POST', body: JSON.stringify({ title, names }) }, auth),
   myAssignments: (auth: AuthState) => request<Assignment[]>('/api/assignments/mine', {}, auth),
   joinedAssignments: (auth: AuthState) => request<Assignment[]>('/api/assignments/joined', {}, auth),
-  getAssignment: (code: string, auth: AuthState | null) => request<Assignment>(`/api/assignments/${encodeURIComponent(code)}${auth ? '/me' : ''}`, {}, auth),
+  getAssignment: (code: string, auth: AuthState | null) => request<Assignment>(`/api/assignments/${encodeURIComponent(code)}`, {}, auth),
   answerAssignment: (auth: AuthState, code: string, itemId: number, answer: string, attempt: number) =>
     request<AssignmentAnswer>(`/api/assignments/${encodeURIComponent(code)}/answer/${itemId}`, { method: 'POST', body: JSON.stringify({ answer, attempt }) }, auth),
   assignmentProgress: (auth: AuthState, code: string) => request<AssignmentProgress>(`/api/assignments/${encodeURIComponent(code)}/progress`, {}, auth),

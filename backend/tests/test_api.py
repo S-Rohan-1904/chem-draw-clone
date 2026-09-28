@@ -262,3 +262,88 @@ def test_charges_endpoint():
         n_atoms = base["molblock"].split("\n")[3][:3].strip()
         assert len(r["charges"]) == int(n_atoms)
         assert r["min"] < -0.3 and r["max"] > 0.1  # oxygen negative, hydroxyl H positive
+
+
+def test_smiles_case_is_part_of_the_cache_key():
+    # C1CCCCC1 is cyclohexane and c1ccccc1 is benzene; a lowercased key once
+    # served the first one built for both.
+    with client:
+        cyclohexane = client.post("/api/molecule", json={"input": "C1CCCCC1"}).json()
+        benzene = client.post("/api/molecule", json={"input": "c1ccccc1"}).json()
+        check = client.post("/api/molecule/check", json={"input": "c1ccccc1"}).json()
+    assert cyclohexane["formula"] == "C6H12" and benzene["formula"] == "C6H6"
+    assert check["ok"] is True
+
+
+def test_lowercased_name_keys_are_dropped():
+    from app import db as dbmod
+
+    with client:
+        with dbmod.SessionLocal() as s:
+            s.add(dbmod.NameCache(key="c1ccccc2", smiles="C1CCCCC1", source="smiles", normalised="C1CCCCC2"))
+            s.add(dbmod.NameCache(key="kept-name", smiles="CCO", source="iupac", normalised="kept-name"))
+            s.commit()
+        dbmod.init_db()
+        with dbmod.SessionLocal() as s:
+            assert s.get(dbmod.NameCache, "c1ccccc2") is None
+            assert s.get(dbmod.NameCache, "kept-name") is not None
+
+
+def test_concurrent_build_of_the_same_molecule(monkeypatch):
+    # Another request stores the molecule while this one is still building it.
+    import json
+
+    from app import cache, chem
+    from app import db as dbmod
+
+    real = chem.build_from_smiles
+
+    def build_and_race(smiles, **kw):
+        result = real(smiles, **kw)
+        with dbmod.SessionLocal() as other:
+            other.add(dbmod.MoleculeCache(smiles=smiles, result_json=json.dumps(cache._serialise(result)), inchikey=result.inchikey))
+            other.commit()
+        return result
+
+    monkeypatch.setattr(chem, "build_from_smiles", build_and_race)
+    with client:
+        r = client.post("/api/molecule", json={"input": "CCCCCCCCO"})
+    assert r.status_code == 200 and r.json()["formula"] == "C8H18O"
+
+
+def test_warnings_round_trip_through_name_cache():
+    from app import cache
+
+    assert cache.decode_warnings(cache.encode_warnings(["one.", "two."])) == ["one.", "two."]
+    assert cache.decode_warnings("an old single warning") == ["an old single warning"]
+    assert cache.decode_warnings("") == []
+
+
+def test_batch_caps_network_lookups(monkeypatch):
+    from app import resolver
+    from app.routers import molecule as molrouter
+
+    calls = []
+    monkeypatch.setattr(resolver, "enabled", lambda: True)
+    monkeypatch.setattr(resolver, "lookup", lambda name: calls.append(name))
+    names = [f"zzqfoo{i}" for i in range(molrouter.BATCH_LOOKUPS + 5)]
+    with client:
+        rows = client.post("/api/molecule/batch", json={"inputs": names}).json()["rows"]
+    assert len(rows) == len(names) and not any(r["ok"] for r in rows)
+    assert len(calls) == molrouter.BATCH_LOOKUPS
+
+
+def test_login_upgrades_old_password_hashes():
+    from argon2 import PasswordHasher
+
+    from app import db as dbmod
+
+    old = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4).hash("password123")
+    with client:
+        with dbmod.SessionLocal() as s:
+            s.add(dbmod.User(username="oldtimer", password_hash=old))
+            s.commit()
+        assert client.post("/api/auth/login", json={"username": "oldtimer", "password": "password123"}).status_code == 200
+        with dbmod.SessionLocal() as s:
+            new = s.query(dbmod.User).filter_by(username="oldtimer").one().password_hash
+    assert new != old and "m=19456" in new

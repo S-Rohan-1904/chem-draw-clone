@@ -1,7 +1,7 @@
 """Structure analysis endpoints: bonding, projections (Fischer, Haworth),
 conformer scans, acid/base sites, isotopes, reaction tools."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -15,15 +15,16 @@ class SmilesIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
 
 
-def _molblock(db: Session, smiles: str) -> str:
+def _molblock(db: Session, smiles: str, request: Request) -> str:
+    ratelimit.charge_unbuilt(request, db, smiles)
     data, _ = cache.get_or_build(db, smiles)
     return data["molblock"]
 
 
 @router.post("/bonding")
-def bonding(body: SmilesIn, db: Session = Depends(get_db)):
+def bonding(body: SmilesIn, request: Request, db: Session = Depends(get_db)):
     try:
-        return analysis.bonding(body.smiles, _molblock(db, body.smiles))
+        return analysis.bonding(body.smiles, _molblock(db, body.smiles, request))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -68,11 +69,11 @@ def isotopes_apply(body: IsotopesIn):
 
 
 @router.post("/sugars")
-def sugar_projections(body: SmilesIn, db: Session = Depends(get_db)):
+def sugar_projections(body: SmilesIn, request: Request, db: Session = Depends(get_db)):
     from .. import sugars
 
     try:
-        return sugars.projections(_molblock(db, body.smiles))
+        return sugars.projections(_molblock(db, body.smiles, request))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -85,11 +86,11 @@ class ScanIn(BaseModel):
 
 
 @router.post("/scan", dependencies=[Depends(ratelimit.check)])
-def torsion_scan(body: ScanIn, db: Session = Depends(get_db)):
+def torsion_scan(body: ScanIn, request: Request, db: Session = Depends(get_db)):
     from .. import conformers
 
     try:
-        return conformers.torsion_scan(_molblock(db, body.smiles), body.front, body.back, body.step)
+        return conformers.torsion_scan(_molblock(db, body.smiles, request), body.front, body.back, body.step)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -100,11 +101,11 @@ class ChairEnergyIn(BaseModel):
 
 
 @router.post("/chair-energy", dependencies=[Depends(ratelimit.check)])
-def chair_energy(body: ChairEnergyIn, db: Session = Depends(get_db)):
+def chair_energy(body: ChairEnergyIn, request: Request, db: Session = Depends(get_db)):
     from .. import conformers
 
     try:
-        return conformers.chair_energies(_molblock(db, body.smiles), body.ring)
+        return conformers.chair_energies(_molblock(db, body.smiles, request), body.ring)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 

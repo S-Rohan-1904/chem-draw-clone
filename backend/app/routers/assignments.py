@@ -6,14 +6,15 @@ from __future__ import annotations
 import secrets
 import string
 from datetime import datetime
+from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import chem
-from ..auth import current_user
+from .. import chem, ratelimit
+from ..auth import current_user, optional_user
 from ..db import Assignment, AssignmentItem, AssignmentProgress, User, get_db
 
 router = APIRouter(prefix="/api/assignments", tags=["assignments"])
@@ -60,6 +61,11 @@ class CreateOut(BaseModel):
     rejected: list[dict]
 
 
+@lru_cache(maxsize=512)
+def _unlabelled_svg(smiles: str) -> str:
+    return chem.render_svg(chem.mol_from_smiles(smiles), annotate=False)
+
+
 def _svg_formula(db: Session, smiles: str, annotate: bool = True) -> tuple[str, str]:
     from .. import cache
 
@@ -67,7 +73,7 @@ def _svg_formula(db: Session, smiles: str, annotate: bool = True) -> tuple[str, 
     if annotate:
         return data["svg"], data["formula"]
     # Students get the drawing without R/S and E/Z labels: those are part of the answer.
-    return chem.render_svg(chem.mol_from_smiles(smiles), annotate=False), data["formula"]
+    return _unlabelled_svg(smiles), data["formula"]
 
 
 def _out(a: Assignment, user: User | None, db: Session) -> AssignmentOut:
@@ -95,7 +101,7 @@ def _out(a: Assignment, user: User | None, db: Session) -> AssignmentOut:
     )
 
 
-@router.post("", response_model=CreateOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=CreateOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(ratelimit.check)])
 def create(body: AssignmentIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     a = Assignment(owner_id=user.id, title=body.title.strip(), code=_code(db))
     rejected = []
@@ -136,15 +142,8 @@ def joined(user: User = Depends(current_user), db: Session = Depends(get_db)):
 
 
 @router.get("/{code}", response_model=AssignmentOut)
-def get(code: str, db: Session = Depends(get_db), user: User | None = Depends(lambda: None)):
-    a = db.scalar(select(Assignment).where(Assignment.code == code.strip().upper()))
-    if a is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "No assignment with that code.")
-    return _out(a, user, db)
-
-
-@router.get("/{code}/me", response_model=AssignmentOut)
-def get_with_progress(code: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def get(code: str, db: Session = Depends(get_db), user: User | None = Depends(optional_user)):
+    """Anyone with the code can look; signed in users also get their progress."""
     a = db.scalar(select(Assignment).where(Assignment.code == code.strip().upper()))
     if a is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No assignment with that code.")
@@ -169,7 +168,6 @@ def answer_item(code: str, item_id: int, body: AssignmentAnswer, user: User = De
     from ..grading import grade
 
     a = db.scalar(select(Assignment).where(Assignment.code == code.strip().upper()))
-    item = next((i for i in a.items), None) if a else None
     item = next((i for i in a.items if i.id == item_id), None) if a else None
     if a is None or item is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Not found")

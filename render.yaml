@@ -16,3 +16,8 @@ services:
         sync: false
       - key: ADMIN_USERS
         sync: false
+      - key: ADMIN_SIGNUP_CODE
+        sync: false
+      # Render's proxy appends the client address to X-Forwarded-For.
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"

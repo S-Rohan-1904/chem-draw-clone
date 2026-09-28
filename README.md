@@ -69,7 +69,7 @@ is first opened.
 - If a stereo descriptor does not fit the name (for example `(2R)-propan-2-ol`), the structure is built without it and a warning is shown.
 - Failed parses return a plain-English reason, the unreadable fragment, and up to three "did you mean" names. Suggestions are never applied automatically.
 - The input box checks validity while typing and offers autocomplete from the example list, names built before, and `backend/app/data/common_names.txt`.
-- OPSIN runs as one long-lived process per mode (strict, ignore-bad-stereo) instead of one JVM per request.
+- OPSIN runs as one long-lived process per mode (strict, ignore-bad-stereo) instead of one JVM per request. A process that does not answer within `CHEM_OPSIN_TIMEOUT` seconds (default 30) is killed and restarted.
 - OPSIN only reads systematic nomenclature. A name it cannot parse (protoporphyrin IX, hemin, aspirin) is looked up in PubChem, then NCI CACTUS, on build (not while typing); the result is cached and shown with a "looked up" tag and the record it came from. Trivial names can be ambiguous (PubChem's "rosarin" is a Rhodiola glycoside, not the expanded porphyrin) and some literature names (turcasarin) are in no database: paste a SMILES or draw those. `CHEM_NAME_LOOKUP=0` turns the lookup off, `CHEM_LOOKUP_TIMEOUT` (seconds, default 6) bounds each request.
 
 ## Analysis cards and tabs
@@ -138,15 +138,36 @@ Setup:
 2. Render account (https://render.com, sign in with GitHub).
 3. Render dashboard, New, Blueprint, pick this repo. Render reads `render.yaml`.
 4. When prompted, fill `HF_TOKEN` with the token and `HF_DATASET_REPO` with
-   `<hf-user>/chem-draw-data`, and `ADMIN_USERS` with the usernames (comma
-   separated) that may open the Stats tab. `SECRET_KEY` is generated.
+   `<hf-user>/chem-draw-data`, `ADMIN_USERS` with the usernames (comma
+   separated) that may open the Stats tab, and `ADMIN_SIGNUP_CODE` with a
+   secret of your choice. `SECRET_KEY` is generated.
 5. Deploy. First build takes about 10 minutes.
+6. Register each admin name with the code (the sign up form cannot, so nobody
+   else can claim the name first):
+
+   ```bash
+   curl -X POST https://<your-app>.onrender.com/api/auth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"username": "<admin>", "password": "<password>", "admin_code": "<ADMIN_SIGNUP_CODE>"}'
+   ```
+
+   Names in `ADMIN_USERS` cannot be registered without it; accounts that
+   already exist are unaffected.
 
 Cold starts: the image build runs `backend/scripts/prewarm.py`, which caches every name
 in `common_names.txt` into `backend/prewarm.db`; at startup rows missing from the live
 database are imported, so common molecules are instant even on the small CPU. To keep
 the free instance from sleeping during class hours, point a free external ping (for
 example cron-job.org) at `https://<your-app>.onrender.com/api/health` every 10 minutes.
+
+Rate limits are per client address, in separate buckets: building new
+molecules and other heavy work (`RATE_LIMIT_PER_MIN`, default 30, burst
+`RATE_LIMIT_BURST` 10; the analysis cards only count when they would build a
+molecule that is not cached), the checks made while typing
+(`TYPING_RATE_LIMIT_PER_MIN`, 120), and login / register
+(`AUTH_RATE_LIMIT_PER_MIN`, 10). `X-Forwarded-For` is only trusted when
+`TRUSTED_PROXY_HOPS` says how many proxies sit in front (Render: 1); otherwise
+anyone could send a new address with every request.
 
 Local container run:
 

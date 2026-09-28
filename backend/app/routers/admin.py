@@ -34,6 +34,9 @@ def stats(days: int = 14, db: Session = Depends(get_db)):
     assignments = db.scalar(select(func.count()).select_from(Assignment)) or 0
     top = db.scalars(select(MoleculeCache).where(MoleculeCache.hits > 0).order_by(MoleculeCache.hits.desc()).limit(15)).all()
     failing = db.scalars(select(FailedInput).order_by(FailedInput.count.desc(), FailedInput.last_at.desc()).limit(20)).all()
+    names: dict[str, str] = {}
+    for smiles, name in db.execute(select(NameCache.smiles, NameCache.normalised).where(NameCache.smiles.in_([r.smiles for r in top]))):
+        names.setdefault(smiles, name)
     return {
         "totals": {
             "molecules_cached": total_mols,
@@ -49,7 +52,7 @@ def stats(days: int = 14, db: Session = Depends(get_db)):
         "quiz_attempts_per_day": _per_day(db, QuizAttempt.created_at, days),
         "signups_per_day": _per_day(db, User.created_at, days),
         "top_molecules": [
-            {"smiles": r.smiles, "hits": r.hits, "name": (db.scalar(select(NameCache.normalised).where(NameCache.smiles == r.smiles)) or "")}
+            {"smiles": r.smiles, "hits": r.hits, "name": names.get(r.smiles) or ""}
             for r in top
         ],
         "top_failures": [{"text": f.text, "count": f.count, "reason": f.last_reason, "last_at": f.last_at} for f in failing],

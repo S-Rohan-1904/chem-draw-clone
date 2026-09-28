@@ -30,7 +30,7 @@ def test_assignment_flow():
         assert a["title"] == "Week 1" and a["done_count"] == 0
 
         # students see structures, not names, until they answer correctly
-        seen = client.get(f"/api/assignments/{code}/me", headers=student).json()
+        seen = client.get(f"/api/assignments/{code}", headers=student).json()
         assert seen["items"][0]["name"] == "" and seen["items"][0]["svg"].startswith("<?xml")
         assert "(R)" not in seen["items"][1]["svg"]  # stereo labels hidden until solved
         item = seen["items"][0]["id"]
@@ -46,7 +46,7 @@ def test_assignment_flow():
         assert p["participants"][0]["attempts"][str(item)] == 2
         assert client.get(f"/api/assignments/{code}/progress", headers=student).status_code == 403
         # owner sees names
-        assert client.get(f"/api/assignments/{code}/me", headers=teacher).json()["items"][1]["name"] == "(2R)-butan-2-ol"
+        assert client.get(f"/api/assignments/{code}", headers=teacher).json()["items"][1]["name"] == "(2R)-butan-2-ol"
         assert client.get("/api/assignments/mine", headers=teacher).json()[0]["code"] == code
         assert client.delete(f"/api/assignments/{code}", headers=student).status_code == 404
         assert client.delete(f"/api/assignments/{code}", headers=teacher).status_code == 204

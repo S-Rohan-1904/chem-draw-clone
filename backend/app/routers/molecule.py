@@ -1,3 +1,4 @@
+import time
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -57,9 +58,20 @@ class PngIn(BaseModel):
     width: int = Field(default=1200, ge=200, le=4000)
 
 
+_KNOWN_TTL = 60.0
+_known: tuple[float, list[str]] = (0.0, [])
+
+
 def _known_from_cache(db: Session) -> list[str]:
-    rows = db.scalars(select(NameCache.normalised).where(NameCache.source.in_(("iupac", *resolver.SOURCES)))).all()
-    return [r for r in rows if r]
+    """Names built here before, for autocomplete and "did you mean". Reread at
+    most once a minute: autocomplete asks on every pause in typing."""
+    global _known
+    loaded_at, names = _known
+    if time.monotonic() - loaded_at > _KNOWN_TTL:
+        rows = db.scalars(select(NameCache.normalised).where(NameCache.source.in_(("iupac", *resolver.SOURCES)))).all()
+        names = [r for r in rows if r]
+        _known = (time.monotonic(), names)
+    return names
 
 
 def _record_failure(db: Session, text: str, reason: str) -> None:
@@ -116,7 +128,7 @@ def molecule_by_key(inchikey: str, db: Session = Depends(get_db)):
 
 
 @router.get("/name/{inchikey}")
-def name_lookup(inchikey: str, db: Session = Depends(get_db)):
+def name_lookup(inchikey: str, request: Request, db: Session = Depends(get_db)):
     """Names for a structure, from PubChem, cached. Misses are retried after a day."""
     from datetime import datetime, timedelta, timezone
 
@@ -124,6 +136,7 @@ def name_lookup(inchikey: str, db: Session = Depends(get_db)):
     row = db.get(NameLookup, key)
     fresh = row is not None and (row.found or (datetime.now(timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)) < timedelta(days=1))
     if not fresh:
+        ratelimit.check.take(request)  # only the PubChem round trip costs anything
         hit = resolver.name_for_inchikey(key)
         if row is None:
             row = NameLookup(inchikey=key)
@@ -144,13 +157,13 @@ class SmilesIn(BaseModel):
 
 
 @router.post("/charges")
-def molecule_charges(body: SmilesIn, db: Session = Depends(get_db)):
+def molecule_charges(body: SmilesIn, request: Request, db: Session = Depends(get_db)):
     """Gasteiger partial charges per atom, in the 3D mol block's atom order (H included)."""
     from rdkit import Chem
     from rdkit.Chem import AllChem
 
     try:
-        mb = _molblock(db, body.smiles)
+        mb = _molblock(db, body.smiles, request)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     mol = Chem.MolFromMolBlock(mb, removeHs=False)
@@ -193,9 +206,9 @@ class AlignIn(BaseModel):
 
 
 @router.post("/align", dependencies=[Depends(ratelimit.check)])
-def molecule_align(body: AlignIn, db: Session = Depends(get_db)):
+def molecule_align(body: AlignIn, request: Request, db: Session = Depends(get_db)):
     try:
-        return _align.align(_molblock(db, body.smiles_a), _molblock(db, body.smiles_b))
+        return _align.align(_molblock(db, body.smiles_a, request), _molblock(db, body.smiles_b, request))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -208,7 +221,7 @@ def molecule_resonance(body: SmilesIn):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
 
-@router.post("/check")
+@router.post("/check", dependencies=[Depends(ratelimit.typing)])
 def check(body: MoleculeIn, db: Session = Depends(get_db)):
     """Parse-only validity check for live feedback while typing. No database
     lookup here: that only runs on build, so typing never hits the network."""
@@ -216,19 +229,20 @@ def check(body: MoleculeIn, db: Session = Depends(get_db)):
     row = db.get(NameCache, key)
     if row is not None:
         # The "taken from PubChem" note is informational; it is shown on build, not as a typing warning.
-        warnings = [row.warning] if row.warning and row.source not in resolver.SOURCES else []
+        warnings = cache.decode_warnings(row.warning) if row.source not in resolver.SOURCES else []
         return {"ok": True, "warnings": warnings, "source": row.source}
     try:
         r = chem.resolve_full(body.input, lookup=False)
     except chem.ChemError as e:
         if not e.opsin_error:  # structure-level problem (valence, aromaticity): show it as is
             return {"ok": False, "reason": str(e), "highlight": None, "lookup": False}
-        diag = suggest.diagnose(chem.normalise_name(body.input), e.opsin_error, [])
+        # Only the reason is shown while typing; spelling suggestions come with Build.
+        diag = suggest.diagnose(chem.normalise_name(body.input), e.opsin_error, [], with_suggestions=False)
         return {"ok": False, "reason": diag.reason, "highlight": list(diag.highlight) if diag.highlight else None, "lookup": resolver.enabled()}
     return {"ok": True, "warnings": r.warnings, "source": r.source}
 
 
-@router.get("/suggest")
+@router.get("/suggest", dependencies=[Depends(ratelimit.typing)])
 def suggest_names(q: str = Query(min_length=1, max_length=200), db: Session = Depends(get_db)):
     return {"names": suggest.autocomplete(q, _known_from_cache(db))}
 
@@ -267,6 +281,10 @@ def molecule_variant(body: VariantIn, db: Session = Depends(get_db)):
     return data
 
 
+# Each PubChem / CACTUS lookup can wait several seconds; cap them per batch.
+BATCH_LOOKUPS = 10
+
+
 @router.post("/batch", dependencies=[Depends(ratelimit.check)])
 def molecule_batch(body: BatchIn):
     """Parse-only table for many names: no depiction or 3D, so it stays quick."""
@@ -274,12 +292,19 @@ def molecule_batch(body: BatchIn):
     from rdkit.Chem import Descriptors, rdMolDescriptors
 
     rows = []
+    lookups = 0
     for raw in body.inputs:
         text = raw.strip()
         if not text:
             continue
         try:
-            resolved = chem.resolve_full(text)
+            try:
+                resolved = chem.resolve_full(text, lookup=False)
+            except chem.ChemError as e:
+                if not e.opsin_error or lookups >= BATCH_LOOKUPS:
+                    raise
+                lookups += 1
+                resolved = chem.resolve_full(text)
             smiles = chem.canonical_smiles(resolved.smiles)
             mol = chem.mol_from_smiles(smiles)
             stereo = chem._stereo_report(mol)
@@ -301,37 +326,38 @@ def molecule_batch(body: BatchIn):
     return {"rows": rows}
 
 
-def _molblock(db: Session, smiles: str) -> str:
+def _molblock(db: Session, smiles: str, request: Request) -> str:
+    ratelimit.charge_unbuilt(request, db, smiles)
     data, _ = cache.get_or_build(db, smiles)
     return data["molblock"]
 
 
 @router.post("/projections")
-def projections_available(body: ProjectionIn, db: Session = Depends(get_db)):
+def projections_available(body: ProjectionIn, request: Request, db: Session = Depends(get_db)):
     """Which Newman bonds and chair rings a molecule offers."""
     try:
-        mb = _molblock(db, body.smiles)
+        mb = _molblock(db, body.smiles, request)
         return {"newman_bonds": projections.newman_bonds(mb), "chair_rings": projections.chair_rings(mb)}
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
 
 @router.post("/newman")
-def newman(body: ProjectionIn, db: Session = Depends(get_db)):
+def newman(body: ProjectionIn, request: Request, db: Session = Depends(get_db)):
     if body.front is None or body.back is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "front and back atoms required")
     try:
-        return projections.newman_svg(_molblock(db, body.smiles), body.front, body.back, body.rotate)
+        return projections.newman_svg(_molblock(db, body.smiles, request), body.front, body.back, body.rotate)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
 
 @router.post("/chair")
-def chair(body: ProjectionIn, db: Session = Depends(get_db)):
+def chair(body: ProjectionIn, request: Request, db: Session = Depends(get_db)):
     if not body.ring:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "ring required")
     try:
-        analysis = projections.chair_analysis(_molblock(db, body.smiles), body.ring)
+        analysis = projections.chair_analysis(_molblock(db, body.smiles, request), body.ring)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     out = {k: v for k, v in analysis.items() if not k.startswith("_")}

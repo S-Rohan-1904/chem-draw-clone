@@ -14,7 +14,7 @@ real example (one with a reported yield, then the smallest, then best yield).
 
 Runs once on a developer machine (a few minutes on 8 cores), not on the server.
 
-Usage: uv run python scripts/build_reactions.py PATH.rsmi [--out reactions.db] [-j 8] [--limit N] [--max-atoms 30]
+Usage: uv run python scripts/build_reactions.py PATH.rsmi [--out reactions.db] [-j 8] [--limit N] [--max-atoms 60]
 """
 
 from __future__ import annotations
@@ -86,7 +86,7 @@ def _neighbours(atom: Chem.Atom, keep: set[int]) -> list[tuple]:
 
 def _pair(a: Chem.Atom, b: Chem.Atom) -> str:
     s1, s2 = sorted((a.GetSymbol(), b.GetSymbol()), key=lambda s: (s != "C", s))
-    return f"{s1}–{s2}"
+    return f"{s1}-{s2}"
 
 
 # Group names from groups.py that read oddly in a reaction label.
@@ -158,7 +158,7 @@ def _consistent_maps(left: list, right: list) -> bool:
     return True
 
 
-def process_line(line: str, max_atoms: int = 30) -> dict | None:
+def process_line(line: str, max_atoms: int = MAX_PRODUCT_ATOMS) -> dict | None:
     """One .rsmi row -> {rxn: (...), key: str, obs: [(inchikey, skeleton, smiles, heavy, direction, label, centre)]}."""
     fields = line.rstrip("\n").split("\t")
     if len(fields) < 4 or not fields[0] or fields[0] == "ReactionSmiles":
@@ -389,7 +389,7 @@ class Index:
         db.close()
 
 
-def build(lines, out: Path, jobs: int = 1, max_atoms: int = 30, chunk: int = 2000) -> Index:
+def build(lines, out: Path, jobs: int = 1, max_atoms: int = MAX_PRODUCT_ATOMS, chunk: int = 2000) -> Index:
     index = Index()
 
     def batches():
@@ -424,7 +424,7 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=ROOT / "reactions.db")
     ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="read only the first N rows (for a trial run)")
-    ap.add_argument("--max-atoms", type=int, default=30, help="index molecules up to this many heavy atoms")
+    ap.add_argument("--max-atoms", type=int, default=MAX_PRODUCT_ATOMS, help="index molecules up to this many heavy atoms")
     args = ap.parse_args()
 
     t0 = time.time()

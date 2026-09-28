@@ -25,8 +25,10 @@ from . import reaction
 from .chem import mol_from_smiles
 
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "reactions.db"
+# Largest molecule the index covers, in heavy atoms (scripts/build_reactions.py MAX_PRODUCT_ATOMS).
+MAX_ATOMS = 60
 SOURCE = {
-    "name": "Chemical reactions from US patents (1976–Sep 2016)",
+    "name": "Chemical reactions from US patents (1976 to Sep 2016)",
     "author": "Daniel Lowe",
     "url": "https://doi.org/10.6084/m9.figshare.5104873",
     "licence": "CC0",
@@ -85,7 +87,7 @@ def _item(row: sqlite3.Row, query_smiles: str, mol: Chem.Mol) -> dict:
         except Exception:  # noqa: BLE001 - a drawing failure should not hide the entry
             svg = ""
     return {
-        "label": row["label"],
+        "label": row["label"].replace("–", "-"),  # en dash in bond labels (C–N) shown as a hyphen
         "count": row["count"],
         "smiles": row["smiles"],
         "reactants": [s for s in reactants.split(".") if s],
@@ -142,4 +144,6 @@ def lookup(smiles: str, limit: int = 5) -> dict:
             stereo_ignored = stereo_ignored or bool(items)
         result[direction] = items
     uses, makes = result["uses"], result["makes"]
-    return {"available": True, "uses": uses, "makes": makes, "stereo_ignored": stereo_ignored, "source": SOURCE}
+    heavy = mol.GetNumHeavyAtoms()
+    return {"available": True, "uses": uses, "makes": makes, "stereo_ignored": stereo_ignored, "source": SOURCE,
+            "heavy_atoms": heavy, "max_atoms": MAX_ATOMS}

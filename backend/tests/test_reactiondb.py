@@ -133,3 +133,9 @@ def test_stereo_fallback_only_for_stereo_molecules(index):
     # (R)- and (S)-benzaldehyde cyanohydrin do not exist in the fixture; an achiral molecule never falls back.
     r = reactiondb.lookup(BENZALDEHYDE)
     assert r["stereo_ignored"] is False
+
+
+def test_reports_size_for_molecules_beyond_the_index(index):
+    big = "CC(C)C[C@H](NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)N)C(=O)O"
+    r = reactiondb.lookup(big)
+    assert r["uses"] == [] and r["heavy_atoms"] > r["max_atoms"] == 60

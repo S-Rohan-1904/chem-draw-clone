@@ -193,6 +193,10 @@ def resolve_full(text: str, lookup: bool = True) -> Resolved:
     if not text:
         raise ChemError("Input is empty.")
 
+    # =, # and @ never appear in a name, so skip the OPSIN queue for these.
+    if re.search(r"[=#@]", text) and _looks_like_smiles(text):
+        return Resolved(text, "smiles", [], text)
+
     smiles, opsin_error = opsin.strict.convert(text)
     if smiles:
         return Resolved(smiles, "iupac", [], text)
@@ -235,6 +239,9 @@ def resolve(text: str) -> tuple[str, str]:
 
 _CW, _CCW = Chem.ChiralType.CHI_TETRAHEDRAL_CW, Chem.ChiralType.CHI_TETRAHEDRAL_CCW
 _MAX_ENUM_CANDIDATES = 8
+# Seconds for embedding candidate stereoisomers. Past this the undecided
+# centres are reported as unspecified rather than holding the worker.
+STEREO_ENUM_BUDGET_S = float(os.environ.get("CHEM_STEREO_ENUM_BUDGET", "15"))
 
 
 def _flip_changes_molecule(mol: Chem.Mol, idx: int) -> bool:
@@ -275,7 +282,10 @@ def _unspecified_centres(mol: Chem.Mol) -> list[int]:
         probe.GetAtomWithIdx(i).SetChiralTag(_CW)
     opts = StereoEnumerationOptions(tryEmbedding=False, onlyUnassigned=True, unique=True, maxIsomers=64)
     energies: dict[str, float] = {}
+    deadline = time.monotonic() + STEREO_ENUM_BUDGET_S
     for iso in EnumerateStereoisomers(probe, options=opts):
+        if time.monotonic() > deadline:
+            return candidates
         e = _embed_energy(iso)
         if e is not None:
             key = Chem.MolToSmiles(iso)
@@ -334,13 +344,14 @@ def _stereo_report(mol: Chem.Mol) -> StereoReport:
     for idx in _unspecified_centres(mol):
         report.centers.append(StereoCenter(idx, mol.GetAtomWithIdx(idx).GetSymbol(), "?"))
     report.centers.sort(key=lambda c: c.atom_idx)
+    ranks = list(Chem.CanonicalRankAtoms(mol, breakTies=False))
     for bond in mol.GetBonds():
         if bond.GetBondType() != Chem.BondType.DOUBLE:
             continue
         cip = bond.GetPropsAsDict().get("_CIPCode", "")
         if cip in ("E", "Z", "e", "z"):
             label = cip
-        elif bond.GetStereo() == Chem.BondStereo.STEREONONE and _is_stereogenic_double(bond):
+        elif bond.GetStereo() == Chem.BondStereo.STEREONONE and _is_stereogenic_double(bond, ranks):
             label = "?"
         else:
             continue
@@ -350,8 +361,10 @@ def _stereo_report(mol: Chem.Mol) -> StereoReport:
     return report
 
 
-def _is_stereogenic_double(bond: Chem.Bond) -> bool:
-    """Acyclic C=C whose ends each carry two different substituents (rough check)."""
+def _is_stereogenic_double(bond: Chem.Bond, ranks: list[int]) -> bool:
+    """Acyclic C=C whose ends each carry two different substituents (rough
+    check). ``ranks`` are the molecule's canonical ranks without tie breaking,
+    so symmetry-equivalent substituents share a rank."""
     if bond.IsInRing():
         return False
     for atom in (bond.GetBeginAtom(), bond.GetEndAtom()):
@@ -360,15 +373,9 @@ def _is_stereogenic_double(bond: Chem.Bond) -> bool:
         nbrs = [n for n in atom.GetNeighbors() if n.GetIdx() not in (bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())]
         if atom.GetTotalNumHs() >= 2 or len(nbrs) < 1:
             return False
-        if len(nbrs) == 2 and _same_substituent(atom, nbrs[0], nbrs[1]):
+        if len(nbrs) == 2 and ranks[nbrs[0].GetIdx()] == ranks[nbrs[1].GetIdx()]:
             return False
     return True
-
-
-def _same_substituent(center: Chem.Atom, a: Chem.Atom, b: Chem.Atom) -> bool:
-    # Cheap symmetry check via canonical ranks.
-    ranks = list(Chem.CanonicalRankAtoms(center.GetOwningMol(), breakTies=False))
-    return ranks[a.GetIdx()] == ranks[b.GetIdx()]
 
 
 def render_svg(mol: Chem.Mol, width: int = 480, height: int = 360, annotate: bool = True) -> str:
@@ -458,10 +465,10 @@ def embed_3d(mol: Chem.Mol, max_tries: int = 6) -> Chem.Mol:
         ps.enforceChirality = True
         ps.timeout = EMBED_TIMEOUT_S
         ps.useRandomCoords = attempt >= 2
+        if attempt and time.monotonic() - started > EMBED_TIMEOUT_S * 2:
+            raise ChemError("Building the 3D model took too long. Try a smaller or less flexible molecule.")
         cid = AllChem.EmbedMolecule(mh, ps)
         if cid < 0:
-            if time.monotonic() - started > EMBED_TIMEOUT_S * 2:
-                raise ChemError("Building the 3D model took too long. Try a smaller or less flexible molecule.")
             continue
         try:
             if AllChem.MMFFHasAllMoleculeParams(mh):

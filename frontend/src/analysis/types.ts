@@ -226,15 +226,61 @@ export interface Preprint {
   doi: string
   url: string
   cited_by: number | null
+  snippet?: string
 }
 
-export interface Literature {
+export interface ChemRxiv {
   available: boolean
   reason?: string
   query: string
   items: Preprint[]
   source: string
   match?: 'fulltext'
+}
+
+export interface JournalArticle {
+  title: string
+  authors: string
+  journal: string
+  year: number | null
+  date: string
+  doi: string
+  pmid: string
+  url: string
+  cited_by: number
+  type: string
+}
+
+export interface Journals {
+  available: boolean
+  reason?: string
+  items: JournalArticle[]
+  total: number
+  match: 'pubchem' | 'title' | ''
+  query: string
+}
+
+export interface PatentItem {
+  number: string
+  url: string
+  year: number | null
+  title: string
+  date: string
+  assignee: string
+  reactions: { direction: 'uses' | 'makes'; label: string }[]
+}
+
+export interface Patents {
+  available: boolean
+  items: PatentItem[]
+  cid: number | null
+  pubchem_url: string
+}
+
+export interface Literature {
+  chemrxiv: ChemRxiv
+  journals: Journals
+  patents: Patents
 }
 
 export interface ReactionClass {

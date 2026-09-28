@@ -144,18 +144,35 @@ class LiteratureIn(BaseModel):
 
 @router.post("/literature", dependencies=[Depends(ratelimit.check)])
 def literature_search(body: LiteratureIn, db: Session = Depends(get_db)):
-    """Top ChemRxiv preprints for the molecule, searched by its common name."""
-    from .. import literature
+    """Literature for the molecule in three lists: ChemRxiv preprints (by name), journal
+    articles PubChem links to the structure, and patents from the reaction index."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from .. import literature, literature_journals, literature_patents, reactiondb
 
     try:
         key = Chem.MolToInchiKey(chem.mol_from_smiles(body.smiles))
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
     row = cache.lookup_name(db, key) if key else None
+    found = row is not None and row.found
+    cid = row.cid if found else None
     # PubChem's title first (usually the common name), then what the user typed, then the
-    # systematic name; the stereo-free record's title only if all of those find nothing.
-    names = [n for n in ((row.title if row and row.found else ""), body.name.strip(), (row.iupac if row and row.found else "")) if n]
-    return cache.get_literature(db, key, lambda: literature.search(names, more=lambda: [resolver.title_for_skeleton(key)]))
+    # systematic name; the stereo-free record's title and PubChem synonyms only if all of those find nothing.
+    names = [n for n in ((row.title if found else ""), body.name.strip(), (row.iupac if found else "")) if n]
+    searches = {
+        "chemrxiv": lambda: literature.search(names, more=lambda: [resolver.title_for_skeleton(key), *literature.synonyms(cid)]),
+        "journals": lambda: literature_journals.search(cid, names),
+        "patents": lambda: literature_patents.search(reactiondb.lookup(body.smiles, draw=False), cid),
+    }
+    out = {kind: cache.cached_literature(db, key, kind) for kind in searches}
+    todo = [kind for kind, hit in out.items() if hit is None]
+    # The searches call different services, so run them side by side; the session stays on this thread.
+    with ThreadPoolExecutor(len(todo) or 1) as pool:
+        results = dict(zip(todo, pool.map(lambda kind: searches[kind](), todo)))
+    for kind, (data, complete) in results.items():
+        out[kind] = cache.store_literature(db, key, kind, data, complete)
+    return out
 
 
 @router.get("/mechanisms")

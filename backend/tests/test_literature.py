@@ -133,16 +133,21 @@ def test_endpoint_uses_pubchem_name_and_caches(monkeypatch):
     monkeypatch.setattr(resolver, "name_for_inchikey", lambda key: {"iupac": "benzaldehyde", "title": "Benzaldehyde", "cid": 240})
     with client:
         r = client.post("/api/analysis/literature", json={"smiles": "O=Cc1ccccc1"}).json()
-        assert r["query"] == "Benzaldehyde" and len(r["items"]) == 5 and r["cached"] is False
+        assert set(r) == {"chemrxiv", "journals", "patents"}
+        rx = r["chemrxiv"]
+        assert rx["query"] == "Benzaldehyde" and len(rx["items"]) == 5 and rx["cached"] is False
         again = client.post("/api/analysis/literature", json={"smiles": "O=Cc1ccccc1"}).json()
-        assert again["cached"] is True and calls.count("api.openalex.org") == 1
+        assert all(again[k]["cached"] is True for k in again)
+        # One OpenAlex call for ChemRxiv, one for journals (PubChem has no PubMed links in this mock).
+        assert calls.count("api.openalex.org") == 2
 
 
 def test_endpoint_without_any_name(monkeypatch):
     monkeypatch.setattr(resolver, "name_for_inchikey", lambda key: None)
     with client:
         r = client.post("/api/analysis/literature", json={"smiles": "CC(C)(C)C(C)(C)C(C)(C)C1CC1"}).json()
-        assert r["available"] is False and "no name to search" in r["reason"]
+        assert r["chemrxiv"]["available"] is False and "no name to search" in r["chemrxiv"]["reason"]
+        assert r["journals"]["available"] is False and r["patents"]["items"] == []
 
 
 def test_crossref_fallback_is_retried_next_day(monkeypatch):

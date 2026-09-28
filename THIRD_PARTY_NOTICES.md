@@ -74,7 +74,8 @@ data from them is bundled in this repository. Results are shown with a note
 naming the source, and use of each service is subject to its provider's terms.
 
 - **PubChem**, National Center for Biotechnology Information (NCBI), U.S.
-  National Library of Medicine: resolving names and structures.
+  National Library of Medicine: resolving names and structures; the PubMed articles and
+  patent records linked to a compound for the Literature card.
   Kim, S. et al. *Nucleic Acids Res.* **2023**, 51 (D1), D1373–D1380.
 - **NCI/CADD Chemical Identifier Resolver (CACTUS)**, National Cancer
   Institute: fallback name resolution.
@@ -87,12 +88,13 @@ naming the source, and use of each service is subject to its provider's terms.
   <https://doi.org/10.18434/T4D303>. NIST reference data is not relicensed
   under this project's MIT License.
 - **OpenAlex** (OurResearch), with **Crossref** as a fallback: finding ChemRxiv
-  preprints for the Literature tab. OpenAlex metadata is released under CC0.
+  preprints, and details of the journal articles PubChem links, for the Literature card. OpenAlex metadata is released under CC0.
   Priem, J.; Piwowar, H.; Orr, R. OpenAlex: A fully-open index of scholarly works,
   authors, venues, institutions, and concepts. arXiv:2205.01833, **2022**.
-  Only titles, authors, dates and DOIs are shown; each links to the preprint on
-  **ChemRxiv**, where the preprint's own licence applies.
-- **Google Patents**: the Reactions tab links each example to its patent page.
+  Only titles, authors, dates, journals, citation counts, DOIs and a short abstract excerpt
+  are shown; each links to the article or to the preprint on **ChemRxiv**, where the work's
+  own licence applies.
+- **Google Patents**: the Reactions and Literature cards link each patent to its page.
 
 ## Software citations
 

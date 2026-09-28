@@ -201,21 +201,32 @@ def lookup_name(db: Session, inchikey: str, before_fetch: Callable[[], None] | N
     return row
 
 
-def get_literature(db: Session, inchikey: str, search) -> dict:
-    """ChemRxiv results for a molecule. `search()` returns (payload, complete).
-    OpenAlex results with papers are kept 30 days; empty results and the thinner
-    Crossref fallback a day, so a better answer replaces them; failures are not kept."""
-    row = db.get(LiteratureCache, inchikey)
-    if row is not None:
-        data = json.loads(row.result_json)
-        age = datetime.now(timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)
-        keep = timedelta(days=30) if data.get("items") and data.get("source") == "OpenAlex" else timedelta(days=1)
-        if age < keep and data.get("_v") == literature_version():
-            data["cached"] = True
-            return data
-    data, complete = search()
+# Literature cache rows: the ChemRxiv search under the bare InChIKey (as before the other
+# sources existed), the others under the key plus a suffix.
+LITERATURE_KINDS = {"chemrxiv": "", "journals": "/j", "patents": "/p"}
+
+
+def cached_literature(db: Session, inchikey: str, kind: str = "chemrxiv") -> dict | None:
+    """A stored literature result still in date for its kind and version, or None.
+    Results with items are kept 30 days (except the thinner Crossref fallback);
+    empty ones a day, so a better answer replaces them."""
+    row = db.get(LiteratureCache, inchikey + LITERATURE_KINDS[kind])
+    if row is None:
+        return None
+    data = json.loads(row.result_json)
+    age = datetime.now(timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)
+    keep = timedelta(days=30) if data.get("items") and data.get("source") != "Crossref" else timedelta(days=1)
+    if age < keep and data.get("_v") == literature_version(kind):
+        data["cached"] = True
+        return data
+    return None
+
+
+def store_literature(db: Session, inchikey: str, kind: str, data: dict, complete: bool) -> dict:
+    """Keep a finished search (failures are not kept) and return it for the response."""
     if complete:
-        db.merge(LiteratureCache(inchikey=inchikey, result_json=json.dumps(data), created_at=datetime.now(timezone.utc)))
+        db.merge(LiteratureCache(inchikey=inchikey + LITERATURE_KINDS[kind], result_json=json.dumps(data),
+                                 created_at=datetime.now(timezone.utc)))
         try:
             db.commit()
         except (IntegrityError, OperationalError):
@@ -224,7 +235,16 @@ def get_literature(db: Session, inchikey: str, search) -> dict:
     return data
 
 
-def literature_version() -> int:
-    from . import literature
+def get_literature(db: Session, inchikey: str, search, kind: str = "chemrxiv") -> dict:
+    """Literature results for a molecule. `search()` returns (payload, complete)."""
+    hit = cached_literature(db, inchikey, kind)
+    if hit is not None:
+        return hit
+    data, complete = search()
+    return store_literature(db, inchikey, kind, data, complete)
 
-    return literature.VERSION
+
+def literature_version(kind: str = "chemrxiv") -> int:
+    from . import literature, literature_journals, literature_patents
+
+    return {"chemrxiv": literature, "journals": literature_journals, "patents": literature_patents}[kind].VERSION

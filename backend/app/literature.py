@@ -20,8 +20,9 @@ CHEMRXIV_SOURCE = "S4393918830"  # OpenAlex source id for ChemRxiv
 CHEMRXIV_PREFIX = "10.26434"
 MAILTO = "chem-forge@users.noreply.github.com"
 LIMIT = 5
-MAX_NAMES = 4  # names tried per molecule
-VERSION = 3  # bump when the payload or the search changes; older cache rows are redone
+MAX_NAMES = 6  # names tried per molecule
+VERSION = 4  # bump when the payload or the search changes; older cache rows are redone
+SNIPPET = 220  # characters of abstract shown around the name
 
 
 def enabled() -> bool:
@@ -82,6 +83,59 @@ def _squash(text: str) -> str:
     return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
+def _abstract(inverted: dict | None) -> str:
+    """OpenAlex stores abstracts as {word: [positions]}; put the words back in order."""
+    if not inverted:
+        return ""
+    words: dict[int, str] = {}
+    for word, positions in inverted.items():
+        for p in positions:
+            words[p] = word
+    return " ".join(words[i] for i in sorted(words))
+
+
+def snippet(text: str, name: str) -> str:
+    """A stretch of the abstract around the first mention of the name, or ''."""
+    at = text.lower().find(name.lower()) if name else -1
+    if at < 0:
+        return ""
+    start = max(0, at - SNIPPET // 2)
+    end = min(len(text), at + len(name) + SNIPPET // 2)
+    if start > 0:
+        start = text.find(" ", start) + 1 or start
+    if end < len(text):
+        cut = text.rfind(" ", at + len(name), end)
+        end = cut if cut > 0 else end
+    return ("…" if start > 0 else "") + text[start:end].strip() + ("…" if end < len(text) else "")
+
+
+PUBCHEM_SYNONYMS = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/synonyms/JSON"
+
+
+def synonyms(cid: int | None, limit: int = 3) -> list[str]:
+    """PubChem's leading synonyms that read like names papers use (no CAS numbers,
+    registry codes or long systematic names). Never raises."""
+    if not cid or not enabled():
+        return []
+    try:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
+            r = client.get(PUBCHEM_SYNONYMS.format(cid))
+            if r.status_code != 200:
+                return []
+            info = r.json().get("InformationList", {}).get("Information", [{}])[0]
+    except (httpx.HTTPError, ValueError):
+        return []
+    out = []
+    for syn in info.get("Synonym", [])[:30]:
+        if (len(syn) > 40 or re.fullmatch(r"[\d-]+", syn) or re.search(r"\d{2,}-\d{2}-\d", syn)
+                or re.fullmatch(r"[A-Z0-9 -]+", syn) or not re.search(r"[a-z]{3}", syn)):
+            continue
+        out.append(syn)
+        if len(out) == limit:
+            break
+    return out
+
+
 def _dedupe(items: list[dict]) -> list[dict]:
     """One row per preprint: versions (.v1, .v2) and repeated titles collapse."""
     seen: set[str] = set()
@@ -102,7 +156,8 @@ def _openalex(client: httpx.Client, name: str, fulltext: bool = False) -> list[d
     else:
         # Commas separate OpenAlex filters, so they cannot appear inside the term.
         params = {"filter": f"primary_location.source.id:{CHEMRXIV_SOURCE},title_and_abstract.search:{_term(name.replace(',', ' '))}"}
-    params.update({"sort": "relevance_score:desc", "per_page": str(LIMIT * 2), "mailto": MAILTO})
+    params.update({"sort": "relevance_score:desc", "per_page": str(LIMIT * 2), "mailto": MAILTO,
+                   "select": "doi,title,authorships,publication_date,cited_by_count,abstract_inverted_index"})
     key = os.environ.get("OPENALEX_API_KEY")
     if key:
         params["api_key"] = key
@@ -121,6 +176,7 @@ def _openalex(client: httpx.Client, name: str, fulltext: bool = False) -> list[d
             "doi": doi,
             "url": chemrxiv_url(doi),
             "cited_by": w.get("cited_by_count"),
+            "snippet": snippet(_abstract(w.get("abstract_inverted_index")), name),
         })
     return items
 
@@ -153,6 +209,7 @@ def _crossref(client: httpx.Client, name: str) -> list[dict] | None:
             "doi": doi,
             "url": chemrxiv_url(doi),
             "cited_by": None,
+            "snippet": "",
         })
     return items
 

@@ -93,8 +93,13 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   year, yield) and the reacting atoms highlighted. Enzyme reactions are listed separately with
   their EC numbers. Reaction SMILES inputs get the functional groups lost and gained and a
   guess at the reaction type.
-- **Literature** (`backend/app/literature.py`): lists up to five ChemRxiv preprints found by the molecule's
-  PubChem name, via OpenAlex (Crossref as fallback); titles open the ChemRxiv page.
+- **Literature** (`backend/app/literature*.py`): a card below Reactions with three lists.
+  *ChemRxiv*: up to five preprints found by the molecule's PubChem name (then synonyms), via
+  OpenAlex (Crossref as fallback), each with the abstract sentence that names it.
+  *Journals*: articles PubChem links to the exact structure (PubMed), with details from
+  OpenAlex, ranked by citations with recent articles and titles naming the molecule first.
+  *Patents*: the US patents whose worked examples make or use the molecule, from the reaction
+  index, with titles from PubChem, plus a link to PubChem's full patent list.
 - **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.
 - **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
 
@@ -151,8 +156,8 @@ HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forg
 ```
 
 `setup.sh` and the Docker build download it when `REACTIONS_REPO=<hf-user>/chem-forge-reactions`
-is set; without it the card says the index is not installed. ChemRxiv lookups are cached per
-molecule for 30 days; `CHEM_LITERATURE_LOOKUP=0` turns them off, and a free
+is set; without it the card says the index is not installed. Literature lookups are cached per
+molecule and source for 30 days; `CHEM_LITERATURE_LOOKUP=0` turns them off, and a free
 `OPENALEX_API_KEY` avoids OpenAlex's rate limit on anonymous searches.
 
 ## Deploy (free): Render

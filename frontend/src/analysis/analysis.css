@@ -64,3 +64,5 @@
 @media (max-width: 900px) {
   .mech-layout { grid-template-columns: 1fr; }
 }
+.lit-snippet { color: var(--muted); }
+.lit-snippet mark { background: color-mix(in srgb, #f59e0b 30%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }

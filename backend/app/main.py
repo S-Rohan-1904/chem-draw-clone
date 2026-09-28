@@ -7,15 +7,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import dbsync
-from .db import DB_PATH, init_db
+from .db import DB_PATH, engine, init_db
 from .routers import admin, analysis, assignments, auth, isomers, molecule, quiz, saved, tools, worksheet
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
+def _db_replaced() -> None:
+    engine.dispose()  # pooled connections still point at the old file
+    init_db()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    dbsync.start(DB_PATH)  # pulls the remote copy before tables are created
+    dbsync.start(DB_PATH, on_replace=_db_replaced)  # pulls the remote copy before tables are created
     init_db()
     yield
     dbsync.stop(DB_PATH)

@@ -21,6 +21,7 @@ import sqlite3
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 log = logging.getLogger("dbsync")
@@ -32,6 +33,7 @@ REMOTE_NAME = "data.db"
 
 _stop = threading.Event()
 _thread: threading.Thread | None = None
+_on_replace: Callable[[], None] | None = None
 _last_mtime = 0.0
 _remote_sha: str | None = None
 _LATE_PULL_WINDOW = int(os.environ.get("HF_LATE_PULL_SECONDS", "300"))
@@ -65,7 +67,7 @@ def _remote_revision() -> str | None:
 
 
 def pull(db_path: str) -> None:
-    global _remote_sha
+    global _remote_sha, _last_mtime
     if not enabled():
         return
     from huggingface_hub import hf_hub_download
@@ -81,9 +83,18 @@ def pull(db_path: str) -> None:
         log.warning("could not pull DB: %s", e)
         status["last_error"] = f"pull: {e}"
         return
-    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(db_path).write_bytes(Path(cached).read_bytes())
-    global _last_mtime
+    # Copy next to the target, then rename over it: open connections keep the
+    # old file and never see a half written one.
+    target = Path(db_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=target.parent, suffix=".db")
+    os.close(fd)
+    Path(tmp).write_bytes(Path(cached).read_bytes())
+    os.replace(tmp, target)
+    if _on_replace is not None:
+        _on_replace()
+    # After the migration: the copy still counts as untouched, so a newer
+    # remote can replace it again during the late pull window.
     _last_mtime = os.path.getmtime(db_path)
     status["restored"] = True
     log.warning("restored %s from %s", db_path, REPO)
@@ -95,9 +106,11 @@ def push(db_path: str) -> None:
         return
     from huggingface_hub import HfApi
 
+    # Read the mtime before the snapshot: a write landing in between then shows
+    # up as a change next round instead of being skipped.
+    mtime = os.path.getmtime(db_path)
     tmp = _snapshot(db_path)
     try:
-        _last_mtime = os.path.getmtime(db_path)
         HfApi(token=TOKEN).upload_file(
             path_or_fileobj=tmp,
             path_in_repo=REMOTE_NAME,
@@ -105,6 +118,8 @@ def push(db_path: str) -> None:
             repo_type="dataset",
             commit_message="sync data.db",
         )
+        # Only now counts as synced; a failed upload is retried next round.
+        _last_mtime = mtime
         status["last_upload"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         _remote_sha = _remote_revision()
         log.warning("uploaded %s to %s", REMOTE_NAME, REPO)
@@ -135,8 +150,11 @@ def _loop(db_path: str) -> None:
                 pull(db_path)
 
 
-def start(db_path: str) -> None:
-    global _thread
+def start(db_path: str, on_replace: Callable[[], None] | None = None) -> None:
+    """``on_replace`` runs after a later pull swaps the file under the app, so
+    it can drop pooled connections and migrate the new copy. The first pull
+    happens before the app has opened the database and does not call it."""
+    global _thread, _on_replace
     if not enabled():
         log.warning("DB sync disabled: set HF_TOKEN and HF_DATASET_REPO to persist data across restarts")
         return
@@ -149,6 +167,7 @@ def start(db_path: str) -> None:
         status["last_error"] = f"create_repo: {e}"
         log.warning("could not ensure dataset repo %s: %s", REPO, e)
     pull(db_path)
+    _on_replace = on_replace
     _thread = threading.Thread(target=_loop, args=(db_path,), daemon=True, name="dbsync")
     _thread.start()
 

@@ -3,6 +3,7 @@ import { AcidBase } from './AcidBase'
 import { Bonding } from './Bonding'
 import { Conformations } from './Conformations'
 import { Isotopes } from './Isotopes'
+import { Literature } from './Literature'
 import { Reactions } from './Reactions'
 import { SugarProjections } from './SugarProjections'
 import './analysis.css'
@@ -21,6 +22,7 @@ export function ResultExtras({ mol, onHighlight, onOpen }: Props) {
       <SugarProjections mol={mol} onHighlight={onHighlight} />
       <Conformations mol={mol} onHighlight={onHighlight} />
       <Reactions mol={mol} onOpen={onOpen} onHighlight={onHighlight} />
+      <Literature mol={mol} />
       <AcidBase mol={mol} onHighlight={onHighlight} />
       <Isotopes mol={mol} onHighlight={onHighlight} />
     </>

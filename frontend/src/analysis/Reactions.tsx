@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Molecule } from '../types'
 import { analysisApi } from './api'
-import type { Literature, RecordedReaction, RecordedReactions } from './types'
+import type { RecordedReaction, RecordedReactions } from './types'
 
 interface Props {
   mol: Molecule
@@ -9,50 +9,29 @@ interface Props {
   onHighlight: (atoms: number[] | null, colour?: string) => void
 }
 
-type Tab = 'reactions' | 'literature'
-
-/** Recorded reactions (USPTO patents) and ChemRxiv preprints for the molecule. */
+/** Recorded reactions for the molecule, from US patent records. */
 export function Reactions({ mol, onOpen, onHighlight }: Props) {
-  const [tab, setTab] = useState<Tab>('reactions')
   const [rx, setRx] = useState<RecordedReactions | null>(null)
-  const [lit, setLit] = useState<Literature | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setRx(null)
-    setLit(null)
-    setError(null)
-  }, [mol.smiles])
-
-  useEffect(() => {
-    if (tab === 'reactions' ? rx : lit) return
     let live = true
-    setLoading(true)
+    setRx(null)
     setError(null)
-    // A typed name is a fallback search term when PubChem has no name for the structure.
-    const name = ['iupac', 'pubchem', 'cactus'].includes(mol.source) ? mol.input_text : ''
-    const call = tab === 'reactions'
-      ? analysisApi.reactions(mol.smiles).then((d) => live && setRx(d))
-      : analysisApi.literature(mol.smiles, name).then((d) => live && setLit(d))
-    call.catch((e: Error) => live && setError(e.message)).finally(() => live && setLoading(false))
+    analysisApi.reactions(mol.smiles)
+      .then((d) => live && setRx(d))
+      .catch((e: Error) => live && setError(e.message))
     return () => { live = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, mol.smiles, rx, lit])
+  }, [mol.smiles])
 
   return (
     <section className="card">
       <header className="card-head">
         <h2>Reactions</h2>
-        <div className="toolbar">
-          <button type="button" className={tab === 'reactions' ? 'active' : ''} onClick={() => setTab('reactions')}>Reactions</button>
-          <button type="button" className={tab === 'literature' ? 'active' : ''} onClick={() => setTab('literature')}>Literature</button>
-        </div>
       </header>
       {error && <p className="warn">{error}</p>}
-      {loading && <p className="muted small">Loading…</p>}
-      {!loading && tab === 'reactions' && rx && <RecordedTab data={rx} onOpen={onOpen} onHighlight={onHighlight} />}
-      {!loading && tab === 'literature' && lit && <LiteratureTab data={lit} />}
+      {!error && !rx && <p className="muted small">Loading…</p>}
+      {rx && <RecordedTab data={rx} onOpen={onOpen} onHighlight={onHighlight} />}
     </section>
   )
 }
@@ -128,31 +107,5 @@ function Section({ title, empty, items, direction, onOpen, onHighlight }: {
         })}
       </ol>
     </>
-  )
-}
-
-function LiteratureTab({ data }: { data: Literature }) {
-  if (!data.available) return <p className="muted">{data.reason}</p>
-  return (
-    <div className="bonding-body">
-      {data.match === 'fulltext' && data.items.length > 0 && (
-        <p className="muted small">No ChemRxiv title or abstract names “{data.query}”, so these preprints are ones that mention it in the text.</p>
-      )}
-      {data.items.length === 0 ? (
-        <p className="muted">No ChemRxiv preprints found for “{data.query}”.</p>
-      ) : (
-        <ol className="lit-list">
-          {data.items.map((p) => (
-            <li key={p.doi}>
-              <a href={p.url} target="_blank" rel="noopener noreferrer"><b>{p.title}</b></a>
-              <span className="muted small">
-                {[p.authors, p.date, p.cited_by != null ? `cited ${p.cited_by}×` : ''].filter(Boolean).join(' · ')}
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
-      <p className="muted small">Searched ChemRxiv for “{data.query}”{data.source ? ` via ${data.source}` : ''}. Preprints are not peer reviewed. Links open the ChemRxiv page.</p>
-    </div>
   )
 }

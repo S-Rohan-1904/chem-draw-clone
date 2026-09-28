@@ -1,0 +1,41 @@
+# Chem Forge on one Azure VM: the app behind Caddy, which gets HTTPS certificates itself.
+# Run from this folder on the VM:  docker compose up -d --build
+# Settings come from .env next to this file (see .env.example).
+services:
+  app:
+    build:
+      context: ../..
+      args:
+        REACTIONS_REPO: ${REACTIONS_REPO:-}
+    env_file: .env
+    environment:
+      CHEM_DB_PATH: /data/data.db
+      # Caddy is the one proxy in front, so the client address is the last X-Forwarded-For entry.
+      TRUSTED_PROXY_HOPS: "1"
+      # More room for OPSIN than on a 512 MB host.
+      JAVA_TOOL_OPTIONS: "-Xmx512m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xshare:auto"
+    volumes:
+      - data:/data
+    expose:
+      - "7860"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  data:
+  caddy_data:
+  caddy_config:

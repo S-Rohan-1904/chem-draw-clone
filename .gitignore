@@ -11,3 +11,4 @@ backend/py2opsin_temp_input.txt
 frontend/dist/
 frontend/node_modules/
 backend/prewarm.db
+deploy/azure/.env

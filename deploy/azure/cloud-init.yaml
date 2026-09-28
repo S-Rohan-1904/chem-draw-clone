@@ -1,0 +1,15 @@
+#cloud-config
+# First boot of the Chem Forge VM: Docker, git, a swap file, and the repository.
+package_update: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - git
+runcmd:
+  - usermod -aG docker azureuser
+  - systemctl enable --now docker
+  # 2 GB swap as a cushion for image builds on a 4 GB machine.
+  - fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  - git clone https://github.com/S-Rohan-1904/chem-draw-clone.git /opt/chemforge
+  - chown -R azureuser:azureuser /opt/chemforge

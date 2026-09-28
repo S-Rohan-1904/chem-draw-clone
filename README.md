@@ -160,36 +160,45 @@ is set; without it the card says the index is not installed. Literature lookups 
 molecule and source for 30 days; `CHEM_LITERATURE_LOOKUP=0` turns them off, and a free
 `OPENALEX_API_KEY` avoids OpenAlex's rate limit on anonymous searches.
 
-## Deploy (free): Render
+## Deploy: Azure VM
 
-Hugging Face Spaces only offer static hosting for free, so the backend runs on a
-Render free web service instead (Docker, 512 MB RAM, no card). It sleeps after 15
-minutes without traffic and wakes on the next visit in about a minute. New molecules
-are slow on the small CPU; repeats are served from the cache.
+The app runs on one Azure VM (Ubuntu, `Standard_B2pls_v2`: 2 Arm vCPU, 4 GB RAM) with
+Docker Compose, from `deploy/azure/`. Caddy sits in front and gets the HTTPS certificate
+itself. Accounts and saved molecules live in a Docker volume on the VM's disk, so they
+survive rebuilds. The VM does not sleep, so there are no cold starts.
 
-`render.yaml` describes the service. Free instances have no persistent disk, so
-saved molecules and accounts are mirrored to a private Hugging Face dataset
-(free with an HF account): the app restores `data.db` from it at startup and uploads
-a snapshot whenever it changed (every `HF_SYNC_SECONDS`, default 120) and on shutdown.
-Without `HF_TOKEN` and `HF_DATASET_REPO` the app still runs, with a throwaway database.
+Setup, once, from your machine:
 
-Setup:
+1. Azure CLI (`brew install azure-cli`) and `az login`.
+2. Create the VM. It generates the SSH key `~/.ssh/chemforge_azure` if missing, opens
+   ports 80 and 443, installs Docker and clones this repository to `/opt/chemforge`:
 
-1. Hugging Face account (https://huggingface.co/join) and a **Write** token
-   (https://huggingface.co/settings/tokens).
-2. Render account (https://render.com, sign in with GitHub).
-3. Render dashboard, New, Blueprint, pick this repo. Render reads `render.yaml`.
-4. When prompted, fill `HF_TOKEN` with the token and `HF_DATASET_REPO` with
-   `<hf-user>/chem-draw-data`, `REACTIONS_REPO` with the reaction index dataset
-   (see Reaction index), optionally `OPENALEX_API_KEY`, `ADMIN_USERS` with the usernames (comma
-   separated) that may open the Stats tab, and `ADMIN_SIGNUP_CODE` with a
-   secret of your choice. `SECRET_KEY` is generated.
-5. Deploy. First build takes about 10 minutes.
-6. Register each admin name with the code (the sign up form cannot, so nobody
+   ```bash
+   LOCATION=centralindia DNS_LABEL=chemillustrator ./deploy/azure/create-vm.sh
+   ```
+
+   The site is then `https://<DNS_LABEL>.<LOCATION>.cloudapp.azure.com`.
+3. Fill in the settings on the VM, in `/opt/chemforge/deploy/azure/.env` (see
+   `.env.example`; `SITE_ADDRESS` and `SECRET_KEY` are already set): `REACTIONS_REPO`
+   (see Reaction index), optionally `OPENALEX_API_KEY`, `ADMIN_USERS` with the usernames
+   (comma separated) that may open the Stats tab, and `ADMIN_SIGNUP_CODE` with a secret
+   of your choice.
+
+   ```bash
+   ssh -i ~/.ssh/chemforge_azure azureuser@<host> nano /opt/chemforge/deploy/azure/.env
+   ```
+
+4. First deploy. The first build takes about 10 minutes:
+
+   ```bash
+   ./deploy/azure/deploy.sh
+   ```
+
+5. Register each admin name with the code (the sign up form cannot, so nobody
    else can claim the name first):
 
    ```bash
-   curl -X POST https://<your-app>.onrender.com/api/auth/register \
+   curl -X POST https://<host>/api/auth/register \
      -H 'Content-Type: application/json' \
      -d '{"username": "<admin>", "password": "<password>", "admin_code": "<ADMIN_SIGNUP_CODE>"}'
    ```
@@ -197,11 +206,47 @@ Setup:
    Names in `ADMIN_USERS` cannot be registered without it; accounts that
    already exist are unaffected.
 
-Cold starts: the image build runs `backend/scripts/prewarm.py`, which caches every name
-in `common_names.txt` into `backend/prewarm.db`; at startup rows missing from the live
-database are imported, so common molecules are instant even on the small CPU. To keep
-the free instance from sleeping during class hours, point a free external ping (for
-example cron-job.org) at `https://<your-app>.onrender.com/api/health` every 10 minutes.
+`LOCATION`, `DNS_LABEL`, `KEY` and `HOST` override the defaults in every script.
+
+### Automatic deploys
+
+`.github/workflows/deploy.yml` deploys every push to main once CI has passed on it:
+it connects to the VM over SSH, fast forwards `/opt/chemforge` to that commit (never
+backwards, so an older run finishing late changes nothing), rebuilds, restarts and
+checks `/api/health`. Runs never overlap. It can also be started by hand from the
+Actions tab (Deploy, Run workflow).
+
+It uses its own SSH key, not yours. On the VM that key is limited to running
+`deploy/azure/update.sh`: no shell, no port forwarding. Set it up once, after the
+first deploy and with the GitHub CLI signed in (`gh auth login`):
+
+```bash
+./deploy/azure/setup-ci.sh
+```
+
+This creates `~/.ssh/chemforge_github_deploy`, adds it to the VM with that limit, and
+stores in the repository's Actions settings the secrets `AZURE_SSH_KEY` (the private
+key) and `AZURE_KNOWN_HOSTS` (the VM's host key as your machine already trusts it, so
+Actions refuses an impostor) and the variable `AZURE_HOST`. Until then the Deploy
+workflow fails at the SSH step and nothing on the VM changes. To revoke it, delete
+the `chemforge-github-deploy` line from `~/.ssh/authorized_keys` on the VM.
+
+Manual deploys with `./deploy/azure/deploy.sh` still work alongside it.
+
+### Backups
+
+Optional: set `HF_DATASET_REPO` (`<hf-user>/chem-draw-data`, a private Hugging Face
+dataset) and a **Write** `HF_TOKEN` (https://huggingface.co/settings/tokens) in `.env`,
+and the app mirrors `data.db` there whenever it changed (every `HF_SYNC_SECONDS`,
+default 120) and on shutdown. At startup it replaces the local `data.db` with the
+latest copy from the dataset, so only one running deployment may use a given dataset.
+
+`render.yaml` is the older Render free tier setup (512 MB, sleeps when idle, no disk,
+so it relies on the dataset above); it is kept for reference.
+
+Common molecules: the image build runs `backend/scripts/prewarm.py`, which caches every
+name in `common_names.txt` into `backend/prewarm.db`; at startup rows missing from the
+live database are imported, so common molecules are instant.
 
 Rate limits are per client address, in separate buckets: building new
 molecules and other heavy work (`RATE_LIMIT_PER_MIN`, default 30, burst
@@ -209,7 +254,8 @@ molecules and other heavy work (`RATE_LIMIT_PER_MIN`, default 30, burst
 molecule that is not cached), the checks made while typing
 (`TYPING_RATE_LIMIT_PER_MIN`, 120), and login / register
 (`AUTH_RATE_LIMIT_PER_MIN`, 10). `X-Forwarded-For` is only trusted when
-`TRUSTED_PROXY_HOPS` says how many proxies sit in front (Render: 1); otherwise
+`TRUSTED_PROXY_HOPS` says how many proxies sit in front (Caddy on Azure: 1, set in
+`deploy/azure/docker-compose.yml`); otherwise
 anyone could send a new address with every request.
 
 Local container run:

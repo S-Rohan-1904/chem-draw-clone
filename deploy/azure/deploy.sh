@@ -9,10 +9,8 @@ DNS_LABEL="${DNS_LABEL:-chemillustrator}"
 KEY="${KEY:-$HOME/.ssh/chemforge_azure}"
 HOST="${HOST:-$DNS_LABEL.$LOCATION.cloudapp.azure.com}"
 
-ssh -i "$KEY" "azureuser@$HOST" 'set -e
-  cd /opt/chemforge && git pull --ff-only
-  cd deploy/azure && docker compose up -d --build
-  docker image prune -f >/dev/null'
+# Pull first so a VM that predates update.sh gets it.
+ssh -i "$KEY" "azureuser@$HOST" 'cd /opt/chemforge && git pull -q --ff-only && deploy/azure/update.sh'
 echo "Deployed. Checking health..."
 for i in $(seq 1 30); do
   if curl -fsS "https://$HOST/api/health" >/dev/null 2>&1; then echo "Live at https://$HOST"; exit 0; fi

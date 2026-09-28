@@ -1,0 +1,47 @@
+name: Deploy
+
+# After CI passes on a push to main, move the Azure VM to that commit and rebuild.
+# Setup: deploy/azure/setup-ci.sh (secrets AZURE_SSH_KEY, AZURE_KNOWN_HOSTS, variable AZURE_HOST).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HOST: ${{ vars.AZURE_HOST }}
+      REV: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: SSH key
+        env:
+          SSH_KEY: ${{ secrets.AZURE_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.AZURE_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Update and rebuild on the VM
+        run: ssh -o BatchMode=yes -o ServerAliveInterval=30 "azureuser@$HOST" "$REV"
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "https://$HOST/api/health"; then exit 0; fi
+            sleep 10
+          done
+          echo "Not answering after 5 minutes" >&2
+          exit 1

@@ -115,7 +115,7 @@ def search(cid: int | None, names: list[str]) -> tuple[dict, bool]:
     names = [search_name(n) for n in names if n]
     squashed = [_squash(n) for n in names]
     try:
-        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Forge (mailto:{MAILTO})"}) as client:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
             pmids: list[int] = []
             if cid:
                 r = client.get(PUBCHEM_PMIDS.format(cid))

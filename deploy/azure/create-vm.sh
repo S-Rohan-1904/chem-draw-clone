@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Create the Chem Forge VM on Azure (run once, after `az login`).
-#   LOCATION=centralindia DNS_LABEL=chemforge ./deploy/azure/create-vm.sh
+# Create the Chem Illustrator VM on Azure (run once, after `az login`).
+#   LOCATION=centralindia DNS_LABEL=chemillustrator ./deploy/azure/create-vm.sh
 # The site then lives at https://$DNS_LABEL.$LOCATION.cloudapp.azure.com
 set -euo pipefail
 cd "$(dirname "$0")"
 
 LOCATION="${LOCATION:-centralindia}"
-GROUP="${GROUP:-chemforge}"
-VM="${VM:-chemforge}"
+GROUP="${GROUP:-chemillustrator}"
+VM="${VM:-chemillustrator}"
 SIZE="${SIZE:-Standard_B2pls_v2}"   # Arm, 2 vCPU, 4 GB
-DNS_LABEL="${DNS_LABEL:-chemforge}"
+DNS_LABEL="${DNS_LABEL:-chemillustrator}"
 KEY="${KEY:-$HOME/.ssh/chemforge_azure}"
 
 [ -f "$KEY" ] || ssh-keygen -t ed25519 -N "" -C "chemforge-azure" -f "$KEY"

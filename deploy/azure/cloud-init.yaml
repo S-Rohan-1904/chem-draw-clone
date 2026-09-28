@@ -1,5 +1,5 @@
 #cloud-config
-# First boot of the Chem Forge VM: Docker, git, a swap file, and the repository.
+# First boot of the Chem Illustrator VM: Docker, git, a swap file, and the repository.
 package_update: true
 packages:
   - docker.io

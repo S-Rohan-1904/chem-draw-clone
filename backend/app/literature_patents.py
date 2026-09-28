@@ -87,7 +87,7 @@ def search(reactions: dict, cid: int | None) -> tuple[dict, bool]:
     def fill(item: dict) -> None:
         nonlocal complete
         try:
-            with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Forge (mailto:{MAILTO})"}) as client:
+            with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
                 rec = _record(client, item["number"])
         except (httpx.HTTPError, ValueError):
             complete = False  # titles missing: show numbers now, try again next time

@@ -236,7 +236,7 @@ def search(names: list[str], more=None) -> tuple[dict, bool]:
         return {**base, "available": False, "reason": "Literature lookup is turned off on this server."}, False
     failed = False
     try:
-        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Forge (mailto:{MAILTO})"}) as client:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
             pending = list(names)
             fetched_more = False
             while pending or (more is not None and not fetched_more):
@@ -262,7 +262,7 @@ def search(names: list[str], more=None) -> tuple[dict, bool]:
         return {**base, "available": False, "query": tried[0], "reason": "ChemRxiv search is not reachable right now."}, False
     # No title or abstract names the molecule: fall back to preprints that mention it in the text.
     try:
-        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Forge (mailto:{MAILTO})"}) as client:
+        with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
             items = _openalex(client, tried[0], fulltext=True)
     except (httpx.HTTPError, ValueError):
         items = None

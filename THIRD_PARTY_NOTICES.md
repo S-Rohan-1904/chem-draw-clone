@@ -1,10 +1,10 @@
 # Third-party notices
 
-Chem Forge is released under the MIT License (see `LICENSE`). It depends on the
+Chem Illustrator is released under the MIT License (see `LICENSE`). It depends on the
 open-source packages, data and online services listed below. None of their source
 code is copied into this repository; the packages are installed by `npm` and
 `uv`/`pip` and keep their own licenses. Anyone redistributing a built copy of
-Chem Forge (for example a Docker image or a frontend bundle) must also follow
+Chem Illustrator (for example a Docker image or a frontend bundle) must also follow
 those licenses, which in practice means keeping their copyright and licence
 notices. The installed packages ship them (`node_modules/<pkg>/LICENSE`, and
 the `*.dist-info` folders for Python packages).
@@ -19,7 +19,7 @@ the `*.dist-info` folders for Python packages).
 | React, React DOM | MIT | UI framework |
 
 Ketcher and Indigo are licensed under the Apache License, Version 2.0. A copy is
-available at <https://www.apache.org/licenses/LICENSE-2.0>. Chem Forge uses
+available at <https://www.apache.org/licenses/LICENSE-2.0>. Chem Illustrator uses
 these packages unmodified.
 
 ## Backend (Python)
@@ -45,7 +45,7 @@ these packages unmodified.
 | pytest, pytest-xdist (development and testing) | MIT / MIT | Tests |
 | RXNMapper, with PyTorch and Transformers (index building only, in a separate environment) | MIT / BSD-3-Clause / Apache-2.0 | Atom-mapping the Rhea and CRD reactions |
 
-Chem Forge also needs a Java runtime (for example OpenJDK) to run OPSIN. It is
+Chem Illustrator also needs a Java runtime (for example OpenJDK) to run OPSIN. It is
 installed separately and is not distributed with this repository.
 
 ## Data
@@ -98,7 +98,7 @@ naming the source, and use of each service is subject to its provider's terms.
 
 ## Software citations
 
-If you use Chem Forge in teaching or research, please also cite the main tools
+If you use Chem Illustrator in teaching or research, please also cite the main tools
 it builds on:
 
 - RDKit: Open-Source Cheminformatics. <https://www.rdkit.org>

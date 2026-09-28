@@ -1,4 +1,4 @@
-# Chem Forge on one Azure VM: the app behind Caddy, which gets HTTPS certificates itself.
+# Chem Illustrator on one Azure VM: the app behind Caddy, which gets HTTPS certificates itself.
 # Run from this folder on the VM:  docker compose up -d --build
 # Settings come from .env next to this file (see .env.example).
 services:

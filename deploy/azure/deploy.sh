@@ -5,7 +5,7 @@
 set -euo pipefail
 
 LOCATION="${LOCATION:-centralindia}"
-DNS_LABEL="${DNS_LABEL:-chemforge}"
+DNS_LABEL="${DNS_LABEL:-chemillustrator}"
 KEY="${KEY:-$HOME/.ssh/chemforge_azure}"
 HOST="${HOST:-$DNS_LABEL.$LOCATION.cloudapp.azure.com}"
 

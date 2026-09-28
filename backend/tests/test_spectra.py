@@ -170,3 +170,16 @@ def test_incomplete_not_cached(monkeypatch):
         r1 = client.post("/api/molecule/spectra", json={"smiles": "CC(=O)C", "kind": "ms"}).json()
         r2 = client.post("/api/molecule/spectra", json={"smiles": "CC(=O)C", "kind": "ms"}).json()
     assert r1["experimental"] is None and r1["cached"] is False and r2["cached"] is False
+
+
+def test_nist_server_error_is_not_cached_as_missing(monkeypatch):
+    def handler(request):
+        if "InChI=" in str(request.url):
+            return httpx.Response(200, text='<a href="/cgi/cbook.cgi?ID=C67641&amp;Units=SI&amp;Mask=200">')
+        return httpx.Response(503, text="busy")
+
+    _mock(monkeypatch, handler)
+    with client:
+        r1 = client.post("/api/molecule/spectra", json={"smiles": "CC(=O)C", "kind": "ir"}).json()
+        r2 = client.post("/api/molecule/spectra", json={"smiles": "CC(=O)C", "kind": "ir"}).json()
+    assert r1["experimental"] is None and r1["cached"] is False and r2["cached"] is False

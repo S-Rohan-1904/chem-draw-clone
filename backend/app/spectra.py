@@ -662,6 +662,7 @@ def _downsample(x: list[float], y: list[float], limit: int = 1500) -> tuple[list
 
 def _nist_id(client: httpx.Client, inchi: str) -> str | None:
     r = client.get(NIST_SEARCH.format(quote(inchi, safe="")))
+    _check_nist(r)
     if r.status_code != 200:
         return None
     # The compound's own section links carry Mask=; earlier ID= links can be
@@ -673,9 +674,17 @@ def _nist_id(client: httpx.Client, inchi: str) -> str | None:
     return None
 
 
+def _check_nist(r: httpx.Response) -> None:
+    """A server error is trouble on NIST's side, not a missing spectrum; raise
+    so the result is marked incomplete and not cached."""
+    if r.status_code >= 500:
+        raise httpx.HTTPStatusError(f"NIST returned {r.status_code}", request=r.request, response=r)
+
+
 def _nist_ir(client: httpx.Client, nist_id: str) -> dict | None:
     for idx in range(5):
         r = client.get(NIST_JCAMP.format(nist_id, "IR", idx))
+        _check_nist(r)
         if r.status_code != 200 or "##TITLE" not in r.text:
             break
         data = parse_jcamp(r.text)
@@ -701,6 +710,7 @@ def _nist_ir(client: httpx.Client, nist_id: str) -> dict | None:
 
 def _nist_ms(client: httpx.Client, nist_id: str) -> dict | None:
     r = client.get(NIST_JCAMP.format(nist_id, "Mass", 0))
+    _check_nist(r)
     if r.status_code != 200 or "##TITLE" not in r.text:
         return None
     data = parse_jcamp(r.text)

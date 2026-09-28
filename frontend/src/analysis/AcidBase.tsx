@@ -56,7 +56,7 @@ export function AcidBase({ mol, onHighlight }: Props) {
       <div className="bonding-split">
         <div>
           <div className="svg-wrap bonding-svg" dangerouslySetInnerHTML={{ __html: data.species_svg }} />
-          <p className="muted small">Dominant form at pH {ph.toFixed(1)} is <code>{data.species_smiles}</code>, charge {charge > 0 ? '+' : ''}{charge}</p>
+          <p className="muted small">Dominant form at pH {ph.toFixed(1)}: <code>{data.species_smiles}</code>, charge {charge > 0 ? '+' : ''}{charge}</p>
         </div>
         <div>
           <label className="check slider ph-slider">
@@ -88,7 +88,7 @@ export function AcidBase({ mol, onHighlight }: Props) {
               ))}
             </tbody>
           </table>
-          <p>Average net charge at this pH <b>{data.net_charge > 0 ? '+' : ''}{data.net_charge.toFixed(2)}</b>{data.pi !== null ? <span>, isoelectric point pI = <b>{data.pi.toFixed(2)}</b></span> : null}</p>
+          <p>Average net charge at this pH: <b>{data.net_charge > 0 ? '+' : ''}{data.net_charge.toFixed(2)}</b>{data.pi !== null ? <span>, isoelectric point pI = <b>{data.pi.toFixed(2)}</b></span> : null}</p>
           <p className="muted small">{data.note}</p>
         </div>
       </div>

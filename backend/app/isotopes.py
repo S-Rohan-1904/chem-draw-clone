@@ -74,7 +74,7 @@ def apply_labels(smiles: str, labels: list[dict]) -> dict:
     try:
         Chem.SanitizeMol(m)
     except Exception as e:  # noqa: BLE001
-        raise ChemError(f"Could not apply the labels ({e}).")
+        raise ChemError(f"Could not apply the labels: {e}")
     labelled_mass = Descriptors.ExactMolWt(m)
     shift = labelled_mass - base_mass
     heavy = Chem.RemoveHs(m)  # keeps isotopic H

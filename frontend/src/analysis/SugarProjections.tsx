@@ -39,7 +39,7 @@ export function SugarProjections({ mol, onHighlight }: Props) {
           <div className="svg-wrap bonding-svg" onMouseEnter={() => onHighlight(f.chain, '#f59e0b')} onMouseLeave={() => onHighlight(null)} dangerouslySetInnerHTML={{ __html: f.svg }} />
           <div>
             {f.dl && <p className="bonding-title"><span className="tag chir-meso">{f.dl} series</span> {f.dl_reason}</p>}
-            {!f.dl && <p className="muted small">D/L is only assigned for sugars and amino acids, which have a carbonyl or carboxyl on top and a heteroatom on the deciding centre.</p>}
+            {!f.dl && <p className="muted small">D/L is only assigned for sugars and amino acids: a carbonyl or carboxyl on top and a heteroatom on the deciding centre.</p>}
             <table className="bonding-table">
               <thead><tr><th>Carbon</th><th>Left</th><th>Right</th></tr></thead>
               <tbody>
@@ -72,7 +72,7 @@ export function SugarProjections({ mol, onHighlight }: Props) {
             {h.anomer && h.reference && (
               <p>
                 The anomeric group on C{h.atoms[0].label} points {h.anomeric_up ? 'up' : 'down'}, and the reference group {h.reference.text} on C{h.reference.num} points {h.reference.up ? 'up' : 'down'}.
-                {h.anomer === 'beta' ? ' Same side, so β.' : ' Opposite sides, so α.'}
+                {h.anomer === 'beta' ? ' Same side: β.' : ' Opposite sides: α.'}
               </p>
             )}
             <table className="bonding-table">

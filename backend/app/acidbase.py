@@ -131,7 +131,7 @@ def species_at(mol: Chem.Mol, site_list: list[dict], ph: float) -> Chem.Mol:
     try:
         Chem.SanitizeMol(m)
     except Exception as e:  # noqa: BLE001
-        raise ChemError(f"Could not build the ionised form ({e}).")
+        raise ChemError(f"Could not build the ionised form: {e}")
     return m
 
 

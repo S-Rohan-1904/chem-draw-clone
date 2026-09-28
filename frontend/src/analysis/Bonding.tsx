@@ -136,7 +136,7 @@ export function Bonding({ mol, onHighlight }: Props) {
               </tbody>
             </table>
           )}
-          <p className="muted small">In VSEPR theory, electron domains around an atom spread out as far as possible. Lone pairs take more room, so angles close up a little.</p>
+          <p className="muted small">VSEPR: electron domains around an atom spread out as far as possible. Lone pairs take more room, so angles close up a little.</p>
         </div>
       )}
 
@@ -154,15 +154,15 @@ export function Bonding({ mol, onHighlight }: Props) {
               <p className="muted small">{r.details.join(' · ')}</p>
             </div>
           ))}
-          <p className="muted small">By Hückel's rule, a planar, fully conjugated ring with 4n+2 π electrons is aromatic.</p>
+          <p className="muted small">Hückel's rule: a planar, fully conjugated ring with 4n+2 π electrons is aromatic.</p>
         </div>
       )}
 
       {tab === 'dbe' && (
         <div className="bonding-body">
-          <p className="bonding-title">Degrees of unsaturation <b>{u.dbe}</b></p>
-          <p>From the formula ({u.formula_terms}), <code>{u.from_formula}</code></p>
-          <p>From the structure, {u.breakdown} = {u.structural}</p>
+          <p className="bonding-title">Degrees of unsaturation: <b>{u.dbe}</b></p>
+          <p>From the formula ({u.formula_terms}): <code>{u.from_formula}</code></p>
+          <p>From the structure: {u.breakdown} = {u.structural}</p>
           {!u.consistent && <p className="muted small">The two counts differ because the formula count only handles C, H, N, O and halogens.</p>}
           {u.note && <p className="muted small">{u.note}</p>}
         </div>
@@ -182,13 +182,13 @@ export function Bonding({ mol, onHighlight }: Props) {
                   onMouseEnter={() => onHighlight([a.idx], '#f59e0b')}
                   onMouseLeave={() => onHighlight(null)}
                 >
-                  {a.symbol}{a.idx + 1} ({a.oxidation_state > 0 ? '+' : ''}{a.oxidation_state})
+                  {a.symbol}{a.idx + 1}: {a.oxidation_state > 0 ? '+' : ''}{a.oxidation_state}
                 </button>
               ))}
             </div>
             {detail !== null && data.oxidation.atoms[detail] && (
               <p className="small">
-                {sym(detail)} gets {data.oxidation.atoms[detail].terms.length ? data.oxidation.atoms[detail].terms.join(', ') : 'nothing, as it has no bonds to other elements'}
+                {sym(detail)}: {data.oxidation.atoms[detail].terms.length ? data.oxidation.atoms[detail].terms.join(', ') : 'no bonds to other elements'}
               </p>
             )}
             <p className="muted small">Each bond's electrons are assigned to the more electronegative atom, and bonds between identical atoms are split evenly.</p>
@@ -216,13 +216,13 @@ export function Bonding({ mol, onHighlight }: Props) {
             </dl>
             {data.polarity.dipole && (
               <div className="dipole-row">
-                <span>Dipole moment estimate <b>{data.polarity.dipole.debye.toFixed(2)} D</b></span>
+                <span>Dipole moment estimate: <b>{data.polarity.dipole.debye.toFixed(2)} D</b></span>
                 {data.polarity.dipole.debye > 0.05 && (
                   <button type="button" className={showDipole ? 'active' : ''} onClick={() => setShowDipole((s) => !s)}>{showDipole ? 'Hide arrow in 3D' : 'Show arrow in 3D'}</button>
                 )}
               </div>
             )}
-            <p className="muted small">A bond is polar for ΔEN 0.4 to 1.7 and ionic above 1.7. The dipole comes from Gasteiger partial charges on the 3D model and points to the negative end.</p>
+            <p className="muted small">Polar: ΔEN 0.4 to 1.7, ionic above 1.7. The dipole comes from Gasteiger partial charges on the 3D model and points to the negative end.</p>
           </div>
         </div>
       )}
@@ -232,17 +232,17 @@ export function Bonding({ mol, onHighlight }: Props) {
           <div className="svg-wrap bonding-svg" dangerouslySetInnerHTML={{ __html: data.hbond.svg }} />
           <div>
             <p>
-              <span className="swatch-inline" style={{ background: '#2563eb' }} /> donors {data.hbond.donors.length ? data.hbond.donors.map(sym).join(', ') : 'none'}
+              <span className="swatch-inline" style={{ background: '#2563eb' }} /> donors: {data.hbond.donors.length ? data.hbond.donors.map(sym).join(', ') : 'none'}
               <br />
-              <span className="swatch-inline" style={{ background: '#dc2626' }} /> acceptors {data.hbond.acceptors.length ? data.hbond.acceptors.map(sym).join(', ') : 'none'}
+              <span className="swatch-inline" style={{ background: '#dc2626' }} /> acceptors: {data.hbond.acceptors.length ? data.hbond.acceptors.map(sym).join(', ') : 'none'}
               {data.hbond.both.length > 0 && (
                 <>
                   <br />
-                  <span className="swatch-inline" style={{ background: '#7c3aed' }} /> both {data.hbond.both.map(sym).join(', ')}
+                  <span className="swatch-inline" style={{ background: '#7c3aed' }} /> both: {data.hbond.both.map(sym).join(', ')}
                 </>
               )}
             </p>
-            <p className="bonding-title">Water solubility <b>{data.solubility.class}</b></p>
+            <p className="bonding-title">Water solubility: <b>{data.solubility.class}</b></p>
             <p>{data.solubility.text}. Estimated log S = {data.solubility.logs} (about {formatSol(data.solubility.g_per_l)}).</p>
             <ul className="bonding-list">
               {data.solubility.reasons.map((r) => <li key={r}>{r}</li>)}

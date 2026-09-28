@@ -129,7 +129,7 @@ def _mclafferty(mol: Chem.Mol) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
-        out.append(_node(mol, counts, parent=0, loss=_sp._formula(ncounts), why="McLafferty rearrangement, gamma-H to the carbonyl O with loss of an alkene", atoms=sorted(ion_atoms), charged=_o, radical=True, score=3.5))
+        out.append(_node(mol, counts, parent=0, loss=_sp._formula(ncounts), why="McLafferty rearrangement: gamma-H to the carbonyl O, alkene lost", atoms=sorted(ion_atoms), charged=_o, radical=True, score=3.5))
     return out
 
 
@@ -168,7 +168,7 @@ def _secondary(mol: Chem.Mol, node: dict, node_id: int) -> list[dict]:
     elif why == "simple cleavage" and set(counts) <= {"C", "H"} and counts.get("C", 0) >= 3:
         c = _sub(counts, _LOSS_COUNTS["C2H4"])
         if c and c.get("C", 0) >= 2:
-            out.append(_node(mol, c, parent=node_id, loss="C2H4", why="alkyl cation loses ethene (CnH2n+1 series 29, 43, 57...)", atoms=[], charged=None, radical=False, score=1.5))
+            out.append(_node(mol, c, parent=node_id, loss="C2H4", why="alkyl cation loses ethene (CnH2n+1 series: 29, 43, 57...)", atoms=[], charged=None, radical=False, score=1.5))
     return out
 
 

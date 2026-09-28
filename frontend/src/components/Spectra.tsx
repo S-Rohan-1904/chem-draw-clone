@@ -138,7 +138,7 @@ function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' |
           ))}
         </tbody>
       </table>
-      <p className="muted small">{peaks.length} signal{peaks.length === 1 ? '' : 's'}. {data.note}{nucleus === 'h' && ' Multiplicities come from first-order coupling, with 7 Hz across freely rotating bonds, Karplus dihedrals in rings, 16/10.5 Hz trans/cis on alkenes, 8/2 Hz ortho/meta. Splittings in the drawing are exaggerated for visibility.'}</p>
+      <p className="muted small">{peaks.length} signal{peaks.length === 1 ? '' : 's'}. {data.note}{nucleus === 'h' && ' Multiplicities from first-order coupling: 7 Hz across freely rotating bonds, Karplus dihedrals in rings, 16/10.5 Hz trans/cis on alkenes, 8/2 Hz ortho/meta. Splittings in the drawing are exaggerated for visibility.'}</p>
     </div>
   )
 }
@@ -229,7 +229,7 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
         <tbody>
           {data.predicted.map((b, i) => (
             <tr key={i} className={sel === i ? 'sel' : ''} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)}>
-              <td>{b.low} to {b.high}</td><td>{b.name}</td><td>{b.intensity}{b.shape !== 'sharp' ? `, ${b.shape}` : ''}</td>
+              <td>{b.low}-{b.high}</td><td>{b.name}</td><td>{b.intensity}{b.shape !== 'sharp' ? `, ${b.shape}` : ''}</td>
             </tr>
           ))}
         </tbody>

@@ -67,7 +67,7 @@ export function Overlay({ mol, onClose }: Props) {
         <button type="button" onClick={onClose}>Close</button>
       </header>
       <form className="draw-actions" onSubmit={run}>
-        <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="Second molecule, name or SMILES" aria-label="Second molecule" style={{ flex: '1 1 260px' }} autoFocus />
+        <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="Second molecule: name or SMILES" aria-label="Second molecule" style={{ flex: '1 1 260px' }} autoFocus />
         <button type="submit" className="primary" disabled={busy || !other.trim()}>{busy ? 'Aligning...' : 'Overlay'}</button>
       </form>
       {error && <p className="error">{error}</p>}
@@ -79,8 +79,8 @@ export function Overlay({ mol, onClose }: Props) {
           </p>
           <p className="muted small">
             RMSD {res.rmsd} Å over {res.common_atoms} common heavy atoms ({res.heavy_a} and {res.heavy_b} in total).
-            {res.identical_connectivity ? ' Same connectivity, so the difference is stereochemistry or conformation.' : ''}
-            {res.rmsd < 0.3 ? ' Superimposable.' : res.identical_connectivity && res.rmsd > 0.5 ? ' Not superimposable, so these are stereoisomers or different conformers.' : ''}
+            {res.identical_connectivity ? ' Same connectivity: the difference is stereochemistry or conformation.' : ''}
+            {res.rmsd < 0.3 ? ' Superimposable.' : res.identical_connectivity && res.rmsd > 0.5 ? ' Not superimposable: these are stereoisomers or different conformers.' : ''}
           </p>
         </>
       )}

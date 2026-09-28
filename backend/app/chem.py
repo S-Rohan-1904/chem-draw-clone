@@ -149,7 +149,7 @@ def _stereo_group_notes(mol: Chem.Mol) -> list[str]:
             continue
         atoms = ", ".join(f"{a.GetSymbol()}{a.GetIdx() + 1}" for a in g.GetAtoms())
         notes.append(
-            f"Enhanced stereo marks {atoms} as {_GROUP_WORDS[kind]}. "
+            f"Enhanced stereo: {atoms} drawn as {_GROUP_WORDS[kind]}. "
             + ("The structure is a mixture of both enantiomers at these centres, and the model shows one of them." if kind == Chem.StereoGroupType.STEREO_AND
                else "The relative configuration is known but the absolute one is not, so the model shows one possibility.")
         )
@@ -179,7 +179,7 @@ def _problem_report(mol: Chem.Mol | None) -> str:
             atoms = ", ".join(f"{mol.GetAtomWithIdx(i).GetSymbol()}{i + 1}" for i in idxs if i < mol.GetNumAtoms())
             msg = f"aromatic ring at {atoms or 'the lowercase atoms'} cannot be drawn with alternating double bonds (check the ring size, charges and hydrogens)"
         msgs.append(msg)
-    return f" Problems found. {'. '.join(m[:1].upper() + m[1:] for m in msgs)}." if msgs else ""
+    return f" Problems: {'. '.join(m[:1].upper() + m[1:] for m in msgs)}." if msgs else ""
 
 
 def resolve_full(text: str, lookup: bool = True) -> Resolved:
@@ -485,13 +485,13 @@ def embed_3d(mol: Chem.Mol, max_tries: int = 6) -> Chem.Mol:
         if all(got.get(k) == v for k, v in target.items()):
             return mh
         last_err = "3D geometry did not reproduce requested stereochemistry"
-    raise ChemError(f"Could not build a 3D model ({last_err}).")
+    raise ChemError(f"Could not build a 3D model: {last_err}.")
 
 
 def mol_from_smiles(smiles: str) -> Chem.Mol:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        raise ChemError(f"Invalid SMILES ({smiles}).")
+        raise ChemError(f"Invalid SMILES: {smiles}")
     return mol
 
 
@@ -566,7 +566,7 @@ def build_from_smiles(smiles: str, input_text: str = "", source: str = "smiles")
     mol = mol_from_smiles(smiles)
     if mol.GetNumHeavyAtoms() > MAX_HEAVY_ATOMS:
         raise ChemError(
-            f"Molecule too large, with {mol.GetNumHeavyAtoms()} heavy atoms (the limit is {MAX_HEAVY_ATOMS})."
+            f"Molecule too large: {mol.GetNumHeavyAtoms()} heavy atoms (limit {MAX_HEAVY_ATOMS})."
         )
     stereo = _stereo_report(mol)
     svg = render_svg(mol)

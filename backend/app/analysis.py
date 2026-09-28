@@ -251,29 +251,29 @@ def ring_aromaticity(mol: Chem.Mol) -> list[dict]:
             lone = max(0, (valence_e - charge - bonding_e) // 2)
             if ring_double:
                 pi += 1
-                details.append(f"{sym}{idx + 1} gives 1 (double bond)")
+                details.append(f"{sym}{idx + 1}: 1 (double bond)")
             elif exo_double:
-                details.append(f"{sym}{idx + 1} gives 0 (exocyclic double bond)")
+                details.append(f"{sym}{idx + 1}: 0 (exocyclic double bond)")
             elif charge > 0 and sym == "C":
-                details.append(f"{sym}{idx + 1} gives 0 (empty p orbital)")
+                details.append(f"{sym}{idx + 1}: 0 (empty p orbital)")
             elif lone > 0:
                 pi += 2
-                details.append(f"{sym}{idx + 1} gives 2 (lone pair)")
+                details.append(f"{sym}{idx + 1}: 2 (lone pair)")
             else:
                 conjugated = False
-                details.append(f"{sym}{idx + 1} is sp3 and breaks conjugation")
+                details.append(f"{sym}{idx + 1}: sp3, breaks conjugation")
         aromatic = all(mol.GetBondBetweenAtoms(ring[i], ring[(i + 1) % len(ring)]).GetIsAromatic() for i in range(len(ring)))
         if aromatic:
             n = (pi - 2) // 4
-            verdict = f"aromatic, with {pi} pi electrons = 4n+2 for n = {n}, planar and fully conjugated"
+            verdict = f"aromatic: {pi} pi electrons = 4n+2 with n = {n}, planar and fully conjugated"
         elif not conjugated:
-            verdict = "not aromatic, because an sp3 atom breaks the conjugation"
+            verdict = "not aromatic: an sp3 atom breaks the conjugation"
         elif pi % 4 == 2:
             verdict = f"{pi} pi electrons fit 4n+2 but the ring is not perceived as aromatic (usually not planar)"
         elif pi % 4 == 0:
-            verdict = f"{pi} pi electrons = 4n, so antiaromatic if planar. Larger rings twist out of plane and are simply non-aromatic"
+            verdict = f"{pi} pi electrons = 4n: antiaromatic if planar. Larger rings twist out of plane and are simply non-aromatic"
         else:
-            verdict = f"{pi} pi electrons is an odd count, so not aromatic"
+            verdict = f"{pi} pi electrons: an odd count, not aromatic"
         rings.append({"atoms": list(ring), "size": len(ring), "pi_electrons": pi, "aromatic": aromatic, "conjugated": conjugated, "verdict": verdict, "details": details})
     return rings
 
@@ -306,7 +306,7 @@ def unsaturation(mol: Chem.Mol) -> dict:
     aromatic_rings = rdMolDescriptors.CalcNumAromaticRings(mol)
     note = ""
     if aromatic_rings:
-        note = "Each benzene-type ring counts 4 (1 ring and 3 double bonds)."
+        note = "Each benzene-type ring counts 4: 1 ring + 3 double bonds."
     other = {el for el in counts if el not in ("C", "H", "N", "O", "P", "S", *_HALOGENS)}
     if other:
         note = (note + " " if note else "") + f"Formula count ignores {', '.join(sorted(other))}."
@@ -389,7 +389,7 @@ def chirality_class(mol: Chem.Mol) -> dict:
     pair_text = " and ".join(f"{mol.GetAtomWithIdx(i).GetSymbol()}{i + 1} ({labels.get(f'a{i}')}) and {mol.GetAtomWithIdx(j).GetSymbol()}{j + 1} ({labels.get(f'a{j}')})" for i, j in pairs)
     reason = "Stereocentres are present, but the mirror image is the same molecule."
     if pairs:
-        reason += f" The equivalent centres {pair_text} carry opposite descriptors, so one half of the molecule mirrors the other. An internal mirror plane or inversion centre makes it superimposable on its mirror image."
+        reason += f" The equivalent centres {pair_text} carry opposite descriptors, so one half of the molecule mirrors the other: an internal mirror plane or inversion centre makes it superimposable on its mirror image."
     else:
         reason += " A symmetry element relates the centres to each other."
     return {
@@ -452,13 +452,13 @@ def solubility(mol: Chem.Mol) -> dict:
     if hbd + hba == 0:
         reasons.append("no hydrogen bond donors or acceptors, so water has nothing to bind to")
     elif c and c / max(1, hbd + hba) > 5:
-        reasons.append(f"{c} carbons per {hbd + hba} polar group{'s' if hbd + hba != 1 else ''}, so the hydrocarbon part dominates")
+        reasons.append(f"{c} carbons per {hbd + hba} polar group{'s' if hbd + hba != 1 else ''}: the hydrocarbon part dominates")
     else:
-        reasons.append(f"{hbd} donor{'s' if hbd != 1 else ''} and {hba} acceptor{'s' if hba != 1 else ''} for {c} carbon{'s' if c != 1 else ''}, enough polar groups to hydrogen bond with water")
+        reasons.append(f"{hbd} donor{'s' if hbd != 1 else ''} and {hba} acceptor{'s' if hba != 1 else ''} for {c} carbon{'s' if c != 1 else ''}: enough polar groups to hydrogen bond with water")
     if logp > 3:
-        reasons.append(f"logP {logp:.1f} is high, so it prefers oil over water")
+        reasons.append(f"logP {logp:.1f} is high: prefers oil over water")
     elif logp < 0:
-        reasons.append(f"logP {logp:.1f} is negative, so it prefers water over oil")
+        reasons.append(f"logP {logp:.1f} is negative: prefers water over oil")
     if any(a.GetFormalCharge() for a in mol.GetAtoms()):
         reasons.append("a charged group pulls the molecule into water")
     return {
@@ -469,7 +469,7 @@ def solubility(mol: Chem.Mol) -> dict:
         "text": text,
         "reasons": reasons,
         "logp": round(logp, 2),
-        "method": "ESOL estimate, logS = 0.16 - 0.63 logP - 0.0062 MW + 0.066 rotatable bonds - 0.74 aromatic proportion",
+        "method": "ESOL: logS = 0.16 - 0.63 logP - 0.0062 MW + 0.066 rotatable bonds - 0.74 aromatic proportion",
     }
 
 

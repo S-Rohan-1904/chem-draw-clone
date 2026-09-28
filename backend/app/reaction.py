@@ -135,9 +135,9 @@ def parse_reaction(text: str) -> dict:
     try:
         rxn = AllChem.ReactionFromSmarts(text.strip(), useSmiles=True)
     except Exception as e:  # noqa: BLE001
-        raise ChemError(f"Could not read the reaction ({e}).")
+        raise ChemError(f"Could not read the reaction: {e}")
     if rxn is None or rxn.GetNumReactantTemplates() == 0 or rxn.GetNumProductTemplates() == 0:
-        raise ChemError("A reaction needs at least one reactant and one product, written reactants>>products.")
+        raise ChemError("A reaction needs at least one reactant and one product: reactants>>products.")
     reactants = [Chem.Mol(m) for m in rxn.GetReactants()]
     products = [Chem.Mol(m) for m in rxn.GetProducts()]
     agents = [Chem.Mol(m) for m in rxn.GetAgents()]
@@ -146,7 +146,7 @@ def parse_reaction(text: str) -> dict:
             m.UpdatePropertyCache(strict=False)
             Chem.SanitizeMol(m)
         except Exception as e:  # noqa: BLE001
-            raise ChemError(f"A component of the reaction is not a valid molecule ({e}).")
+            raise ChemError(f"A component of the reaction is not a valid molecule: {e}")
     svg = draw_reaction(reactants, agents, products)
     left, right = _counts(reactants), _counts(products)
     diff = {el: right.get(el, 0) - left.get(el, 0) for el in set(left) | set(right) if right.get(el, 0) != left.get(el, 0)}
@@ -179,9 +179,9 @@ def classify(reactant_smiles: list[str], product_smiles: list[str]) -> dict:
     if any("Alkene" in g or "Alkyne" in g for g in lost) and not any("Alkene" in g or "Alkyne" in g for g in gained):
         guess = "Looks like an addition to a multiple bond."
     elif any("Alkene" in g for g in gained):
-        guess = "Looks like an elimination, since a double bond is formed."
+        guess = "Looks like an elimination: a double bond is formed."
     elif any("halide" in g for g in lost) and gained:
-        guess = "Looks like a nucleophilic substitution, since the halide is replaced."
+        guess = "Looks like a nucleophilic substitution: the halide is replaced."
     elif any(g.startswith("Alcohol") for g in lost) and any(("Aldehyde" in g or "Ketone" in g or "acid" in g) for g in gained):
         guess = "Looks like an oxidation of the alcohol."
     elif any(("Aldehyde" in g or "Ketone" in g) for g in lost) and any(g.startswith("Alcohol") for g in gained):
@@ -191,7 +191,7 @@ def classify(reactant_smiles: list[str], product_smiles: list[str]) -> dict:
     elif any("Ester" in g for g in lost) and any("acid" in g for g in gained):
         guess = "Looks like an ester hydrolysis."
     elif len(reactants) == 2 and len(product_smiles) == 1:
-        guess = "Two reactants give one product, so an addition or a condensation."
+        guess = "Two reactants give one product: an addition or a condensation."
     else:
         guess = "Compare the functional groups lost and gained."
     return {"groups_lost": lost, "groups_gained": gained, "guess": guess}

@@ -73,13 +73,13 @@ def explain_centre(smiles: str, idx: int) -> dict:
     lowest = rows[-1]
     direction = "clockwise" if label.upper() == "R" else "anticlockwise"
     steps = [
-        "Rank the four substituents by CIP priority, higher atomic number first. On a tie, "
+        "Rank the four substituents by CIP priority: higher atomic number first. On a tie, "
         "compare the atoms attached to each substituent (duplicated for double bonds).",
         f"Lowest priority is {lowest['group']}. View the centre with it pointing away from you.",
-        f"Trace 1 to 2 to 3. The path runs {direction}, so the centre is {label.upper()}.",
+        f"Trace 1 to 2 to 3: the path runs {direction}, so the centre is {label.upper()}.",
     ]
     if label.islower():
-        steps.append("Lowercase r/s marks a pseudo-asymmetric centre, where two substituents differ only by their own configuration.")
+        steps.append("Lowercase r/s: pseudo-asymmetric centre, two substituents differ only by their own configuration.")
     notes = {r["atom_idx"]: str(r["priority"]) for r in rows if r["atom_idx"] is not None}
     return {
         "kind": "centre",

@@ -68,7 +68,7 @@ function RecordedTab({ data, onOpen, onHighlight }: { data: RecordedReactions; o
       )}
       <p className="muted small">
         Reaction types are ranked by how many distinct recorded reactions show them. Each has one real example, preferring the simplest one that reports a yield.
-        Sources {data.sources.map((src, i) => (
+        Sources: {data.sources.map((src, i) => (
           <span key={src.url}>
             {i > 0 && ', '}
             <a href={src.url} target="_blank" rel="noopener noreferrer">{src.author}, {src.name}</a> ({src.licence})
@@ -102,7 +102,7 @@ function Section({ title, empty, items, direction, enzyme = false, onOpen, onHig
                 <b>{r.label}</b>
                 <span className="muted small">seen in {r.count} {enzyme ? 'enzyme' : 'recorded'} reaction{r.count === 1 ? '' : 's'}</span>
                 <span className="small">
-                  Example {r.ref_url ? <a href={r.ref_url} target="_blank" rel="noopener noreferrer">{r.ref_label}</a> : r.ref_label}
+                  Example: {r.ref_url ? <a href={r.ref_url} target="_blank" rel="noopener noreferrer">{r.ref_label}</a> : r.ref_label}
                   {r.year ? ` (${r.year})` : ''}
                   {r.yield != null ? `, ${Math.round(r.yield)}% yield` : ''}
                   {r.ec.length > 0 && <>, EC {r.ec.map((ec, i) => (

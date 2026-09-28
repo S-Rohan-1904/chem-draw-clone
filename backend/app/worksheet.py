@@ -21,7 +21,7 @@ COLS, ROWS = 2, 4
 def _png(smiles: str, annotate: bool, px: int = 600) -> bytes:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
-        raise ChemError(f"Invalid SMILES ({smiles}).")
+        raise ChemError(f"Invalid SMILES: {smiles}")
     rdDepictor.Compute2DCoords(mol)
     Chem.WedgeMolBonds(mol, mol.GetConformer())
     d = rdMolDraw2D.MolDraw2DCairo(px, int(px * 0.7))
@@ -51,7 +51,7 @@ def build_pdf(title: str, items: list[dict], show_names: bool, answer_key: bool)
         c.setFont("Helvetica", 9)
         c.drawRightString(w - margin, h - margin, f"Page {page}")
         if not show_names:
-            c.drawString(margin, h - margin - 5 * mm, "Name ______________________________")
+            c.drawString(margin, h - margin - 5 * mm, "Name: ______________________________")
 
     for p in range(pages):
         header(title, p + 1)

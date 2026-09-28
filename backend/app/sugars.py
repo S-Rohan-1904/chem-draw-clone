@@ -155,7 +155,7 @@ def fischer(molblock: str, size: int = 360) -> dict | None:
         "chain": chain,
         "rows": rows,
         "dl": dl,
-        "dl_reason": (f"{dl}, because the heteroatom on C{rows.index(lowest) + 1} points {'right' if dl == 'D' else 'left'}." if dl else None),
+        "dl_reason": (f"{dl}: the heteroatom on C{rows.index(lowest) + 1} points {'right' if dl == 'D' else 'left'}." if dl else None),
         "svg": _fischer_svg(rows, size),
     }
 

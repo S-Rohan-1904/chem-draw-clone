@@ -85,7 +85,7 @@ def from_sequence(kind: str, sequence: str) -> dict:
     if kind == "helm":
         mol = Chem.MolFromHELM(sequence.strip())
         if mol is None:
-            raise ChemError("Could not read that HELM string. An example is PEPTIDE1{A.G.S}$$$$")
+            raise ChemError("Could not read that HELM string. Example: PEPTIDE1{A.G.S}$$$$")
         seq = sequence.strip()
     else:
         if kind not in _FLAVOUR:
@@ -95,7 +95,7 @@ def from_sequence(kind: str, sequence: str) -> dict:
             raise ChemError("Sequence is empty.")
         bad = sorted({c for c in seq if c not in _ALPHABET[kind]})
         if bad:
-            raise ChemError(f"Not a {kind.upper() if kind != 'peptide' else 'standard amino acid'} code ({', '.join(bad)}).")
+            raise ChemError(f"Not a {kind.upper() if kind != 'peptide' else 'standard amino acid'} code: {', '.join(bad)}.")
         if len(seq) > MAX_RESIDUES:
             raise ChemError(f"Sequences are limited to {MAX_RESIDUES} residues.")
         mol = Chem.MolFromSequence(seq, flavor=_FLAVOUR[kind])

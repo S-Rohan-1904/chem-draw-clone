@@ -88,7 +88,7 @@ export function Stoichiometry({ rxn }: Props) {
               })}
             </tbody>
           </table>
-          <p className="muted small">Enter the mass of at least one reactant. Coefficients come from you, since the reaction SMILES carries none. The limiting reagent is the one that supports the smallest number of reaction equivalents; equivalents and theoretical yield are relative to it.</p>
+          <p className="muted small">Enter the mass of at least one reactant. Coefficients come from you: the reaction SMILES carries none. The limiting reagent is the one that supports the smallest number of reaction equivalents. Equivalents and theoretical yield are relative to it.</p>
         </>
       )}
     </div>

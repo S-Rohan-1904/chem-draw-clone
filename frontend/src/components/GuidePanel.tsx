@@ -5,14 +5,14 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
       'Type an IUPAC name or a SMILES string in the box on the Name tab and select Build. The application draws the 2D structure, builds a 3D model that respects the stereochemistry in your name, and lists the properties of the molecule.',
       'The Examples list on the left contains molecules that show common features. Select any entry to load it.',
       'As you type, a tick or a cross appears in the box. A cross means the name cannot be read yet, and the reason is shown under the box. A dropdown offers names that match what you have typed so far. A SMILES with a structural error (an atom with too many bonds, a ring that cannot be aromatic) is reported per atom, for example C2 has 5 bonds.',
-      'Build from a peptide or nucleotide sequence, under the box, turns a sequence into the structure. It accepts a peptide as one-letter (AGSK) or three-letter (Ala-Gly-Ser) codes, written N to C terminus, in the L or D series, DNA or RNA written 5\u2032 to 3\u2032, or HELM notation. Molecules up to about 18 amino acids or 7 nucleotides are accepted.',
+      'Build from a peptide or nucleotide sequence, under the box, turns a sequence into the structure: a peptide as one-letter (AGSK) or three-letter (Ala-Gly-Ser) codes, written N to C terminus, in the L or D series. DNA or RNA written 5\u2032 to 3\u2032. Or HELM notation. Molecules up to about 18 amino acids or 7 nucleotides are accepted.',
     ],
   },
   {
     title: 'Stereochemistry',
     body: [
       'Stereochemistry comes only from the name. Descriptors such as (2R), (3S), (E), (Z), cis and trans are read and applied. Centres that the name leaves undefined are marked with a question mark, and the application never guesses them.',
-      'The Stereochemistry panel lists every stereocentre and stereogenic double bond with its label. Select a label to see why it is R or S (or E or Z). The panel shows the CIP priorities of the substituents, the rule applied, and a drawing with the priorities marked.',
+      'The Stereochemistry panel lists every stereocentre and stereogenic double bond with its label. Select a label to see why it is R or S (or E or Z): the panel shows the CIP priorities of the substituents, the rule applied, and a drawing with the priorities marked.',
       'Mirror image builds the enantiomer and shows both molecules side by side. Flip this centre inverts a single centre so you can compare diastereomers. Open this one loads the second molecule in the main view.',
       'If a descriptor in the name does not fit (for example a stereo label on a carbon that is not a stereocentre), the structure is still built and a warning explains what was ignored.',
     ],
@@ -47,8 +47,8 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'The Structure and bonding panel groups several short analyses of the current molecule. Hover a row or a chip to highlight the atoms it refers to.',
       'Chirality states whether the molecule is chiral, achiral or meso, with the reason. A meso compound shows the pair of equivalent centres that carry opposite descriptors. The verdict is only given when every stereocentre is specified in the name.',
-      'Shapes lists the VSEPR geometry of every atom with two or more neighbours, with its electron domains, lone pairs, shape name, ideal angle and the angle measured in the 3D model.',
-      'Aromaticity examines every ring and gives the pi electron count with a per atom breakdown, whether the ring is fully conjugated, and the Huckel verdict.',
+      'Shapes lists the VSEPR geometry of every atom with two or more neighbours: electron domains, lone pairs, the shape name, the ideal angle and the angle measured in the 3D model.',
+      'Aromaticity examines every ring: the pi electron count with a per-atom breakdown, whether the ring is fully conjugated, and the Huckel verdict.',
       'Unsaturation gives the degrees of unsaturation from the formula and from the structure (rings, double bonds and triple bonds) side by side.',
       'Oxidation states shows the oxidation number of each heavy atom on the drawing. Select an atom chip to see how the number was obtained.',
       'Polarity classifies every bond as nonpolar, polar or ionic from the electronegativity difference and marks the negative end. The dipole moment is estimated from partial charges on the 3D model, and Show arrow in 3D draws it on the model, pointing to the negative end.',
@@ -66,7 +66,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
   {
     title: 'Fischer and Haworth projections',
     body: [
-      'For open chain molecules with stereocentres on a carbon chain, such as sugars and amino acids, the Fischer tab draws the Fischer projection. The chain runs vertically with the most oxidised carbon on top, vertical bonds point away from you and horizontal bonds towards you. Left and right are read from the 3D model. The D or L series is stated when the molecule is a sugar or an amino acid.',
+      'For open-chain molecules with stereocentres on a carbon chain, such as sugars and amino acids, the Fischer tab draws the Fischer projection: the chain runs vertically with the most oxidised carbon on top, vertical bonds point away from you and horizontal bonds towards you. Left and right are read from the 3D model. The D or L series is stated when the molecule is a sugar or an amino acid.',
       'For cyclic sugars (a five or six membered ring with one oxygen and an anomeric carbon) the Haworth tab draws the ring with the thick edge nearest to you and every substituent up or down. The panel names the anomer (alpha or beta), the D or L series and the reasoning.',
     ],
   },
@@ -83,15 +83,15 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     title: 'Spectra',
     body: [
       'The Spectra panel predicts the 1H and 13C NMR, IR and mass spectra of the current molecule. Hover a peak or a table row to highlight the atoms responsible.',
-      'In the 1H NMR spectrum, hydrogens are grouped into signals by symmetry, with a chemical shift, an integration and a multiplicity. The multiplicity comes from first-order coupling, and each signal lists its coupling constants (for example dd, J = 8.0, 2.0 Hz). Typical values are used, namely 7 Hz across a freely rotating single bond, the Karplus value for the dihedral in the lowest energy conformer inside rings, 16 Hz trans and 10.5 Hz cis across a double bond, 8 Hz ortho and 2 Hz meta on a benzene ring, and 2.5 Hz between an aldehyde hydrogen and its neighbour. Hydrogens on oxygen and nitrogen exchange and appear as broad singlets. The drawing builds each multiplet from its real coupling constants, with the splitting exaggerated so it can be seen. Shifts come from nmrshiftdb2 when the service is reachable and from additive rules otherwise. Expect about 0.5 ppm (1H) and 10 ppm (13C) of error.',
-      'The 13C NMR spectrum has one signal per set of equivalent carbons with its environment. The IR spectrum shows the characteristic bands of every functional group present, drawn as a synthetic transmittance curve and listed with their range and intensity. When the NIST WebBook holds an experimental IR or mass spectrum for the compound it is overlaid and linked.',
-      'The mass spectrum shows the molecular ion with its isotope pattern, and a fragmentation tree. Ions in the first row come straight from the molecular ion. They are the most stable single bond cleavages (acylium, benzylic and allylic, alpha to a heteroatom), the McLafferty rearrangement of carbonyl compounds with a gamma hydrogen, and characteristic neutral losses such as water from alcohols, CO from aldehydes and phenols, HCN from nitriles, CO2 from acids and HX from alkyl halides. Under those sit second step ions. An acylium loses CO, the tropylium ion at m/z 91 loses ethyne to m/z 65, and alkyl cations lose ethene down the 29, 43, 57 series. Each ion is drawn with its charge, and ions containing chlorine or bromine show their M+2 partner. Peak heights in the drawing rank the ions by expected stability and are not intensities.',
+      '1H NMR: hydrogens are grouped into signals by symmetry, with a chemical shift, an integration and a multiplicity. The multiplicity comes from first-order coupling: each signal lists its coupling constants (for example dd, J = 8.0, 2.0 Hz). Typical values are used: 7 Hz across a freely rotating single bond, the Karplus value for the dihedral in the lowest-energy conformer inside rings, 16 Hz trans and 10.5 Hz cis across a double bond, 8 Hz ortho and 2 Hz meta on a benzene ring, and 2.5 Hz between an aldehyde hydrogen and its neighbour. Hydrogens on oxygen and nitrogen exchange and appear as broad singlets. The drawing builds each multiplet from its real coupling constants, with the splitting exaggerated so it can be seen. Shifts come from nmrshiftdb2 when the service is reachable and from additive rules otherwise. Expect about 0.5 ppm (1H) and 10 ppm (13C) of error.',
+      '13C NMR: one signal per set of equivalent carbons with its environment. IR: the characteristic bands of every functional group present, drawn as a synthetic transmittance curve and listed with their range and intensity. When the NIST WebBook holds an experimental IR or mass spectrum for the compound it is overlaid and linked.',
+      'Mass spectrum: the molecular ion with its isotope pattern, and a fragmentation tree. Ions in the first row come straight from the molecular ion: the most stable single-bond cleavages (acylium, benzylic and allylic, alpha to a heteroatom), the McLafferty rearrangement of carbonyl compounds with a gamma hydrogen, and characteristic neutral losses such as water from alcohols, CO from aldehydes and phenols, HCN from nitriles, CO2 from acids and HX from alkyl halides. Under those sit second step ions: an acylium loses CO, the tropylium ion at m/z 91 loses ethyne to m/z 65, and alkyl cations lose ethene down the 29, 43, 57 series. Each ion is drawn with its charge. Ions containing chlorine or bromine show their M+2 partner. Peak heights in the drawing rank the ions by expected stability and are not intensities.',
     ],
   },
   {
     title: 'Name breakdown',
     body: [
-      'For molecules built from a name, the Name breakdown panel colours each part of the name, such as stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey, and the name itself was still read correctly.',
+      'For molecules built from a name, the Name breakdown panel colours each part of the name: stereo descriptors, locants, multipliers, substituents, ring prefix, parent chain, saturation and suffix. Hover a part to highlight its atoms in both views. Parts the breakdown does not recognise are shown in grey. The name itself was still read correctly.',
     ],
   },
   {
@@ -106,8 +106,8 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'The Draw tab opens a structure editor. Draw a molecule with the atom and bond tools, use the wedge and hash bond tools to set stereocentres, and select Build 3D. The result appears below the editor and is shown with its SMILES, since drawn structures do not carry a name.',
       'Copy to editor, available on every result, loads the current molecule into the editor so you can modify it and build again. On the Draw tab the side lists are hidden so the editor and its result use the full width.',
-      'Insert template adds a ready made structure to the canvas next to whatever is already there, such as the twenty amino acids, nucleobases and nucleosides, sugars in open chain and ring forms, steroids and terpenes, heterocycles, carbocycles, and common reagents and solvents. The structure arrives with its natural stereochemistry.',
-      'The editor also has a structure library of its own (the book icon), and an enhanced stereochemistry tool. Marking centres as racemic (AND) or relative (OR) is understood. The model can only show one configuration, so the result carries a warning saying which centres were drawn as a mixture or with unknown absolute configuration. If a drawn structure has a valence problem, the message names the atom.',
+      'Insert template adds a ready-made structure to the canvas next to whatever is already there: the twenty amino acids, nucleobases and nucleosides, sugars in open-chain and ring forms, steroids and terpenes, heterocycles, carbocycles, and common reagents and solvents. The structure arrives with its natural stereochemistry.',
+      'The editor also has a structure library of its own (the book icon), and an enhanced stereochemistry tool. Marking centres as racemic (AND) or relative (OR) is understood: the model can only show one configuration, so the result carries a warning saying which centres were drawn as a mixture or with unknown absolute configuration. If a drawn structure has a valence problem, the message names the atom.',
     ],
   },
   {
@@ -121,15 +121,15 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     body: [
       'A reaction SMILES such as CC(=O)O.CCO>>CC(=O)OCC.O, entered in the Name tab, draws the reaction with reactants, agents and products, lists each component with its formula, and reports whether the atoms balance. Components open in the viewer. Atom map numbers in the SMILES ([CH3:1][OH:2]) colour the matching atoms on both sides of the arrow, so you can follow where each atom goes.',
       'Show stoichiometry opens a grid for the reaction. Enter a coefficient for each component (the SMILES carries none) and the mass of at least one reactant, and the grid fills in millimoles, equivalents, the limiting reagent, and the theoretical yield of each product. Enter the mass actually obtained to get the percentage yield.',
-      'Under every molecule, the Reactions panel has two tabs. Reactions shows real recorded chemistry from US patents (1976 to 2016). It lists up to five reaction types that use the molecule as a starting material and up to five that make it, ranked by how many distinct patent reactions show each type. Every type comes with one real example, showing the reaction scheme with its reagents, the patent (linked), the year and the reported yield. Hover a row to highlight the atoms that react. Open product or Open starting material loads the other molecule. The data is text-mined, so an occasional entry is wrong.',
-      'Literature lists up to five ChemRxiv preprints about the molecule, found by its common name. Each title opens the preprint on ChemRxiv.',
+      'Under every molecule, the Reactions panel shows real recorded chemistry: US patent grants and applications (1976-2016), the Chemical Reaction Database of patent and journal reactions, and Rhea enzyme reactions. It lists up to five reaction types that use the molecule as a starting material and up to five that make it, ranked by how many distinct reactions show each type. Every type comes with one real example: the reaction scheme with its reagents, the source (linked), the year and the reported yield. Enzyme reactions have their own lists with their EC numbers. Hover a row to highlight the atoms that react. Open product or Open starting material loads the other molecule. Most of the data is text-mined, so an occasional entry is wrong.',
+      'The Literature panel, below Reactions, has three tabs. ChemRxiv: up to five preprints found by the molecule\'s name, each with the sentence of the abstract that mentions it. Journals: articles PubChem links to this exact structure, ranked by citations with recent articles and titles that name the molecule first. Patents: the US patents whose worked examples make or use the molecule, with titles from PubChem.',
       'When you enter a reaction (reactants>>products) the Reaction panel lists the functional groups lost and gained and suggests the kind of reaction (addition, elimination, substitution, oxidation, reduction, esterification).',
     ],
   },
   {
     title: 'Mechanisms',
     body: [
-      'The Mechanisms tab holds a library of twenty curved arrow mechanisms grouped by type. They cover substitution (SN1, SN2, Williamson), elimination (E1, E2), additions to alkenes, carbonyl chemistry (esterification, ester hydrolysis, cyanohydrin, Grignard, borohydride reduction, imine formation, aldol, amide formation), electrophilic aromatic substitution, the Diels-Alder reaction and radical chlorination.',
+      'The Mechanisms tab holds a library of twenty curved-arrow mechanisms grouped by type: substitution (SN1, SN2, Williamson), elimination (E1, E2), additions to alkenes, carbonyl chemistry (esterification, ester hydrolysis, cyanohydrin, Grignard, borohydride reduction, imine formation, aldol, amide formation), electrophilic aromatic substitution, the Diels-Alder reaction and radical chlorination.',
       'Select a mechanism and step through it with Previous and Next or the numbered dots. Each step shows the species involved, the curved arrows for that step and a caption explaining what moves and why. A full arrow moves an electron pair, and a fishhook arrow (radical mechanisms) moves a single electron. The last step shows the products and offers to open the main product on the Name tab.',
     ],
   },
@@ -143,9 +143,9 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
   {
     title: 'Quiz',
     body: [
-      'The Quiz tab shows a structure and asks for its name. Three levels are available, covering small molecules, molecules with functional groups, and molecules with stereochemistry.',
-      'Your answer is checked by structure, not by spelling, so any correct name is accepted. If the skeleton is right but the stereochemistry differs, the feedback says so. Show answer reveals the accepted names, which can be opened in the viewer. Signed in users have their attempts recorded.',
-      'Level 4, Draw it, shows a name and an editor. Draw the structure and select Check. Timed mode allows 60 seconds per question and reveals the answer when time runs out. Signed in users see My progress with accuracy, current streak and recent attempts.',
+      'The Quiz tab shows a structure and asks for its name. Three levels are available: small molecules, molecules with functional groups, and molecules with stereochemistry.',
+      'Your answer is checked by structure, not by spelling, so any correct name is accepted. If the skeleton is right but the stereochemistry differs, the feedback says so. Show answer reveals the accepted names, which can be opened in the viewer. Signed-in users have their attempts recorded.',
+      'Level 4, Draw it, shows a name and an editor: draw the structure and select Check. Timed mode allows 60 seconds per question and reveals the answer when time runs out. Signed-in users see My progress with accuracy, current streak and recent attempts.',
     ],
   },
   {
@@ -165,7 +165,7 @@ const SECTIONS: { title: string; body: (string | string[])[] }[] = [
     title: 'Accounts and saving',
     body: [
       'Create an account with Log in / Register to save molecules. Save stores the current molecule with a label and an optional collection. Saved molecules appear in the left column grouped by collection. Select the pencil icon to add notes or move an entry to another collection.',
-      'The search box above the saved list finds molecules by structure. Type a SMILES or SMARTS and entries that contain it as a substructure are shown. If nothing contains it, the list is ranked by similarity instead, with the percentage beside each entry.',
+      'The search box above the saved list finds molecules by structure. Type a SMILES or SMARTS: entries that contain it as a substructure are shown. If nothing contains it, the list is ranked by similarity instead, with the percentage beside each entry.',
       'Share copies a link to the current molecule. Anyone with the link sees the same structure.',
       'The Recent list under Examples keeps the last twenty molecules built in this browser.',
     ],

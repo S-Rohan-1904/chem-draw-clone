@@ -319,7 +319,7 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
           <label className="check">
             <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} /> Labels
           </label>
-          <label className="check" title="Van der Waals surface coloured by partial charge, red negative and blue positive">
+          <label className="check" title="Van der Waals surface coloured by partial charge: red negative, blue positive">
             <input type="checkbox" checked={surface} onChange={(e) => setSurface(e.target.checked)} /> Surface
           </label>
           <label className="check" title="Show hybridisation and lone pairs on each heavy atom">
@@ -345,7 +345,7 @@ export function Structure3D({ mol, highlight, compact = false }: Props) {
       )}
       {measuring && (
         <p className="measure-bar">
-          {picked.length === 0 && 'Click 2 atoms for a distance, 3 for an angle, 4 for a dihedral.'}
+          {picked.length === 0 && 'Click atoms: 2 for distance, 3 for angle, 4 for dihedral.'}
           {picked.length === 1 && 'Pick another atom.'}
           {reading && <b>{picked.length === 2 ? 'Distance' : picked.length === 3 ? 'Angle' : 'Dihedral'}: {reading}</b>}
           {picked.length > 0 && <button type="button" className="link" onClick={clearMeasure}>Clear</button>}

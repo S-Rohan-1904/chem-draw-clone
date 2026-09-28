@@ -16,8 +16,8 @@ export function ReactionClass({ rxn }: { rxn: ReactionResult }) {
       <p><b>{data.guess}</b></p>
       {(data.groups_lost.length > 0 || data.groups_gained.length > 0) && (
         <p className="muted small">
-          {data.groups_lost.length > 0 && <span>Groups lost are {data.groups_lost.join(', ')}. </span>}
-          {data.groups_gained.length > 0 && <span>Groups gained are {data.groups_gained.join(', ')}.</span>}
+          {data.groups_lost.length > 0 && <span>Groups lost: {data.groups_lost.join(', ')}. </span>}
+          {data.groups_gained.length > 0 && <span>Groups gained: {data.groups_gained.join(', ')}.</span>}
         </p>
       )}
     </div>

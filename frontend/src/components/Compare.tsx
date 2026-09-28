@@ -28,7 +28,7 @@ export function Compare({ base, other, title, onClose, onUse }: Props) {
           <button type="button" onClick={onClose}>Close</button>
         </div>
       </header>
-      {same && <p className="warn">Same molecule. The mirror image is superimposable (meso or achiral).</p>}
+      {same && <p className="warn">Same molecule: the mirror image is superimposable (meso or achiral).</p>}
       <div className="grid2">
         <div>
           <p className="compare-title">Original <span className="muted">{labels(base)}</span></p>

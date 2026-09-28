@@ -205,7 +205,7 @@ def chair_energies(molblock: str, ring: list[int], n_conf: int = 30) -> dict:
     if delta is None:
         summary = "Only one chair was found in the conformer search."
     elif abs(delta) < 0.3:
-        summary = "The two chairs are within 0.3 kcal/mol, so they form a roughly equal mixture at room temperature."
+        summary = "The two chairs are within 0.3 kcal/mol: about a 50:50 mixture at room temperature."
     else:
         k = math.exp(-abs(delta) / (0.001987 * 298.15))
         pct = 100.0 / (1.0 + k)

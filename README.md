@@ -208,3 +208,9 @@ SECRET_KEY=$(openssl rand -base64 48) docker compose up --build
 
 - Names with impossible stereo (for example `(1S,4R)-camphor`) are rejected with an error.
 - Atom numbers in tooltips follow the model's atom order, not IUPAC locants.
+
+## Licence
+
+MIT, copyright 2026 S Rohan and Nitika Grover, BITS Pilani (see `LICENSE`).
+Third-party packages, data and services keep their own terms; see
+`THIRD_PARTY_NOTICES.md`.

@@ -26,8 +26,7 @@ CYCLOHEXANONE = "O=C1CCCCC1"
 def index(tmp_path_factory):
     """A small index built by the real builder from 88 real USPTO rows (tests/fixtures_reactions.rsmi)."""
     out = tmp_path_factory.mktemp("rx") / "reactions.db"
-    with open(HERE / "fixtures_reactions.rsmi", encoding="utf-8") as f:
-        build_reactions.build(f, out, jobs=1)
+    build_reactions.build(build_reactions.read(HERE / "fixtures_reactions.rsmi", "uspto"), out, jobs=1)
     old = os.environ.get("CHEM_REACTIONS_DB")
     os.environ["CHEM_REACTIONS_DB"] = str(out)
     reactiondb._connect.cache_clear()
@@ -56,7 +55,7 @@ def test_benzaldehyde_uses_keep_the_ring(index):
     kept = sum(Chem.MolFromSmiles(item["products"][0]).HasSubstructMatch(ring) for item in r["uses"])
     assert kept >= len(r["uses"]) - 1
     for item in r["uses"]:
-        assert item["svg"].startswith("<svg") and item["patent_url"].startswith("https://patents.google.com/patent/US")
+        assert item["svg"].startswith("<svg") and item["ref_url"].startswith("https://patents.google.com/patent/US")
         assert item["atoms"], "reacting atoms map onto the user's molecule"
 
 
@@ -139,3 +138,85 @@ def test_reports_size_for_molecules_beyond_the_index(index):
     big = "CC(C)C[C@H](NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)NC(=O)[C@H](CC(C)C)N)C(=O)O"
     r = reactiondb.lookup(big)
     assert r["uses"] == [] and r["heavy_atoms"] > r["max_atoms"] == 60
+
+
+@pytest.fixture(scope="module")
+def multi(tmp_path_factory):
+    """USPTO fixture plus two CRD rows (one repeating a USPTO reaction) and two Rhea enzyme reactions."""
+    out = tmp_path_factory.mktemp("rx") / "reactions.db"
+    records = [
+        *build_reactions.read(HERE / "fixtures_reactions.rsmi", "uspto"),
+        *build_reactions.read(HERE / "fixtures_reactions_crd.tsv", "crd"),
+        *build_reactions.read(HERE / "fixtures_reactions_rhea.tsv", "rhea"),
+    ]
+    index = build_reactions.build(records, out, jobs=1)
+    old = os.environ.get("CHEM_REACTIONS_DB")
+    os.environ["CHEM_REACTIONS_DB"] = str(out)
+    reactiondb._connect.cache_clear()
+    reactiondb._schema.cache_clear()
+    yield index
+    if old is None:
+        os.environ.pop("CHEM_REACTIONS_DB", None)
+    else:
+        os.environ["CHEM_REACTIONS_DB"] = old
+    reactiondb._connect.cache_clear()
+    reactiondb._schema.cache_clear()
+
+
+def test_sources_are_counted_once(multi):
+    assert multi.stats["reactions_crd"] == 1, "the CRD row repeating a USPTO reaction is a duplicate"
+    assert multi.stats["duplicates"] >= 1 and multi.stats["reactions_rhea"] >= 2
+
+
+def test_crd_example_cites_the_dataset(multi):
+    r = reactiondb.lookup("COc1ccc(Oc2ccc(OC)cc2)cc1")
+    item = r["makes"][0]
+    assert item["source"] == "crd" and item["ref_url"] == "https://doi.org/10.5281/zenodo.18109268"
+    assert [s["licence"] for s in r["sources"]] == ["CC0", "CC BY 4.0", "CC BY 4.0"]
+
+
+def test_enzyme_reactions_have_their_own_group(multi):
+    ethanol = reactiondb.lookup("CCO")
+    assert [x["label"] for x in ethanol["enzyme_uses"]] == ["Alcohol → Aldehyde"]
+    item = ethanol["enzyme_uses"][0]
+    assert item["ref_url"] == "https://www.rhea-db.org/rhea/25291" and item["ec"] == ["1.1.1.1"]
+    assert item["products"] == ["CC=O"]
+    # Rhea draws ions; the index stores neutral molecules, so glucose 6-phosphate is found as the acid.
+    g6p = reactiondb.lookup("O=P(O)(O)OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O")
+    assert g6p["enzyme_makes"] and not g6p["makes"]
+    # ADP is a product of the hexokinase reaction too.
+    adp = reactiondb.lookup("Nc1ncnc2c1ncn2[C@@H]1O[C@H](COP(=O)(O)OP(=O)(O)O)[C@@H](O)[C@H]1O")
+    assert adp["enzyme_makes"]
+
+
+def test_old_index_without_sources(monkeypatch, tmp_path):
+    """The live index predates the extra sources (no source column, no groups) and must keep working."""
+    import sqlite3
+
+    path = tmp_path / "v1.db"
+    con = sqlite3.connect(path)
+    con.executescript(
+        """
+        CREATE TABLE mol (id INTEGER PRIMARY KEY, inchikey TEXT, skeleton TEXT, smiles TEXT);
+        CREATE TABLE rxn (id INTEGER PRIMARY KEY, smiles TEXT, patent TEXT, year INTEGER, yield REAL);
+        CREATE TABLE top (mol_id INTEGER, direction TEXT, rank INTEGER, label TEXT, count INTEGER, rxn_id INTEGER, centre TEXT);
+        CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
+        """
+    )
+    key = Chem.MolToInchiKey(Chem.MolFromSmiles("CCO"))
+    con.execute("INSERT INTO mol VALUES (1, ?, ?, 'CCO')", (key, key[:14]))
+    con.execute("INSERT INTO rxn VALUES (1, 'CCO.CC(=O)Cl>>CC(=O)OCC', 'US03930836', 1976, 80)")
+    con.execute("INSERT INTO top VALUES (1, 'uses', 1, 'Alcohol → Ester', 3, 1, '1,2')")
+    con.commit()
+    con.close()
+    monkeypatch.setenv("CHEM_REACTIONS_DB", str(path))
+    reactiondb._connect.cache_clear()
+    reactiondb._schema.cache_clear()
+    try:
+        r = reactiondb.lookup("CCO")
+        assert [x["label"] for x in r["uses"]] == ["Alcohol → Ester"] and r["enzyme_uses"] == []
+        assert r["uses"][0]["ref_url"] == "https://patents.google.com/patent/US3930836/en"
+        assert [s["author"] for s in r["sources"]] == ["Daniel Lowe"]
+    finally:
+        reactiondb._connect.cache_clear()
+        reactiondb._schema.cache_clear()

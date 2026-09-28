@@ -1,20 +1,27 @@
-"""Build the reaction index (reactions.db) from Daniel Lowe's USPTO reaction set.
+"""Build the reaction index (reactions.db) from recorded reactions.
 
-Source: Lowe, D. (2017) Chemical reactions from US patents (1976-Sep2016),
-figshare, https://doi.org/10.6084/m9.figshare.5104873, CC0. Use the grants
-file 1976_Sep2016_USPTOgrants_smiles.rsmi (tab separated: ReactionSmiles,
-PatentNumber, ParagraphNum, Year, TextMinedYield, CalculatedYield). The
-reaction SMILES are atom-mapped, which is what lets us tell the molecules that
-end up in the product from solvents and reagents.
+Sources, all atom-mapped, which is what lets us tell the molecules that end
+up in the product from solvents and reagents:
+- uspto: Lowe, D. (2017) Chemical reactions from US patents (1976-Sep2016),
+  figshare, https://doi.org/10.6084/m9.figshare.5104873, CC0. The grants and
+  applications files (*_smiles.rsmi, tab separated: ReactionSmiles,
+  PatentNumber, ParagraphNum, Year, TextMinedYield, CalculatedYield).
+- crd: van der Lingen, Chemical Reaction Database, 1.44M reactions from
+  patents and papers, https://doi.org/10.5281/zenodo.18109268, CC BY 4.0.
+- rhea: Rhea enzyme reactions, https://www.rhea-db.org, CC BY 4.0.
+CRD and Rhea come unmapped; scripts/map_reactions.py maps them first.
 
-For every molecule the index keeps up to five reaction types in each
-direction ("uses": the molecule is a reactant, "makes": it is the product),
-ranked by how many distinct patent reactions show that type, each with one
-real example (one with a reported yield, then the smallest, then best yield).
+A reaction seen in several sources (grants and applications, or USPTO and
+CRD) is counted once. For every molecule the index keeps up to five reaction
+types in each direction ("uses": the molecule is a reactant, "makes": it is
+the product), ranked by how many distinct reactions show that type, each with
+one real example (one with a reported yield, then the smallest, then best
+yield). Enzyme reactions are ranked separately and shown in their own group.
 
-Runs once on a developer machine (a few minutes on 8 cores), not on the server.
+Runs once on a developer machine (about half an hour on 8 cores), not on the server.
 
-Usage: uv run python scripts/build_reactions.py PATH.rsmi [--out reactions.db] [-j 8] [--limit N] [--max-atoms 60]
+Usage: uv run python scripts/build_reactions.py --uspto GRANTS.rsmi APPS.rsmi [--crd CRD.tsv] [--rhea RHEA.tsv]
+           [--out reactions.db] [-j 8] [--limit N] [--max-atoms 60]
 """
 
 from __future__ import annotations
@@ -32,12 +39,18 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from rdkit import Chem, RDLogger  # noqa: E402
+from rdkit.Chem.MolStandardize import rdMolStandardize  # noqa: E402
 
 from app.groups import find_groups  # noqa: E402
 
 RDLogger.DisableLog("rdApp.*")
 
-SOURCE = "Lowe, Chemical reactions from US patents (1976-Sep2016), figshare, doi:10.6084/m9.figshare.5104873, CC0"
+SOURCES = {
+    "uspto": "Lowe, Chemical reactions from US patents (1976-Sep2016), figshare, doi:10.6084/m9.figshare.5104873, CC0",
+    "crd": "van der Lingen, Chemical Reaction Database, Zenodo, doi:10.5281/zenodo.18109268, CC BY 4.0",
+    "rhea": "Rhea, the reaction knowledgebase, https://www.rhea-db.org, CC BY 4.0",
+}
+ENZYME_SOURCES = {"rhea"}
 MAX_PRODUCT_ATOMS = 60
 MAX_AGENTS = 5
 TOP = 5
@@ -62,6 +75,14 @@ def _unmapped(mol: Chem.Mol) -> Chem.Mol:
     for a in m.GetAtoms():
         a.SetAtomMapNum(0)
     return m
+
+
+_uncharger = rdMolStandardize.Uncharger()
+
+
+def _neutral(mol: Chem.Mol) -> Chem.Mol:
+    """Unmapped and neutralised where a proton can do it (keeps atom order)."""
+    return _uncharger.uncharge(_unmapped(mol))
 
 
 def _canonical(mol: Chem.Mol) -> tuple[str, list[int]]:
@@ -158,30 +179,69 @@ def _consistent_maps(left: list, right: list) -> bool:
     return True
 
 
-def process_line(line: str, max_atoms: int = MAX_PRODUCT_ATOMS) -> dict | None:
-    """One .rsmi row -> {rxn: (...), key: str, obs: [(inchikey, skeleton, smiles, heavy, direction, label, centre)]}."""
+# A record: (reaction SMILES reactants>agents>products, source, ref, year, yield, extra).
+
+def uspto_record(line: str) -> tuple | None:
+    """One row of Lowe's .rsmi files."""
     fields = line.rstrip("\n").split("\t")
     if len(fields) < 4 or not fields[0] or fields[0] == "ReactionSmiles":
         return None
-    parts = fields[0].split(" ")[0].split(">")
-    if len(parts) != 3:
-        return None
-    patent = fields[1].strip()
     try:
         year = int(fields[3])
     except ValueError:
         year = 0
     yld = _yield(*(fields[4:6] if len(fields) >= 6 else []))
+    return fields[0].split(" ")[0], "uspto", fields[1].strip(), year, yld, ""
 
+
+def mapped_record(line: str, source: str) -> tuple | None:
+    """One row written by scripts/map_reactions.py (rows it could not map have no SMILES)."""
+    fields = line.rstrip("\n").split("\t")
+    if len(fields) < 5 or not fields[0]:
+        return None
+    try:
+        year = int(fields[2])
+    except ValueError:
+        year = 0
+    return fields[0], source, fields[1].strip(), year, _yield(fields[3]), fields[4].strip()
+
+
+def process_line(line: str, max_atoms: int = MAX_PRODUCT_ATOMS) -> dict | None:
+    """One USPTO .rsmi row -> {rxn: (...), key: str, obs: [(inchikey, skeleton, smiles, heavy, direction, label, centre)]}."""
+    rec = uspto_record(line)
+    views = process(rec, max_atoms) if rec else []
+    return views[0] if views else None
+
+
+def process(rec: tuple, max_atoms: int = MAX_PRODUCT_ATOMS) -> list[dict]:
+    """A record -> one entry per product considered: the largest product, or for enzyme
+    reactions every product (a kinase makes both the phosphate and ADP)."""
+    rxn, source = rec[0], rec[1]
+    parts = rxn.split(">")
+    if len(parts) != 3:
+        return []
     left = [(s, Chem.MolFromSmiles(s)) for s in parts[0].split(".") if s]
     agents = [(s, Chem.MolFromSmiles(s)) for s in parts[1].split(".") if s]
     right_all = [Chem.MolFromSmiles(s) for s in parts[2].split(".") if s]
     if not _consistent_maps([m for _, m in left], right_all):
-        return None
+        return []
     right = [m for m in right_all if m is not None and any(a.GetAtomMapNum() for a in m.GetAtoms())]
     if not right:
-        return None
-    product = max(right, key=lambda m: m.GetNumHeavyAtoms())
+        return []
+    if source in ENZYME_SOURCES:
+        products = sorted((m for m in right if m.GetNumHeavyAtoms() >= 2), key=lambda m: -m.GetNumHeavyAtoms())
+    else:
+        products = [max(right, key=lambda m: m.GetNumHeavyAtoms())]
+    out = []
+    for product in products:
+        view = _view(rec, left, agents, product, max_atoms)
+        if view is not None:
+            out.append(view)
+    return out
+
+
+def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: int) -> dict | None:
+    _, source, ref, year, yld, extra = rec
     if product.GetNumHeavyAtoms() > MAX_PRODUCT_ATOMS:
         return None
     pmaps = {a.GetAtomMapNum() for a in product.GetAtoms() if a.GetAtomMapNum()}
@@ -231,14 +291,17 @@ def process_line(line: str, max_atoms: int = MAX_PRODUCT_ATOMS) -> dict | None:
             broken[_pair(a, nb)] += 1
 
     # Unmapped molecules for display, identity and group matching (atom indices are unchanged).
-    plain_r = [_unmapped(m) for m in reactants]
-    plain_p = _unmapped(product)
+    # Rhea draws molecules as the ions present at pH 7.3 (acetate, not acetic acid); the neutral
+    # form is what people look up, and what the InChIKey of the user's molecule matches.
+    plain = _neutral if source in ENZYME_SOURCES else _unmapped
+    plain_r = [plain(m) for m in reactants]
+    plain_p = plain(product)
     r_smiles = [_canonical(m) for m in plain_r]
     p_smiles, p_pos = _canonical(plain_p)
     agent_smiles = []
     for _, m in agents + [(None, o) for o in others]:
         if m is not None:
-            s = Chem.MolToSmiles(_unmapped(m))
+            s = Chem.MolToSmiles(plain(m))
             if s not in agent_smiles:
                 agent_smiles.append(s)
     agent_smiles = agent_smiles[:MAX_AGENTS]
@@ -282,19 +345,18 @@ def process_line(line: str, max_atoms: int = MAX_PRODUCT_ATOMS) -> dict | None:
     if not obs:
         return None
     size = sum(m.GetNumHeavyAtoms() for m in plain_r) + plain_p.GetNumHeavyAtoms()
-    return {"rxn": (rxn_smiles, patent, year, yld), "size": size, "key": key, "obs": obs}
+    group = "enzyme" if source in ENZYME_SOURCES else "chem"
+    return {"rxn": (rxn_smiles, source, ref, year, yld, extra), "size": size, "key": key, "group": group, "obs": obs}
 
 
-def _chunk(args: tuple[list[str], int]) -> list[dict]:
-    lines, max_atoms = args
+def _chunk(args: tuple[list[tuple], int]) -> list[dict]:
+    records, max_atoms = args
     out = []
-    for line in lines:
+    for rec in records:
         try:
-            r = process_line(line, max_atoms)
+            out.extend(process(rec, max_atoms))
         except Exception:  # noqa: BLE001 - one bad row must not stop the build
-            r = None
-        if r is not None:
-            out.append(r)
+            pass
     return out
 
 
@@ -306,8 +368,8 @@ class Index:
         self.rxns: list[tuple] = []
         self.sizes: list[int] = []  # heavy atoms in reactants + product, to prefer simple examples
         self.mols: dict[str, tuple[str, str]] = {}  # inchikey -> (skeleton, smiles)
-        # (inchikey, direction, label) -> [count, rxn_id, centre]
-        self.agg: dict[tuple[str, str, str], list] = {}
+        # (inchikey, direction, group, label) -> [count, rxn_id, centre]
+        self.agg: dict[tuple[str, str, str, str], list] = {}
         self.stats = Counter()
 
     def add(self, r: dict) -> None:
@@ -317,37 +379,39 @@ class Index:
             return
         self.seen.add(h)
         self.stats["reactions"] += 1
+        self.stats[f"reactions_{r['rxn'][1]}"] += 1
         rid = len(self.rxns)
         self.rxns.append(r["rxn"])
         self.sizes.append(r["size"])
-        _, _, year, yld = r["rxn"]
+        year, yld = r["rxn"][3], r["rxn"][4]
         rank = (yld is not None, -r["size"], yld or 0, year)
         for ik, skel, smi, _heavy, direction, label, centre in r["obs"]:
             self.mols.setdefault(ik, (skel, smi))
-            k = (ik, direction, label)
+            k = (ik, direction, r["group"], label)
             cur = self.agg.get(k)
             if cur is None:
                 self.agg[k] = [1, rid, centre]
                 continue
             cur[0] += 1
-            _, _, byear, byld = self.rxns[cur[1]]
+            byear, byld = self.rxns[cur[1]][3], self.rxns[cur[1]][4]
             # Example: a reaction with a reported yield (a real worked example; text-mining
             # slips rarely carry one), then the simplest, then best yield, then most recent.
             if rank > (byld is not None, -self.sizes[cur[1]], byld or 0, byear):
                 cur[1], cur[2] = rid, centre
 
     def write(self, out: Path) -> None:
-        by_mol: dict[tuple[str, str], list] = defaultdict(list)
-        for (ik, direction, label), (count, rid, centre) in self.agg.items():
-            by_mol[(ik, direction)].append((count, label, rid, centre))
+        by_mol: dict[tuple[str, str, str], list] = defaultdict(list)
+        for (ik, direction, group, label), (count, rid, centre) in self.agg.items():
+            by_mol[(ik, direction, group)].append((count, label, rid, centre))
         if out.exists():
             out.unlink()
         db = sqlite3.connect(out)
         db.executescript(
             """
             CREATE TABLE mol (id INTEGER PRIMARY KEY, inchikey TEXT NOT NULL, skeleton TEXT NOT NULL, smiles TEXT NOT NULL);
-            CREATE TABLE rxn (id INTEGER PRIMARY KEY, smiles TEXT NOT NULL, patent TEXT, year INTEGER, yield REAL);
-            CREATE TABLE top (mol_id INTEGER NOT NULL, direction TEXT NOT NULL, rank INTEGER NOT NULL,
+            CREATE TABLE rxn (id INTEGER PRIMARY KEY, smiles TEXT NOT NULL, source TEXT NOT NULL, ref TEXT,
+                              year INTEGER, yield REAL, extra TEXT);
+            CREATE TABLE top (mol_id INTEGER NOT NULL, direction TEXT NOT NULL, grp TEXT NOT NULL, rank INTEGER NOT NULL,
                               label TEXT NOT NULL, count INTEGER NOT NULL, rxn_id INTEGER NOT NULL, centre TEXT);
             CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);
             """
@@ -355,7 +419,7 @@ class Index:
         mol_ids: dict[str, int] = {}
         rxn_ids: dict[int, int] = {}
         top_rows = []
-        for (ik, direction), rows in by_mol.items():
+        for (ik, direction, group), rows in by_mol.items():
             rows.sort(key=lambda r: (-r[0], r[1]))
             mid = mol_ids.get(ik)
             if mid is None:
@@ -364,10 +428,10 @@ class Index:
                 new = rxn_ids.get(rid)
                 if new is None:
                     new = rxn_ids[rid] = len(rxn_ids) + 1
-                top_rows.append((mid, direction, rank, label, count, new, centre))
+                top_rows.append((mid, direction, group, rank, label, count, new, centre))
         db.executemany("INSERT INTO mol VALUES (?,?,?,?)", ((mid, ik, *self.mols[ik]) for ik, mid in mol_ids.items()))
-        db.executemany("INSERT INTO rxn VALUES (?,?,?,?,?)", ((new, *self.rxns[old]) for old, new in rxn_ids.items()))
-        db.executemany("INSERT INTO top VALUES (?,?,?,?,?,?,?)", top_rows)
+        db.executemany("INSERT INTO rxn VALUES (?,?,?,?,?,?,?)", ((new, *self.rxns[old]) for old, new in rxn_ids.items()))
+        db.executemany("INSERT INTO top VALUES (?,?,?,?,?,?,?,?)", top_rows)
         db.executescript(
             """
             CREATE INDEX mol_key ON mol (inchikey);
@@ -375,8 +439,11 @@ class Index:
             CREATE INDEX top_mol ON top (mol_id, direction, rank);
             """
         )
+        used = [k for k in SOURCES if self.stats[f"reactions_{k}"]]
         meta = {
-            "source": SOURCE,
+            "source": "; ".join(SOURCES[k] for k in used),
+            "sources": ",".join(used),
+            **{f"reactions_{k}": str(self.stats[f"reactions_{k}"]) for k in used},
             "built": date.today().isoformat(),
             "reactions": str(self.stats["reactions"]),
             "duplicates_skipped": str(self.stats["duplicates"]),
@@ -389,14 +456,26 @@ class Index:
         db.close()
 
 
-def build(lines, out: Path, jobs: int = 1, max_atoms: int = MAX_PRODUCT_ATOMS, chunk: int = 2000) -> Index:
+def read(path: Path, source: str, limit: int = 0):
+    """Records from one input file: Lowe's .rsmi for uspto, map_reactions.py output otherwise."""
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for n, line in enumerate(f):
+            if limit and n >= limit:
+                break
+            rec = uspto_record(line) if source == "uspto" else mapped_record(line, source)
+            if rec is not None:
+                yield rec
+
+
+def build(records, out: Path, jobs: int = 1, max_atoms: int = MAX_PRODUCT_ATOMS, chunk: int = 2000) -> Index:
+    """Index the records in order; a reaction already seen (in an earlier file too) is skipped."""
     index = Index()
 
     def batches():
         buf = []
-        for line in lines:
+        for rec in records:
             index.stats["rows"] += 1
-            buf.append(line)
+            buf.append(rec)
             if len(buf) >= chunk:
                 yield (buf, max_atoms)
                 buf = []
@@ -420,20 +499,25 @@ def build(lines, out: Path, jobs: int = 1, max_atoms: int = MAX_PRODUCT_ATOMS, c
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("rsmi", type=Path)
+    ap.add_argument("--uspto", type=Path, nargs="*", default=[], help="Lowe .rsmi files (grants first, then applications)")
+    ap.add_argument("--crd", type=Path, nargs="*", default=[], help="CRD mapped by map_reactions.py")
+    ap.add_argument("--rhea", type=Path, nargs="*", default=[], help="Rhea mapped by map_reactions.py")
     ap.add_argument("--out", type=Path, default=ROOT / "reactions.db")
     ap.add_argument("-j", "--jobs", type=int, default=4)
-    ap.add_argument("--limit", type=int, default=0, help="read only the first N rows (for a trial run)")
+    ap.add_argument("--limit", type=int, default=0, help="read only the first N rows of each file (for a trial run)")
     ap.add_argument("--max-atoms", type=int, default=MAX_PRODUCT_ATOMS, help="index molecules up to this many heavy atoms")
     args = ap.parse_args()
 
+    inputs = [(p, "uspto") for p in args.uspto] + [(p, "crd") for p in args.crd] + [(p, "rhea") for p in args.rhea]
+    if not inputs:
+        ap.error("give at least one input file")
     t0 = time.time()
-    with open(args.rsmi, encoding="utf-8", errors="replace") as f:
-        lines = f if not args.limit else (line for _, line in zip(range(args.limit), f))
-        index = build(lines, args.out, args.jobs, args.max_atoms)
+    records = (rec for path, source in inputs for rec in read(path, source, args.limit))
+    index = build(records, args.out, args.jobs, args.max_atoms)
     size = args.out.stat().st_size / 1e6
-    print(f"{index.stats['rows']} rows -> {index.stats['reactions']} reactions "
-          f"({index.stats['duplicates']} duplicates), {size:.1f} MB in {time.time() - t0:.0f} s -> {args.out}")
+    per_source = ", ".join(f"{k} {index.stats[f'reactions_{k}']}" for k in SOURCES if index.stats[f"reactions_{k}"])
+    print(f"{index.stats['rows']} rows -> {index.stats['reactions']} reactions ({per_source}; "
+          f"{index.stats['duplicates']} duplicates), {size:.1f} MB in {time.time() - t0:.0f} s -> {args.out}")
 
 
 if __name__ == "__main__":

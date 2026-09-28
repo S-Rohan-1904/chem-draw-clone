@@ -196,8 +196,11 @@ export interface RecordedReaction {
   reactants: string[]
   agents: string[]
   products: string[]
-  patent: string
-  patent_url: string
+  source: 'uspto' | 'crd' | 'rhea'
+  ref: string
+  ref_label: string
+  ref_url: string
+  ec: string[]
   year: number | null
   yield: number | null
   svg: string
@@ -208,8 +211,10 @@ export interface RecordedReactions {
   available: boolean
   uses: RecordedReaction[]
   makes: RecordedReaction[]
+  enzyme_uses: RecordedReaction[]
+  enzyme_makes: RecordedReaction[]
   stereo_ignored: boolean
-  source: { name: string; author: string; url: string; licence: string }
+  sources: { name: string; author: string; url: string; licence: string }[]
   heavy_atoms?: number
   max_atoms?: number
 }

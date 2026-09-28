@@ -43,6 +43,7 @@ these packages unmodified.
 | huggingface_hub | Apache-2.0 | Optional database backup; reaction index download |
 | httpx (installed with huggingface_hub) | BSD-3-Clause | HTTP calls to the online services below |
 | pytest, pytest-xdist (development and testing) | MIT / MIT | Tests |
+| RXNMapper, with PyTorch and Transformers (index building only, in a separate environment) | MIT / BSD-3-Clause / Apache-2.0 | Atom-mapping the Rhea and CRD reactions |
 
 Chem Forge also needs a Java runtime (for example OpenJDK) to run OPSIN. It is
 installed separately and is not distributed with this repository.
@@ -54,7 +55,17 @@ installed separately and is not distributed with this repository.
   Reactions tab reads an index built from this set (`backend/scripts/build_reactions.py`);
   the index is distributed separately (a Hugging Face dataset, downloaded into the
   Docker image at build time), and `backend/tests/fixtures_reactions.rsmi` holds 88 of
-  its rows as a test fixture.
+  its rows as a test fixture. Both the grants and the applications files are used.
+- **Chemical Reaction Database**, Rik van der Lingen, Zenodo,
+  <https://doi.org/10.5281/zenodo.18109268>, released under CC BY 4.0. Reactions from
+  patents and papers, atom-mapped with RXNMapper and added to the reaction index; examples
+  from it cite the dataset. `backend/tests/fixtures_reactions_crd.tsv` holds one mapped row.
+- **Rhea**, the reaction knowledgebase, SIB Swiss Institute of Bioinformatics,
+  <https://www.rhea-db.org>, released under CC BY 4.0. Bansal, P. et al. Rhea, the reaction
+  knowledgebase in 2022. *Nucleic Acids Res.* **2022**, 50 (D1), D693–D700. Enzyme
+  reactions (left-to-right direction, no generic R groups) are atom-mapped with RXNMapper
+  and added to the reaction index, each linked to its Rhea entry and EC numbers.
+  `backend/tests/fixtures_reactions_rhea.tsv` holds two mapped rows.
 
 ## Online services
 
@@ -98,3 +109,6 @@ it builds on:
 - Ketcher, EPAM Systems. <https://github.com/epam/ketcher>
 - Lowe, D. Chemical reactions from US patents (1976–Sep2016). figshare, **2017**.
   <https://doi.org/10.6084/m9.figshare.5104873>
+- Schwaller, P.; Hoover, B.; Reymond, J.-L.; Strobelt, H.; Laino, T. Extraction of organic
+  chemistry grammar from unsupervised learning of chemical reactions. *Sci. Adv.* **2021**,
+  7 (15), eabe4166. <https://doi.org/10.1126/sciadv.abe4166>

@@ -83,14 +83,18 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 - **Conformational energy**: MMFF94 torsion scan around a chosen bond with a linked Newman projection; energies of the two chairs of a substituted ring.
 - **Conformers and energy** (`backend/app/tools.py`): ETKDG + MMFF94 ensemble of up to 8 distinct conformers with energy above the lowest, Boltzmann population at 298 K and heavy-atom RMSD, each viewable in 3D; "Minimise model" gives the steric energy of the shown geometry before and after minimisation.
 - **Properties**: elemental analysis (atoms, mass and mass % per element) under the usual descriptors.
-- **Reactions** (`backend/app/reactiondb.py`, `backend/app/literature.py`): two tabs.
-  *Reactions* shows recorded chemistry from Daniel Lowe's text-mined US patent reactions
-  (1976–Sep 2016, [CC0](https://doi.org/10.6084/m9.figshare.5104873)): up to five reaction
-  types that use the molecule and five that make it, ranked by the number of distinct patent
-  reactions, each with one example, preferring the simplest that reports a yield (scheme, patent link, year, yield) and the reacting atoms
-  highlighted. *Literature* lists up to five ChemRxiv preprints found by the molecule's
-  PubChem name, via OpenAlex (Crossref as fallback); titles open the ChemRxiv page. Reaction
-  SMILES inputs get the functional groups lost and gained and a guess at the reaction type.
+- **Reactions** (`backend/app/reactiondb.py`): recorded chemistry from Daniel Lowe's
+  text-mined US patent grants and applications (1976–Sep 2016,
+  [CC0](https://doi.org/10.6084/m9.figshare.5104873)), the
+  [Chemical Reaction Database](https://doi.org/10.5281/zenodo.18109268) (CC BY 4.0) and
+  [Rhea](https://www.rhea-db.org) enzyme reactions (CC BY 4.0): up to five reaction types
+  that use the molecule and five that make it, ranked by the number of distinct reactions,
+  each with one example, preferring the simplest that reports a yield (scheme, source link,
+  year, yield) and the reacting atoms highlighted. Enzyme reactions are listed separately with
+  their EC numbers. Reaction SMILES inputs get the functional groups lost and gained and a
+  guess at the reaction type.
+- **Literature** (`backend/app/literature.py`): lists up to five ChemRxiv preprints found by the molecule's
+  PubChem name, via OpenAlex (Crossref as fallback); titles open the ChemRxiv page.
 - **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.
 - **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
 
@@ -127,12 +131,22 @@ request. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Data
 
 ### Reaction index
 
-The Reactions tab reads `backend/reactions.db` (override with `CHEM_REACTIONS_DB`), built
-once from the USPTO grants file and published as a public Hugging Face dataset:
+The Reactions card reads `backend/reactions.db` (override with `CHEM_REACTIONS_DB`), built
+once on a developer machine and published as a public Hugging Face dataset. Lowe's USPTO
+files (figshare 5104873, the grants and applications `*_smiles.7z`) are atom-mapped already;
+Rhea (`rhea-reaction-smiles.tsv`, `rhea-directions.tsv`, `rhea2ec.tsv` from
+<https://ftp.expasy.org/databases/rhea/tsv/>) and the Chemical Reaction Database
+(`reactionSmilesFigShare2025.txt`, Zenodo 18109268) are mapped first with RXNMapper, which
+runs in a throwaway environment so torch never enters the project (CRD takes a few hours;
+the output is appended to, so a stopped run resumes):
 
 ```bash
 cd backend
-uv run python scripts/build_reactions.py path/to/1976_Sep2016_USPTOgrants_smiles.rsmi -j 8
+MAP='uv run --isolated --no-project --python 3.12 --with rxnmapper --with transformers>=4.40,<4.50 --with rdkit --with setuptools<81 python scripts/map_reactions.py'
+$MAP rhea path/to/rhea-tsv-folder rhea_mapped.tsv
+$MAP crd path/to/reactionSmilesFigShare2025.txt crd_mapped.tsv
+uv run python scripts/build_reactions.py -j 8 --uspto 1976_Sep2016_USPTOgrants_smiles.rsmi \
+    2001_Sep2016_USPTOapplications_smiles.rsmi --crd crd_mapped.tsv --rhea rhea_mapped.tsv
 HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forge-reactions
 ```
 

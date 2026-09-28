@@ -5,7 +5,7 @@ product. Lowe's USPTO files are mapped already; these two are not, so this
 script maps them once with RXNMapper (Schwaller et al., Sci. Adv. 2021, MIT)
 and writes a tab-separated file the builder reads:
 
-    mapped reaction SMILES (reactants>agents>products)  ref  year  yield  extra
+    mapped reaction SMILES (reactants>agents>products)  ref  year  yield  extra  confidence
 
 Sources
 - rhea: rhea-reaction-smiles.tsv, rhea-directions.tsv and rhea2ec.tsv from
@@ -129,10 +129,10 @@ def main() -> None:
         for (rxn, agents, ref, year, yld, extra), res in zip(batch, results):
             if res is None:
                 n_skip += 1
-                out.write(f"\t{ref}\t\t\t\n")  # remembered as done
+                out.write(f"\t{ref}\t\t\t\t\n")  # remembered as done
                 continue
             left, _, right = res["mapped_rxn"].partition(">>")
-            out.write(f"{left}>{agents}>{right}\t{ref}\t{year}\t{yld}\t{extra}\n")
+            out.write(f"{left}>{agents}>{right}\t{ref}\t{year}\t{yld}\t{extra}\t{res['confidence']:.3f}\n")
             n_done += 1
         batch.clear()
 
@@ -144,7 +144,7 @@ def main() -> None:
                 continue
             if len(item[0]) > MAX_LEN:
                 n_skip += 1
-                out.write(f"\t{item[2]}\t\t\t\n")
+                out.write(f"\t{item[2]}\t\t\t\t\n")
                 continue
             batch.append(item)
             if len(batch) >= BATCH:

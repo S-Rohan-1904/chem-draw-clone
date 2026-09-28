@@ -53,6 +53,10 @@ SOURCES = {
 ENZYME_SOURCES = {"rhea"}
 MAX_PRODUCT_ATOMS = 60
 MAX_AGENTS = 5
+# RXNMapper confidence below which a mapped CRD or Rhea row is dropped. Off by default: the
+# score falls with molecule size (Rhea's cofactors), and on Rhea it did not separate right
+# maps from wrong ones (a mis-mapped transaminase 0.69, a correct hexokinase 0.25).
+MIN_CONFIDENCE = 0.0
 TOP = 5
 
 
@@ -194,10 +198,13 @@ def uspto_record(line: str) -> tuple | None:
     return fields[0].split(" ")[0], "uspto", fields[1].strip(), year, yld, ""
 
 
-def mapped_record(line: str, source: str) -> tuple | None:
-    """One row written by scripts/map_reactions.py (rows it could not map have no SMILES)."""
+def mapped_record(line: str, source: str, min_confidence: float = 0.0) -> tuple | None:
+    """One row written by scripts/map_reactions.py. Rows it could not map have no SMILES;
+    rows RXNMapper was unsure of (a sixth column below min_confidence) are dropped too."""
     fields = line.rstrip("\n").split("\t")
     if len(fields) < 5 or not fields[0]:
+        return None
+    if len(fields) > 5 and fields[5] and float(fields[5]) < min_confidence:
         return None
     try:
         year = int(fields[2])
@@ -456,13 +463,13 @@ class Index:
         db.close()
 
 
-def read(path: Path, source: str, limit: int = 0):
+def read(path: Path, source: str, limit: int = 0, min_confidence: float = 0.0):
     """Records from one input file: Lowe's .rsmi for uspto, map_reactions.py output otherwise."""
     with open(path, encoding="utf-8", errors="replace") as f:
         for n, line in enumerate(f):
             if limit and n >= limit:
                 break
-            rec = uspto_record(line) if source == "uspto" else mapped_record(line, source)
+            rec = uspto_record(line) if source == "uspto" else mapped_record(line, source, min_confidence)
             if rec is not None:
                 yield rec
 
@@ -505,6 +512,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=ROOT / "reactions.db")
     ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="read only the first N rows of each file (for a trial run)")
+    ap.add_argument("--min-confidence", type=float, default=MIN_CONFIDENCE,
+                    help="drop CRD and Rhea rows whose RXNMapper confidence is lower")
     ap.add_argument("--max-atoms", type=int, default=MAX_PRODUCT_ATOMS, help="index molecules up to this many heavy atoms")
     args = ap.parse_args()
 
@@ -512,7 +521,7 @@ def main() -> None:
     if not inputs:
         ap.error("give at least one input file")
     t0 = time.time()
-    records = (rec for path, source in inputs for rec in read(path, source, args.limit))
+    records = (rec for path, source in inputs for rec in read(path, source, args.limit, args.min_confidence))
     index = build(records, args.out, args.jobs, args.max_atoms)
     size = args.out.stat().st_size / 1e6
     per_source = ", ".join(f"{k} {index.stats[f'reactions_{k}']}" for k in SOURCES if index.stats[f"reactions_{k}"])

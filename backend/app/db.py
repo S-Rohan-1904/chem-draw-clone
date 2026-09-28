@@ -167,6 +167,7 @@ def init_db() -> None:
     _add_missing_columns()
     _backfill_inchikeys()
     import_prewarm()
+    _drop_lowercased_name_keys()
 
 
 def import_prewarm(path: str | None = None) -> int:
@@ -192,6 +193,17 @@ def import_prewarm(path: str | None = None) -> int:
     finally:
         con.close()
     return added
+
+
+def _drop_lowercased_name_keys() -> None:
+    """name_cache keys used to be lowercased, which made C1CCCCC1 and
+    c1ccccc1 share a row. Keys now match the normalised text exactly, so any
+    row where they differ is from the old scheme and may point at the wrong
+    molecule. Dropping it only costs one more OPSIN call for that input."""
+    from sqlalchemy import delete
+
+    with engine.begin() as conn:
+        conn.execute(delete(NameCache).where(NameCache.key != NameCache.normalised))
 
 
 def _backfill_inchikeys() -> None:

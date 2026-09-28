@@ -43,6 +43,7 @@ def main() -> None:
         os.unlink(args.out)
     import json
 
+    from app.cache import encode_warnings
     from app.db import MoleculeCache, NameCache, SessionLocal, init_db
     from app.suggest import known_names
 
@@ -58,7 +59,7 @@ def main() -> None:
             if key is None:
                 print(f"skip {name}: {data}", file=sys.stderr)
                 continue
-            db.merge(NameCache(key=key, smiles=smiles, source=resolved.source, warning=" ".join(resolved.warnings), normalised=resolved.normalised))
+            db.merge(NameCache(key=key, smiles=smiles, source=resolved.source, warning=encode_warnings(resolved.warnings), normalised=resolved.normalised))
             if smiles not in seen_smiles:
                 seen_smiles.add(smiles)
                 db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data), inchikey=data["inchikey"]))

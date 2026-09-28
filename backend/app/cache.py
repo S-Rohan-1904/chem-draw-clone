@@ -22,7 +22,25 @@ from .db import MoleculeCache, NameCache, SpectraCache
 
 
 def normalise(text: str) -> str:
-    return chem.normalise_name(text).lower()
+    """Name cache key. Case is kept: SMILES are case sensitive (C1CCCCC1 is
+    cyclohexane, c1ccccc1 is benzene)."""
+    return chem.normalise_name(text)
+
+
+def encode_warnings(warnings: list[str]) -> str:
+    return json.dumps(warnings) if warnings else ""
+
+
+def decode_warnings(stored: str) -> list[str]:
+    """name_cache.warning: a JSON list, or one plain string in older rows."""
+    if not stored:
+        return []
+    if stored.startswith("["):
+        try:
+            return list(json.loads(stored))
+        except ValueError:
+            pass
+    return [stored]
 
 
 # Bump when the serialised result gains fields; older cache rows are rebuilt on read.
@@ -40,24 +58,42 @@ def _current(data: dict) -> bool:
     return data.get("_v") == CACHE_VERSION
 
 
-def _from_molecule_cache(db: Session, smiles: str, text: str, resolved: chem.Resolved) -> dict:
-    mol_row = db.get(MoleculeCache, smiles)
-    if mol_row is not None and _current(json.loads(mol_row.result_json)):
-        data = json.loads(mol_row.result_json)
-        mol_row.hits += 1
-        mol_row.last_used_at = datetime.now(timezone.utc)
+def is_built(db: Session, smiles: str) -> bool:
+    """True if the molecule is already in the cache, so fetching it is cheap."""
+    try:
+        key = chem.canonical_smiles(smiles)
+    except chem.ChemError:
+        return False
+    row = db.get(MoleculeCache, key)
+    return row is not None and _current(json.loads(row.result_json))
+
+
+def _load_or_build(db: Session, smiles: str, input_text: str, source: str) -> tuple[dict, bool]:
+    """Full result for a canonical SMILES from molecule_cache, building and
+    storing it on a miss. Returns (data, cached); the caller commits."""
+    row = db.get(MoleculeCache, smiles)
+    if row is not None:
+        data = json.loads(row.result_json)
+        if _current(data):
+            row.hits += 1
+            row.last_used_at = datetime.now(timezone.utc)
+            return data, True
+    data = _serialise(chem.build_from_smiles(smiles, input_text=input_text, source=source))
+    if row is not None:
+        row.result_json = json.dumps(data)
+        row.inchikey = data["inchikey"]
     else:
-        data = _serialise(chem.build_from_smiles(smiles, input_text=smiles, source=resolved.source))
-        if mol_row is not None:
-            mol_row.result_json = json.dumps(data)
-        else:
-            db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data), inchikey=data["inchikey"]))
-    db.commit()
-    data["input_text"] = smiles if resolved.source == "molfile" else text.strip()
-    data["source"] = resolved.source
-    data["warnings"] = resolved.warnings
-    data["normalised_input"] = resolved.normalised
-    return data
+        db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data), inchikey=data["inchikey"]))
+    return data, False
+
+
+def _commit(db: Session) -> None:
+    try:
+        db.commit()
+    except IntegrityError:
+        # Another request built the same molecule or name at the same time and
+        # stored it first. Its row holds the same result, so drop ours.
+        db.rollback()
 
 
 def get_or_build(db: Session, text: str) -> tuple[dict, bool]:
@@ -65,40 +101,28 @@ def get_or_build(db: Session, text: str) -> tuple[dict, bool]:
     if chem._is_molfile(text):
         # Drawn structures: no name to cache; key only on the molecule.
         resolved = chem.resolve_molfile(text)
-        cached = db.get(MoleculeCache, resolved.smiles) is not None
-        return _from_molecule_cache(db, resolved.smiles, text, resolved), cached
-
-    key = normalise(text)
-    name_row = db.get(NameCache, key)
-    if name_row is not None:
-        smiles, source = name_row.smiles, name_row.source
-        warnings = [name_row.warning] if name_row.warning else []
-        normalised = name_row.normalised
-    else:
-        resolved = chem.resolve_full(text)
         smiles = chem.canonical_smiles(resolved.smiles)
-        source, warnings, normalised = resolved.source, resolved.warnings, resolved.normalised
-
-    mol_row = db.get(MoleculeCache, smiles)
-    if mol_row is not None and _current(json.loads(mol_row.result_json)):
-        data = json.loads(mol_row.result_json)
-        mol_row.hits += 1
-        mol_row.last_used_at = datetime.now(timezone.utc)
-        cached = True
+        data, cached = _load_or_build(db, smiles, smiles, resolved.source)
+        _commit(db)
+        input_text, source, warnings, normalised = smiles, resolved.source, resolved.warnings, resolved.normalised
     else:
-        data = _serialise(chem.build_from_smiles(smiles, input_text=text.strip(), source=source))
-        if mol_row is not None:
-            mol_row.result_json = json.dumps(data)
+        key = normalise(text)
+        name_row = db.get(NameCache, key)
+        if name_row is not None:
+            smiles, source = name_row.smiles, name_row.source
+            warnings, normalised = decode_warnings(name_row.warning), name_row.normalised
         else:
-            db.add(MoleculeCache(smiles=smiles, result_json=json.dumps(data), inchikey=data["inchikey"]))
-        cached = False
+            resolved = chem.resolve_full(text)
+            smiles = chem.canonical_smiles(resolved.smiles)
+            source, warnings, normalised = resolved.source, resolved.warnings, resolved.normalised
+        data, cached = _load_or_build(db, smiles, text.strip(), source)
+        if name_row is None:
+            db.merge(NameCache(key=key, smiles=smiles, source=source, warning=encode_warnings(warnings), normalised=normalised))
+        _commit(db)
+        # Echo what the user actually typed, not whoever filled the cache first.
+        input_text = text.strip()
 
-    if name_row is None:
-        db.merge(NameCache(key=key, smiles=smiles, source=source, warning=" ".join(warnings), normalised=normalised))
-    db.commit()
-
-    # Echo what the user actually typed, not whoever filled the cache first.
-    data["input_text"] = text.strip()
+    data["input_text"] = input_text
     data["source"] = source
     data["warnings"] = warnings
     data["normalised_input"] = normalised

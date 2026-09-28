@@ -159,13 +159,14 @@ def _axial_penalty(mol: Chem.Mol, conf) -> float:
     """Sum of A values for axial substituents on chair cyclohexanes. MMFF
     misranks some (it puts chlorocyclohexane's Cl axial), so this decides
     between conformers before the force-field energy does."""
-    from .conformers import _axial_set, _is_chair, _ring_order
+    from .conformers import _axial_set, _is_chair
+    from .projections import ring_order
 
     total = 0.0
     for ring in mol.GetRingInfo().AtomRings():
         if len(ring) != 6 or any(mol.GetAtomWithIdx(i).GetAtomicNum() != 6 or mol.GetAtomWithIdx(i).GetHybridization() != Chem.HybridizationType.SP3 for i in ring):
             continue
-        ordered = _ring_order(mol, list(ring))
+        ordered = ring_order(mol, list(ring))
         if not _is_chair(conf, ordered):
             total += 3.0  # twist-boat: worse than any single axial group
             continue

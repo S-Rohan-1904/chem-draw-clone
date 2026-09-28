@@ -10,7 +10,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, rdMolTransforms
 
 from .chem import ChemError
-from .projections import _mol3d
+from .projections import _mol3d, ring_order
 from .sugars import group_label as _label
 
 MAX_HEAVY = 40
@@ -80,16 +80,6 @@ def torsion_scan(molblock: str, front: int, back: int, step: int = 10) -> dict:
 
 # --- chair flip -------------------------------------------------------------
 
-def _ring_order(mol: Chem.Mol, ring: list[int]) -> list[int]:
-    ordered = [ring[0]]
-    ring_set = set(ring)
-    while len(ordered) < len(ring):
-        cur = mol.GetAtomWithIdx(ordered[-1])
-        nxt = next(n.GetIdx() for n in cur.GetNeighbors() if n.GetIdx() in ring_set and n.GetIdx() not in ordered)
-        ordered.append(nxt)
-    return ordered
-
-
 def _is_chair(conf, ordered: list[int]) -> bool:
     tors = [rdMolTransforms.GetDihedralDeg(conf, ordered[i], ordered[(i + 1) % 6], ordered[(i + 2) % 6], ordered[(i + 3) % 6]) for i in range(6)]
     if any(abs(t) < 35 or abs(t) > 80 for t in tors):
@@ -126,6 +116,18 @@ def _flip_chair(mol: Chem.Mol, conf_id: int, ordered: list[int], props) -> tuple
     for i in range(6):
         target = -tors[i]
         ff.MMFFAddTorsionConstraint(ordered[i], ordered[(i + 1) % 6], ordered[(i + 2) % 6], ordered[(i + 3) % 6], False, target - 5, target + 5, 200.0)
+    # Negated ring torsions also describe the mirror image, which the
+    # minimiser can reach by inverting a substituted ring carbon; then an
+    # equatorial group stays equatorial. Hold each substituent on its face of
+    # the ring (the improper X-Ci-Ci+1-Ci-1 keeps its sign in both chairs).
+    ring_set = set(ordered)
+    for i, idx in enumerate(ordered):
+        after, before = ordered[(i + 1) % 6], ordered[i - 1]
+        for nb in mol.GetAtomWithIdx(idx).GetNeighbors():
+            if nb.GetIdx() in ring_set or nb.GetAtomicNum() == 1:
+                continue
+            v = rdMolTransforms.GetDihedralDeg(src, nb.GetIdx(), idx, after, before)
+            ff.MMFFAddTorsionConstraint(nb.GetIdx(), idx, after, before, False, v - 20, v + 20, 200.0)
     ff.Minimize(maxIts=2000)
     ff2 = AllChem.MMFFGetMoleculeForceField(mol, props, confId=cid)
     ff2.Minimize(maxIts=2000)
@@ -139,9 +141,7 @@ def chair_energies(molblock: str, ring: list[int], n_conf: int = 30) -> dict:
     mol = _mol3d(molblock)
     if mol.GetNumHeavyAtoms() > MAX_HEAVY:
         raise ChemError(f"Chair energies are limited to {MAX_HEAVY} heavy atoms.")
-    if len(ring) != 6 or any(not (0 <= i < mol.GetNumAtoms()) for i in ring):
-        raise ChemError("Not a six-membered ring.")
-    ordered = _ring_order(mol, ring)
+    ordered = ring_order(mol, ring)
     props = AllChem.MMFFGetMoleculeProperties(mol)
     if props is None:
         raise ChemError("MMFF94 has no parameters for this molecule.")

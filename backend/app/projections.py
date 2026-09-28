@@ -133,21 +133,28 @@ def chair_rings(molblock: str) -> list[list[int]]:
     return rings
 
 
+def ring_order(mol: Chem.Mol, ring: list[int]) -> list[int]:
+    """The atoms of a six-membered ring of ``mol``, ordered so neighbours in
+    the list are bonded. Anything that is not one of the molecule's rings
+    (repeated atoms, a substituent, out of range indices) is rejected."""
+    ring_set = set(ring)
+    if len(ring) != 6 or not any(ring_set == set(r) for r in mol.GetRingInfo().AtomRings()):
+        raise ChemError("Not a six-membered ring.")
+    ordered = [ring[0]]
+    while len(ordered) < 6:
+        cur = mol.GetAtomWithIdx(ordered[-1])
+        ordered.append(next(n.GetIdx() for n in cur.GetNeighbors() if n.GetIdx() in ring_set and n.GetIdx() not in ordered))
+    return ordered
+
+
 def chair_analysis(molblock: str, ring: list[int]) -> dict:
     """Axial/equatorial assignment for each ring substituent from the 3D
     conformer. `flipped=True` describes the other chair (axial and
     equatorial swap, up/down stay)."""
     mol = _mol3d(molblock)
     pos = mol.GetConformer().GetPositions()
-    if len(ring) != 6 or any(not (0 <= i < mol.GetNumAtoms()) for i in ring):
-        raise ChemError("Not a six-membered ring.")
-    # Order ring atoms by connectivity so neighbours in the list are bonded.
-    ordered = [ring[0]]
-    ring_set = set(ring)
-    while len(ordered) < 6:
-        cur = mol.GetAtomWithIdx(ordered[-1])
-        nxt = next(n.GetIdx() for n in cur.GetNeighbors() if n.GetIdx() in ring_set and n.GetIdx() not in ordered)
-        ordered.append(nxt)
+    ordered = ring_order(mol, ring)
+    ring_set = set(ordered)
     centre = pos[ordered].mean(axis=0)
     # Ring mean-plane normal via SVD.
     _, _, vt = np.linalg.svd(pos[ordered] - centre)

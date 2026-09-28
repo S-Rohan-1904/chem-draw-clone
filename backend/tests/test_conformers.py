@@ -59,3 +59,13 @@ def test_endpoints():
         r = client.post("/api/analysis/chair-energy", json={"smiles": "CC1CCCCC1", "ring": [1, 2, 3, 4, 5, 6]})
         assert r.status_code == 200 and len(r.json()["chairs"]) == 2
         assert client.post("/api/analysis/chair-energy", json={"smiles": "C1CCCCC1", "ring": [0, 1, 2, 3, 4, 5]}).status_code == 400
+
+
+def test_rings_must_be_real_rings():
+    with client:
+        for ring in ([1, 1, 1, 1, 1, 1], [0, 1, 2, 3, 4, 5], [1, 2, 3, 4, 5, 99]):
+            r = client.post("/api/analysis/chair-energy", json={"smiles": "CC1CCCCC1", "ring": ring})
+            assert r.status_code == 400, ring
+            r = client.post("/api/molecule/chair", json={"smiles": "CC1CCCCC1", "ring": ring})
+            assert r.status_code == 400, ring
+        assert client.post("/api/molecule/chair", json={"smiles": "CC1CCCCC1", "ring": [1, 2, 3, 4, 5, 6]}).status_code == 200

@@ -1,0 +1,2882 @@
+[
+ {
+  "name": "(+)-camphor",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(-)-menthol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(-)-nicotine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(12R)-12-hydroxyoctadecanoic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(13C)methane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1E,5E,9E)-cyclododeca-1,5,9-triene",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(1R)-1-phenylethanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R)-2,3-dihydro-1H-inden-1-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,2R)-1,2-dichlorocyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2R)-1,2-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2R)-2-methylcyclohexan-1-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,2R)-cyclohexane-1,2-diamine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(1R,2R)-cyclopropane-1,2-dicarboxylic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2R,4R)-1,7,7-trimethylbicyclo[2.2.1]heptan-2-ol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(1R,2R,4S)-bicyclo[2.2.1]heptan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2S)-1,2-dibromo-1,2-diphenylethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2S)-1-amino-2,3-dihydro-1H-inden-2-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,2S)-1-ethyl-2-methylcyclohexane",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(1R,2S)-2-methylcyclohexan-1-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,2S)-cyclopropane-1,2-dicarboxylic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2S,4S)-bicyclo[2.2.1]heptan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,2S,5R)-2-isopropyl-5-methylcyclohexan-1-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,2S,5R)-2-isopropyl-5-methylcyclohexanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,4aS,8aS)-1,4a-dimethyl-6-methylidene-2,3,4,5,7,8-hexahydro-1H-naphthalene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1R,4R)-1,7,7-trimethylbicyclo[2.2.1]heptan-2-one",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(1R,4S)-bicyclo[2.2.1]hept-2-ene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,4S)-bicyclo[2.2.1]heptan-2-one",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1R,5R)-2,6,6-trimethylbicyclo[3.1.1]hept-2-ene",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(1R,5R)-6,6-dimethyl-2-methylidenebicyclo[3.1.1]heptane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S)-1-phenylethan-1-amine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S)-2,3-dihydro-1H-inden-1-amine",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(1S)-2-(tert-butylamino)-1-[4-hydroxy-3-(hydroxymethyl)phenyl]ethanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S,2R,4S)-1,7,7-trimethylbicyclo[2.2.1]heptan-2-ol",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(1S,2R,5S)-5-methyl-2-(propan-2-yl)cyclohexan-1-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S,2S)-1,2-dimethylcyclopentane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1S,2S)-cyclohexane-1,2-diamine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S,2S,3S,5R)-2,6,6-trimethylbicyclo[3.1.1]heptan-3-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1S,2S,4S)-2-methylbicyclo[2.2.1]heptane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(1S,4R)-bicyclo[2.2.1]heptan-2-one",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S,4S)-1,7,7-trimethylbicyclo[2.2.1]heptan-2-one",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(1S,5S)-2,6,6-trimethylbicyclo[3.1.1]hept-2-ene",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(1Z,5E,9E)-cyclododeca-1,5,9-triene",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(2E)-2-butenal",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(2E)-3,7-dimethylocta-2,6-dien-1-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2E)-3,7-dimethylocta-2,6-dienal",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2E)-but-2-en-1-ol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2E)-but-2-ene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2E)-hexa-2,4-diene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2E,4E)-hexa-2,4-diene",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2E,4E)-hexa-2,4-dienoic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2E,4E,6E)-octa-2,4,6-triene",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2E,4E,6E,8E)-3,7-dimethyl-9-(2,6,6-trimethylcyclohexen-1-yl)nona-2,4,6,8-tetraen-1-ol",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(2E,4E,6E,8E)-3,7-dimethyl-9-(2,6,6-trimethylcyclohexen-1-yl)nona-2,4,6,8-tetraenoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2E,4R)-4-methylhex-2-ene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2E,4Z)-hexa-2,4-diene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2E,4Z)-hexa-2,4-dienoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-1,2-dibromopropane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2,3-dibromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2,3-dihydroxypropanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2,3-dihydroxypropyl (9Z)-octadec-9-enoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2,5,7,8-tetramethyl-2-[(4R,8R)-4,8,12-trimethyltridecyl]-3,4-dihydrochromen-6-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-(methylsulfanyl)butane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-[4-(2-methylpropyl)phenyl]propanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2-amino-3-sulfanylpropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2-aminopropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2-bromobutane (2S)-2-bromobutane (2R)-butan-2-amine (2S)-butan-2-amine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-chlorobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-hydroxypropanenitrile",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-hydroxypropanoate",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2-hydroxypropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2-methylbutanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-methylmorpholine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-methyloxirane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R)-2-methyloxolane",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2R)-2-methylpyrrolidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-nitrobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-phenylpropanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-2-propylpiperidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-butan-2-amine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-butan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-butan-2-ol (2S)-butan-2-ol (2R)-2-chlorobutane (2S)-2-chlorobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-butane-2-thiol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-pentan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R)-propane-1,2-diol",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2R,3R)-2,3,4-trihydroxybutanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R)-2,3-dibromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R)-2,3-dihydroxybutanedial",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R)-2,3-dihydroxybutanedioic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2R,3R)-2,3-dihydroxybutanedioic acid (2R,3S)-2,3-dihydroxybutanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R)-2,3-dimethyloxirane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R)-butane-2,3-diol",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(2R,3R,4R,5R)-hexane-1,2,3,4,5,6-hexol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2R,3R,4S,5R)-2,3,4,5,6-pentahydroxyhexanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R,4S,5R)-2-(6-aminopurin-9-yl)-5-(hydroxymethyl)oxolane-3,4-diol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2R,3R,4S,5R,6R)-2-(hydroxymethyl)-6-methoxyoxane-3,4,5-triol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R,4S,5S)-hexane-1,2,3,4,5,6-hexol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3R,4S,5S,6R)-2-[(2S,3S,4S,5R)-3,4-dihydroxy-2,5-bis(hydroxymethyl)oxolan-2-yl]oxy-6-(hydroxymethyl)oxane-3,4,5-triol",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2R,3R,4S,5S,6R)-6-(hydroxymethyl)oxane-2,3,4,5-tetrol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S)-2,3-dibromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S)-2,3-dihydroxybutanedioic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2R,3S)-2,3-dimethyloxirane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S)-butane-2,3-diol",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(2R,3S,4R)-2,3,4,5-tetrahydroxypentanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,4R,5R)-2,3,4,5,6-pentahydroxyhexanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,4R,5R)-oxane-2,3,4,5-tetrol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2R,3S,4R,5R,6S)-2-(hydroxymethyl)-6-[(2R,3S,4R,5R,6R)-4,5,6-trihydroxy-2-(hydroxymethyl)oxan-3-yl]oxyoxane-3,4,5-triol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,4R,5S)-2,3,4,5,6-pentahydroxyhexanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,4S,5R)-2,3,4,5,6-pentahydroxyhexanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,4S,5R)-2-(hydroxymethyl)oxolane-3,4,5-triol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,4S,5R,6S)-6-(hydroxymethyl)oxane-2,3,4,5-tetrol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,3S,5R)-5-(6-aminopurin-9-yl)-2-(hydroxymethyl)oxolan-3-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2R,5R)-2-methyl-5-(prop-1-en-2-yl)cyclohexan-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-1-[(2S)-2-methyl-3-sulfanylpropanoyl]pyrrolidine-2-carboxylic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2S)-1-methyl-2-(pyridin-3-yl)pyrrolidine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2,3-dihydroxypropanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2,3-dihydroxypropyl hexadecanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2,4-diamino-4-oxobutanoic acid",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(2S)-2,5-diamino-5-oxopentanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2,6-diaminohexanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-(6-methoxynaphthalen-2-yl)propanoic acid",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(2S)-2-[4-(2-methylpropyl)phenyl]propanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-[[(2S)-2-aminopropanoyl]amino]propanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-amino-3-(1H-imidazol-4-yl)propanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-3-(1H-indol-3-yl)propanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-3-(3,4-dihydroxyphenyl)propanoic acid",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(2S)-2-amino-3-(4-hydroxyphenyl)propanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-3-[4-(4-hydroxy-3,5-diiodophenoxy)-3,5-diiodophenyl]propanoic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2S)-2-amino-3-hydroxypropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-3-methylbutanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-3-phenylpropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-3-selanylpropanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-amino-4-(methylsulfanyl)butanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-4-methylpentanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-amino-5-(diaminomethylideneamino)pentanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-aminobutanedioic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2S)-2-aminopentanedioic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2S)-2-aminopropanamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-aminopropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-aminopropanoic acid (2R)-2-aminopropanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-bromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-hydroxybutanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-hydroxypropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-hydroxypropanoic acid (2R)-2-hydroxypropanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-methylbutanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-methylcyclohexan-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-methyloxirane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S)-2-methylpiperidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-2-propylpiperidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-butan-2-amine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-butan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-butan-2-yl acetate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-N-methyl-1-phenylpropan-2-amine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2S)-oxolan-2-ylmethanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S)-pyrrolidine-2-carboxylic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S,3R)-2,3,4-trihydroxybutanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,3R)-2-amino-3-hydroxybutanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(2S,3R,4R,5R)-hexane-1,2,3,4,5,6-hexol",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(2S,3R,4S,5R)-2,3,4,5,6-pentahydroxyhexanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,3R,4S,5S,6R)-6-(hydroxymethyl)oxane-2,3,4,5-tetrol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,3S)-2,3-dibromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,3S)-2,3-dihydroxybutanedioic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2S,3S)-2-amino-3-methylpentanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,3S,4S,5R,6R)-6-[(2S,3R,4S,5S,6R)-4,5-dihydroxy-2-(hydroxymethyl)-6-methoxyoxan-3-yl]oxy-3,4,5-trihydroxyoxane-2-carboxylic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,4R)-4-hydroxypyrrolidine-2-carboxylic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2S,5R)-2-methyl-5-(prop-1-en-2-yl)cyclohexan-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(2S,5R,6R)-3,3-dimethyl-7-oxo-6-[(2-phenylacetyl)amino]-4-thia-1-azabicyclo[3.2.0]heptane-2-carboxylic acid",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(2Z)-3,7-dimethylocta-2,6-dien-1-ol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(2Z)-but-2-ene",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(2Z,4Z)-hexa-2,4-diene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3E)-4-methylhex-3-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3E)-penta-1,3-diene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-3,7-dimethyloct-6-en-1-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-3,7-dimethylocta-1,6-dien-3-ol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(3R)-3-methylcyclohexan-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-3-methylhexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-3-methylpent-1-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-3-methylpent-1-yne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-3-methylpentan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-4-amino-3-(4-chlorophenyl)butanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3R)-5-(1,2-dithiolan-3-yl)pentanoic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(3R,5aS,6R,8aS,9R,12S,12aR)-3,6,9-trimethyloctahydro-3,12-epoxy-12H-pyrano[4,3-j]-1,2-benzodioxepin-10(3H)-one",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(3R,5R)-7-[2-(4-fluorophenyl)-3-phenyl-4-(phenylcarbamoyl)-5-propan-2-ylpyrrol-1-yl]-3,5-dihydroxyheptanoic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(3S)-3,7-dimethylocta-1,6-dien-3-ol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(3S)-3-(1,3-dioxoisoindol-2-yl)piperidine-2,6-dione",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(3S)-3-(aminomethyl)-5-methylhexanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3S)-3-methylhexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3S)-piperidin-3-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3S,4E)-3-methylhex-4-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(3S,4R,5R)-1,3,4,5,6-pentahydroxyhexan-2-one",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(3S,8S,9S,10R,13R,14S,17R)-10,13-dimethyl-17-[(2R)-6-methylheptan-2-yl]-2,3,4,7,8,9,11,12,14,15,16,17-dodecahydro-1H-cyclopenta[a]phenanthren-3-ol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(4R)-1-methyl-4-(prop-1-en-2-yl)cyclohex-1-ene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(4R)-4-ethyl-2-methylheptane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(4R)-4-methyloxacyclohexadecan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(4S)-4-methyloxacyclohexadecan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(4Z,7Z,10Z,13Z,16Z,19Z)-docosa-4,7,10,13,16,19-hexaenoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(5R)-2-methyl-5-(prop-1-en-2-yl)cyclohex-2-en-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(5R)-5-[(1S)-1,2-dihydroxyethyl]-3,4-dihydroxyfuran-2(5H)-one",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(5R)-5-methyloxolan-2-one",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(5S)-2-methyl-5-(prop-1-en-2-yl)cyclohex-2-en-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(5S)-5-methyloxolan-2-one",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(5S,6R,7E,9E,11Z,14Z)-5,6-dihydroxyicosa-7,9,11,14-tetraenoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(5S,8R,9S,10S,13R,14S)-10,13-dimethyl-2,3,4,5,6,7,8,9,11,12,14,15,16,17-tetradecahydro-1H-cyclopenta[a]phenanthrene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(5Z,8Z,11Z,14Z)-icosa-5,8,11,14-tetraenoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(5Z,8Z,11Z,14Z)-N-(2-hydroxyethyl)icosa-5,8,11,14-tetraenamide",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(5Z,8Z,11Z,14Z,17Z)-icosa-5,8,11,14,17-pentaenoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(6E,10E,14E,18E)-2,6,10,15,19,23-hexamethyltetracosa-2,6,10,14,18,22-hexaene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(8R,9S,10R,13S,14S,17S)-17-hydroxy-10,13-dimethyl-1,2,6,7,8,9,11,12,14,15,16,17-dodecahydrocyclopenta[a]phenanthren-3-one",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(8R,9S,13S,14S,17S)-13-methyl-6,7,8,9,11,12,14,15,16,17-decahydrocyclopenta[a]phenanthrene-3,17-diol",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(8S,9S,10R,11S,13S,14S,17R)-11,17-dihydroxy-17-(2-hydroxyacetyl)-10,13-dimethyl-1,2,6,7,8,9,11,12,14,15,16-undecahydrocyclopenta[a]phenanthren-3-one",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(9E)-octadec-9-enoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(9E,11E)-octadeca-9,11-dienoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(9R,10S)-9,10-dihydroxyoctadecanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(9Z)-octadec-9-enoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(9Z,12Z)-octadeca-9,12-dienoic acid",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(9Z,12Z,15Z)-octadeca-9,12,15-trienoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-1,2-dichloroethene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-3-methylpent-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-4-phenylbut-3-en-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-but-2-ene (Z)-but-2-ene (E)-pent-2-ene (Z)-pent-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-but-2-enedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-but-2-enedioic acid (Z)-but-2-enedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-but-2-enoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-cyclooctene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(E)-hex-2-en-4-yne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-hex-3-ene (Z)-hex-3-ene (E)-1,2-dichloroethene (Z)-1,2-dichloroethene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-pent-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(E)-stilbene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(R)-1-deuterio-1-fluoroethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(R)-1-deuterioethanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(R)-1-phenylpropan-2-amine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(R)-4-[1-hydroxy-2-(methylamino)ethyl]benzene-1,2-diol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(R)-5-(1,2-dithiolan-3-yl)pentanoic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(R)-[(2S,4S,5R)-5-ethenyl-1-azabicyclo[2.2.2]octan-2-yl]-(6-methoxyquinolin-4-yl)methanol",
+  "chemrxiv": 3
+ },
+ {
+  "name": "(R)-adrenaline",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(R)-bromochlorofluoromethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(R)-ethyl methyl sulfoxide",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(R)-methyl phenyl sulfoxide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(R)-nicotine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(S)-(-)-nicotine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(S)-1-(isopropylamino)-3-(naphthalen-1-yloxy)propan-2-ol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(S)-1-deuterioethanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(S)-1-phenylethanaminium chloride",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-1-phenylpropan-2-amine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-2-(2-chlorophenyl)-2-(methylamino)cyclohexan-1-one",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(S)-2-amino-3-[4-(4-hydroxy-3,5-diiodophenoxy)-3,5-diiodophenyl]propanoic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "(S)-bromochlorofluoromethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-dopa",
+  "chemrxiv": 2
+ },
+ {
+  "name": "(S)-ethyl methyl sulfinate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-ethyl methyl sulfoxide",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(S)-ethyl(methyl)(propyl)(phenyl)phosphanium",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-ibuprofen",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(S)-methyl 4-methylphenyl sulfoxide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-methyl phenyl sulfoxide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(S)-nicotine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(Z)-1,2-dichloroethene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(Z)-1,2-diphenylethene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(Z)-1-chloroprop-1-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "(Z)-but-2-enedioic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "(Z)-cyclooctene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "(Z)-hex-3-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,1'-biphenyl-2,2'-diol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,1,1-trifluoroethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,10-phenanthroline",
+  "chemrxiv": 1
+ },
+ {
+  "name": "1,2,3,4-tetrahydronaphthalene",
+  "chemrxiv": 3
+ },
+ {
+  "name": "1,2,4-triazole",
+  "chemrxiv": 2
+ },
+ {
+  "name": "1,2-dimethylbenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,2-dimethylbenzene 1,3-dimethylbenzene 1,4-dimethylbenzene ethylbenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,2-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,3,3-trimethyl-2-oxabicyclo[2.2.2]octane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,3,5,7-tetraazatricyclo[3.3.1.1~3,7~]decane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,3,5-triazine",
+  "chemrxiv": 2
+ },
+ {
+  "name": "1,3,5-trimethylbenzene",
+  "chemrxiv": 3
+ },
+ {
+  "name": "1,3,7-trimethylpurine-2,6-dione",
+  "chemrxiv": 5
+ },
+ {
+  "name": "1,3-dinitrobenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1,3-dioxolane",
+  "chemrxiv": 1
+ },
+ {
+  "name": "1,4-dioxane",
+  "chemrxiv": 2
+ },
+ {
+  "name": "1,4-dioxaspiro[4.5]decane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1-[(2R,3R,4S,5R)-3,4-dihydroxy-5-(hydroxymethyl)oxolan-2-yl]pyrimidine-2,4-dione",
+  "chemrxiv": 2
+ },
+ {
+  "name": "1-[(2R,4S,5R)-4-hydroxy-5-(hydroxymethyl)oxolan-2-yl]-5-methylpyrimidine-2,4-dione",
+  "chemrxiv": 2
+ },
+ {
+  "name": "1-bromo-4-chlorobenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1-chloro-2,2-dimethylpropane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1-chlorobutane 2-chlorobutane 1-bromobutane 2-bromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1-chloropropane 2-chloropropane 2-bromopropane 2-bromo-2-methylpropane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1-iodobutane 1,2-dichloroethane 1,1-dichloroethane 1,2-dibromoethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "1H-pyrrole-2-carboxylic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2,2'-bipyridine",
+  "chemrxiv": 2
+ },
+ {
+  "name": "2,2,4-trimethylpentane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2,3-dibromobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2,4,6-trinitrotoluene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-(diethylamino)-N-(2,6-dimethylphenyl)acetamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-[2-[bis(carboxymethyl)amino]ethyl-(carboxymethyl)amino]acetic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-acetoxybenzoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "2-acetyloxybenzoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "2-acetyloxybenzoic acid 4-hydroxybenzoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-amino-2-(hydroxymethyl)propane-1,3-diol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-aminobenzoic acid 4-aminobenzoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-aminoethanesulfonic acid",
+  "chemrxiv": 3
+ },
+ {
+  "name": "2-aminopyrimidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-butanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-hydroxybenzoic acid",
+  "chemrxiv": 3
+ },
+ {
+  "name": "2-hydroxypropane-1,2,3-tricarboxylic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "2-hydroxypropanoic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "2-hydroxypropanoic acid 2-hydroxybenzoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-iodopropane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylbut-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylbut-2-ene 2-methylpropene 3-methylbut-1-ene buta-1,3-diene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylbuta-1,3-diene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "2-methylcyclohexan-1-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylphenol 4-nitrophenol 2,4,6-trinitrophenol 2,4,6-trinitrotoluene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylpropan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylpropane 2-methylbutane 2,2-dimethylpropane 2-methylpentane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "2-methylpyridine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "3-(diaminomethylidene)-1,1-dimethylguanidine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "3-ethyl-2-methylhexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "3-methylpentane 2,3-dimethylbutane 2,2,4-trimethylpentane 3-ethylpentane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "4-aminobutanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "4-hydroxy-3-[(1S)-3-oxo-1-phenylbutyl]chromen-2-one",
+  "chemrxiv": 1
+ },
+ {
+  "name": "4-methylbenzenesulfonyl chloride",
+  "chemrxiv": 1
+ },
+ {
+  "name": "4-methylphenol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "4-nitrotoluene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "5-methylpyrimidine-2,4(1H,3H)-dione",
+  "chemrxiv": 5
+ },
+ {
+  "name": "5alpha-androstane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "7-chloro-1-methyl-5-phenyl-3H-1,4-benzodiazepin-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "9H-fluorene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "9H-purin-6-amine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "[18]annulene",
+  "chemrxiv": 2
+ },
+ {
+  "name": "acetamide acetic anhydride",
+  "chemrxiv": 0
+ },
+ {
+  "name": "acetate",
+  "chemrxiv": 5
+ },
+ {
+  "name": "acetic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "acetic acid formic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "acetone acetaldehyde formaldehyde acetonitrile",
+  "chemrxiv": 0
+ },
+ {
+  "name": "acetophenone",
+  "chemrxiv": 3
+ },
+ {
+  "name": "acetyl chloride",
+  "chemrxiv": 0
+ },
+ {
+  "name": "acridine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "adamantane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "adenine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "adenosine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "adenosine thymidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "adipic acid stearic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "alanine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "aminoacetic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "ammonia",
+  "chemrxiv": 5
+ },
+ {
+  "name": "aniline",
+  "chemrxiv": 5
+ },
+ {
+  "name": "anthracene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "azepan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "azetidine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "azidomethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "aziridine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzaldehyde",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzaldehyde propanone butanone pentan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "benzamide",
+  "chemrxiv": 3
+ },
+ {
+  "name": "benzene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzene-1,2-diol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzene-1,2-diol benzene-1,3-diol benzene-1,4-diol 4-methylphenol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "benzenesulfonic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "benzimidazole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzofuran",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzoic acid",
+  "chemrxiv": 3
+ },
+ {
+  "name": "benzoic acid ethanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "benzonitrile",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzophenone",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzothiophene",
+  "chemrxiv": 2
+ },
+ {
+  "name": "benzoyl chloride",
+  "chemrxiv": 2
+ },
+ {
+  "name": "benzoyl chloride ethanoyl chloride",
+  "chemrxiv": 0
+ },
+ {
+  "name": "benzyl alcohol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "benzyl chloride benzyl bromide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "bicyclo[1.1.1]pentane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "bicyclo[2.2.1]hept-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "bicyclo[2.2.1]heptane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "bicyclo[2.2.2]octane",
+  "chemrxiv": 3
+ },
+ {
+  "name": "bicyclo[3.3.1]nonane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "bicyclo[4.4.0]decane",
+  "chemrxiv": 3
+ },
+ {
+  "name": "biotin",
+  "chemrxiv": 5
+ },
+ {
+  "name": "biphenyl",
+  "chemrxiv": 5
+ },
+ {
+  "name": "borane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "bromoethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "but-1-ene",
+  "chemrxiv": 3
+ },
+ {
+  "name": "but-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "but-2-yne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "buta-1,3-diene",
+  "chemrxiv": 1
+ },
+ {
+  "name": "butan-1-amine N-methylmethanamine N,N-dimethylmethanamine aniline",
+  "chemrxiv": 0
+ },
+ {
+  "name": "butan-1-ol butan-2-ol 2-methylpropan-2-ol pentan-1-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "butan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "butan-2-one",
+  "chemrxiv": 1
+ },
+ {
+  "name": "butanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "butanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "caffeine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "carbazole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "carbon dioxide",
+  "chemrxiv": 5
+ },
+ {
+  "name": "chlorobenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "chlorobenzene bromobenzene nitrobenzene toluene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "chloromethane",
+  "chemrxiv": 3
+ },
+ {
+  "name": "chloromethane bromomethane iodomethane dichloromethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "chlorotrimethylsilane",
+  "chemrxiv": 2
+ },
+ {
+  "name": "cholesterol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "cholesterol caffeine nicotine adenine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cis-1,2-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cis-1,3-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cis-1,4-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cis-cyclobutane-1,3-diol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cis-decahydronaphthalene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "codeine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "coronene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "cubane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "cyanide",
+  "chemrxiv": 5
+ },
+ {
+  "name": "cyclobutane-1,1-dicarboxylic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cyclododeca-1,5,9-triene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cyclododecane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cycloheptane cyclooctane cyclohexene cyclopentene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cyclohex-2-en-1-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cyclohexanamine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "cyclohexane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "cyclohexanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cyclohexanone",
+  "chemrxiv": 3
+ },
+ {
+  "name": "cyclohexene",
+  "chemrxiv": 4
+ },
+ {
+  "name": "cyclooctatetraene",
+  "chemrxiv": 4
+ },
+ {
+  "name": "cyclopropane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "cyclopropane cyclobutane cyclopentane cyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "cytosine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "D-alanine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "D-fructose",
+  "chemrxiv": 3
+ },
+ {
+  "name": "D-glucose",
+  "chemrxiv": 5
+ },
+ {
+  "name": "D-glucose D-fructose D-galactose D-mannose",
+  "chemrxiv": 0
+ },
+ {
+  "name": "D-glyceraldehyde",
+  "chemrxiv": 0
+ },
+ {
+  "name": "D-ribose D-xylose L-arabinose",
+  "chemrxiv": 0
+ },
+ {
+  "name": "D-xylose",
+  "chemrxiv": 3
+ },
+ {
+  "name": "decahydronaphthalene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "deuteriomethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "dichloromethane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "diethyl (2R,3R)-2,3-dihydroxybutanedioate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "diethyl ether tetrahydrofuran dimethylformamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "dimethyl ether",
+  "chemrxiv": 4
+ },
+ {
+  "name": "dimethyl methylphosphonate",
+  "chemrxiv": 2
+ },
+ {
+  "name": "dimethyl sulfide",
+  "chemrxiv": 2
+ },
+ {
+  "name": "dimethyl sulfone",
+  "chemrxiv": 0
+ },
+ {
+  "name": "dimethyl sulfoxide",
+  "chemrxiv": 2
+ },
+ {
+  "name": "diphenylethyne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanal",
+  "chemrxiv": 1
+ },
+ {
+  "name": "ethanamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanamide propanamide benzamide N-methylethanamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethane-1,2-diamine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethane-1,2-diol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "ethane-1,2-diol propane-1,2,3-triol cyclohexanol phenol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanenitrile",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanenitrile propanenitrile benzonitrile",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanethiol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethanoic anhydride",
+  "chemrxiv": 1
+ },
+ {
+  "name": "ethanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "ethanoyl chloride",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethene",
+  "chemrxiv": 2
+ },
+ {
+  "name": "ethene propene but-1-ene but-2-ene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethoxyethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethyl (3R,4R,5S)-4-acetamido-5-amino-3-(pentan-3-yloxy)cyclohex-1-ene-1-carboxylate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethyl acetate",
+  "chemrxiv": 2
+ },
+ {
+  "name": "ethyl benzoate",
+  "chemrxiv": 1
+ },
+ {
+  "name": "ethyl butanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethyl ethanoate propyl ethanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethyl propanoate methyl benzoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethylene propylene isoprene isobutane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethylenediaminetetraacetic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ethyne",
+  "chemrxiv": 1
+ },
+ {
+  "name": "ethyne propyne but-1-yne but-2-yne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "folic acid",
+  "chemrxiv": 3
+ },
+ {
+  "name": "furan",
+  "chemrxiv": 5
+ },
+ {
+  "name": "glycerol ethylene glycol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "glycine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "glycine L-alanine L-valine L-leucine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "glycyl-L-alanyl-L-serine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "glycylglycine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "guanine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "guanine cytosine thymine uracil",
+  "chemrxiv": 0
+ },
+ {
+  "name": "heptanal octanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hex-1-en-5-yne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hexa-2,4-dienoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hexacosane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hexadecanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hexafluorobenzene",
+  "chemrxiv": 2
+ },
+ {
+  "name": "hexan-1-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hexan-2-one hexan-3-one heptan-2-one hexanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hexanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "hydrazine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "hydrogen peroxide",
+  "chemrxiv": 5
+ },
+ {
+  "name": "hydroxylamine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "ibuprofen",
+  "chemrxiv": 5
+ },
+ {
+  "name": "imidazole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "imidazole pyrimidine purine indole",
+  "chemrxiv": 0
+ },
+ {
+  "name": "indane",
+  "chemrxiv": 3
+ },
+ {
+  "name": "indole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "isocyanatomethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "isopentane neopentane isopropanol tert-butanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "isoquinoline",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-alanine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-alanyl-L-alanine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-alanyl-L-phenylalanine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-allothreonine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-arabinose",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-arginine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-ascorbic acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-asparagine",
+  "chemrxiv": 3
+ },
+ {
+  "name": "L-aspartic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "L-aspartic acid L-glutamic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-aspartyl-L-phenylalanine methyl ester",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-cysteine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-DOPA",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-glutamic acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "L-glutamine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-histidine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-isoleucine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-isoleucine L-proline L-phenylalanine L-tyrosine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-leucine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-lysine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-lysine L-arginine L-histidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-methionine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-methionine L-asparagine L-glutamine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-phenylalanine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-proline",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-serine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-threonine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-tryptophan",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-tryptophan L-serine L-threonine L-cysteine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "L-tyrosine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "L-valine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "lactic acid tartaric acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "lactose",
+  "chemrxiv": 2
+ },
+ {
+  "name": "linoleic acid",
+  "chemrxiv": 2
+ },
+ {
+  "name": "maleic acid succinic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "malic acid fumaric acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "menthol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methanal",
+  "chemrxiv": 1
+ },
+ {
+  "name": "methanal ethanal propanal butanal",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methanamine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "methanamine ethanamine propan-1-amine propan-2-amine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "methane ethane propane butane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methanesulfonic acid",
+  "chemrxiv": 1
+ },
+ {
+  "name": "methanethiol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "methanethiol ethanethiol dimethyl sulfide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methanoic acid ethanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methanol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "methanol ethanol propan-1-ol propan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methoxybenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methoxymethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methoxymethane ethoxyethane methoxyethane methoxybenzene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl (1R,2R,3S,5S)-3-benzoyloxy-8-methyl-8-azabicyclo[3.2.1]octane-2-carboxylate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl (2R)-2-hydroxypropanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl (2S)-2-[[(2S)-2-amino-3-carboxypropanoyl]amino]-3-phenylpropanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl (E)-but-2-enoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl benzoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl ethanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methyl methanoate methyl ethanoate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "methylammonium",
+  "chemrxiv": 5
+ },
+ {
+  "name": "methylcyclohexane",
+  "chemrxiv": 1
+ },
+ {
+  "name": "morphine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "morpholine",
+  "chemrxiv": 2
+ },
+ {
+  "name": "N,N-dimethylaniline",
+  "chemrxiv": 1
+ },
+ {
+  "name": "N,N-dimethylmethanamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N,N-dimethylmethanamine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N-(4-hydroxyphenyl)acetamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N-[(2S,3R,4R,5S,6R)-2,4,5-trihydroxy-6-(hydroxymethyl)oxan-3-yl]acetamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N-methylethanamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N-methylidenemethanamine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N-methylmethanamine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "N-phenylethanamide",
+  "chemrxiv": 0
+ },
+ {
+  "name": "naphthalene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "nicotinamide",
+  "chemrxiv": 5
+ },
+ {
+  "name": "nicotine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "nitric acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "nitrobenzene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "nitromethane",
+  "chemrxiv": 2
+ },
+ {
+  "name": "nitromethane nitroethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "nonane decane undecane dodecane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "octadecane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "octadecanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "oxacyclohexadecan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "oxalic acid citric acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "oxazole",
+  "chemrxiv": 1
+ },
+ {
+  "name": "oxetane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "oxirane oxolane oxane 1,4-dioxane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "oxolan-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "oxolane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "palmitic acid oleic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "paracetamol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "penta-1,3-diene 2-methylbuta-1,3-diene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pentacene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pentan-3-one cyclohexanone acetophenone benzophenone",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pentane hexane heptane octane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pentane-2,4-dione",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pentanoic acid hexanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "phenanthrene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "phenol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "phenylboronic acid",
+  "chemrxiv": 2
+ },
+ {
+  "name": "phenylethyne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "phosphine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "phosphoric acid",
+  "chemrxiv": 5
+ },
+ {
+  "name": "piperazine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "piperidine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "porphyrin",
+  "chemrxiv": 5
+ },
+ {
+  "name": "potassium (2R,3R)-2,3-dihydroxybutanedioate",
+  "chemrxiv": 0
+ },
+ {
+  "name": "prop-2-en-1-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "prop-2-enenitrile",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propan-2-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propanal",
+  "chemrxiv": 1
+ },
+ {
+  "name": "propane-1,2,3-triol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propane-1,2,3-triyl tri(octadecanoate)",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propanedioic acid butanedioic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propanoic acid butanoic acid",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propanone",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propene",
+  "chemrxiv": 4
+ },
+ {
+  "name": "propyne",
+  "chemrxiv": 0
+ },
+ {
+  "name": "purine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyrazine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyrazole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyrene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyridazine",
+  "chemrxiv": 3
+ },
+ {
+  "name": "pyridin-3-ol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pyridine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyridine pyrrole furan thiophene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pyridoxine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "pyrimidine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyrrole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "pyrrolidin-2-one",
+  "chemrxiv": 0
+ },
+ {
+  "name": "pyrrolidine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "quinoline",
+  "chemrxiv": 5
+ },
+ {
+  "name": "quinoline piperidine pyrrolidine morpholine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "silane",
+  "chemrxiv": 5
+ },
+ {
+  "name": "sodium acetate",
+  "chemrxiv": 2
+ },
+ {
+  "name": "sodium chloride",
+  "chemrxiv": 2
+ },
+ {
+  "name": "spiro[2.2]pentane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "spiro[4.5]decane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "spiro[5.5]undecane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "styrene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "styrene naphthalene anthracene phenanthrene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "sulfuric acid",
+  "chemrxiv": 4
+ },
+ {
+  "name": "tetrachloromethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "tetrafluoroborate",
+  "chemrxiv": 5
+ },
+ {
+  "name": "tetramethylammonium chloride",
+  "chemrxiv": 0
+ },
+ {
+  "name": "tetramethylsilane",
+  "chemrxiv": 2
+ },
+ {
+  "name": "tetraphenylmethane",
+  "chemrxiv": 1
+ },
+ {
+  "name": "tetrazole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "thiazole",
+  "chemrxiv": 5
+ },
+ {
+  "name": "thiolane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "thiophene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "thiourea",
+  "chemrxiv": 5
+ },
+ {
+  "name": "threonine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "thymidine",
+  "chemrxiv": 2
+ },
+ {
+  "name": "thymine",
+  "chemrxiv": 5
+ },
+ {
+  "name": "toluene",
+  "chemrxiv": 5
+ },
+ {
+  "name": "trans-1,2-dichlorocyclopentane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trans-1,2-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trans-1,4-dimethylcyclohexane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trans-decahydronaphthalene",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trichloromethane",
+  "chemrxiv": 1
+ },
+ {
+  "name": "trichloromethane tetrachloromethane chloroethane bromoethane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "tricyclo[3.3.1.1~3,7~]decane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trideuteriomethanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trimethyl phosphate",
+  "chemrxiv": 1
+ },
+ {
+  "name": "trimethylborane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trimethylphosphane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "trimethylsilanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "triphenylmethanol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "triphenylphosphane",
+  "chemrxiv": 0
+ },
+ {
+  "name": "tris(2-aminoethyl)amine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "uracil",
+  "chemrxiv": 5
+ },
+ {
+  "name": "urea",
+  "chemrxiv": 5
+ },
+ {
+  "name": "urea thiourea guanidine hydrazine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "water",
+  "chemrxiv": 5
+ },
+ {
+  "name": "aspirin",
+  "chemrxiv": 5
+ },
+ {
+  "name": "ibuprofen",
+  "chemrxiv": 5
+ },
+ {
+  "name": "paracetamol",
+  "chemrxiv": 5
+ },
+ {
+  "name": "naproxen",
+  "chemrxiv": 2
+ },
+ {
+  "name": "diclofenac",
+  "chemrxiv": 5
+ },
+ {
+  "name": "atorvastatin",
+  "chemrxiv": 4
+ },
+ {
+  "name": "simvastatin",
+  "chemrxiv": 0
+ },
+ {
+  "name": "rosuvastatin",
+  "chemrxiv": 2
+ },
+ {
+  "name": "metformin",
+  "chemrxiv": 1
+ },
+ {
+  "name": "sitagliptin",
+  "chemrxiv": 0
+ },
+ {
+  "name": "lisinopril",
+  "chemrxiv": 0
+ },
+ {
+  "name": "enalapril",
+  "chemrxiv": 0
+ },
+ {
+  "name": "losartan",
+  "chemrxiv": 2
+ },
+ {
+  "name": "valsartan",
+  "chemrxiv": 0
+ },
+ {
+  "name": "amlodipine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "nifedipine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "metoprolol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "propranolol",
+  "chemrxiv": 1
+ },
+ {
+  "name": "atenolol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "warfarin",
+  "chemrxiv": 1
+ },
+ {
+  "name": "clopidogrel",
+  "chemrxiv": 1
+ },
+ {
+  "name": "apixaban",
+  "chemrxiv": 0
+ },
+ {
+  "name": "rivaroxaban",
+  "chemrxiv": 0
+ },
+ {
+  "name": "omeprazole",
+  "chemrxiv": 1
+ },
+ {
+  "name": "esomeprazole",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ranitidine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "loratadine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "cetirizine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "fluoxetine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "sertraline",
+  "chemrxiv": 1
+ },
+ {
+  "name": "citalopram",
+  "chemrxiv": 0
+ },
+ {
+  "name": "venlafaxine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "diazepam",
+  "chemrxiv": 0
+ },
+ {
+  "name": "alprazolam",
+  "chemrxiv": 0
+ },
+ {
+  "name": "haloperidol",
+  "chemrxiv": 0
+ },
+ {
+  "name": "olanzapine",
+  "chemrxiv": 1
+ },
+ {
+  "name": "quetiapine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "sildenafil",
+  "chemrxiv": 1
+ },
+ {
+  "name": "tadalafil",
+  "chemrxiv": 0
+ },
+ {
+  "name": "imatinib",
+  "chemrxiv": 3
+ },
+ {
+  "name": "gefitinib",
+  "chemrxiv": 0
+ },
+ {
+  "name": "erlotinib",
+  "chemrxiv": 0
+ },
+ {
+  "name": "tamoxifen",
+  "chemrxiv": 0
+ },
+ {
+  "name": "oseltamivir",
+  "chemrxiv": 0
+ },
+ {
+  "name": "acyclovir",
+  "chemrxiv": 0
+ },
+ {
+  "name": "ciprofloxacin",
+  "chemrxiv": 3
+ },
+ {
+  "name": "amoxicillin",
+  "chemrxiv": 0
+ },
+ {
+  "name": "fluconazole",
+  "chemrxiv": 1
+ },
+ {
+  "name": "morphine",
+  "chemrxiv": 0
+ },
+ {
+  "name": "caffeine",
+  "chemrxiv": 5
+ }
+]

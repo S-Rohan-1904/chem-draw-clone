@@ -17,6 +17,10 @@ echo "==> Python deps"
 (cd backend && uv sync)
 echo "==> Node deps"
 npm --prefix frontend install
+if [ ! -f backend/reactions.db ] && [ -n "${REACTIONS_REPO:-}" ]; then
+  echo "==> Reaction index"
+  (cd backend && uv run python scripts/reactions_index.py download)
+fi
 if [ ! -f backend/.env ]; then
   echo "==> Writing backend/.env with a generated SECRET_KEY"
   printf 'SECRET_KEY=%s\n' "$(openssl rand -base64 48 | tr -d '\n')" > backend/.env

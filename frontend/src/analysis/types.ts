@@ -189,24 +189,47 @@ export interface ChairEnergy {
   note: string
 }
 
-export interface PredictedReaction {
-  name: string
-  reagents: string
-  category: string
-  note: string
-  products: { smiles: string[]; svgs: string[]; atoms: number[]; why: string }[]
+export interface RecordedReaction {
+  label: string
+  count: number
+  smiles: string
+  reactants: string[]
+  agents: string[]
+  products: string[]
+  patent: string
+  patent_url: string
+  year: number | null
+  yield: number | null
+  svg: string
+  atoms: number[]
 }
 
-export interface RetroRoute {
-  name: string
-  reagents: string
-  target_group: string
-  note: string
-  precursors: { smiles: string[]; svgs: string[]; atoms: number[] }[]
+export interface RecordedReactions {
+  available: boolean
+  uses: RecordedReaction[]
+  makes: RecordedReaction[]
+  stereo_ignored: boolean
+  source: { name: string; author: string; url: string; licence: string }
+}
+
+export interface Preprint {
+  title: string
+  authors: string
+  date: string
+  doi: string
+  url: string
+  cited_by: number | null
+}
+
+export interface Literature {
+  available: boolean
+  reason?: string
+  query: string
+  items: Preprint[]
+  source: string
 }
 
 export interface ReactionClass {
-  matches: { name: string; reagents: string; category: string; explanation: string; note: string; mechanism_note: string; reactant: string; atoms: number[] }[]
   groups_lost: string[]
   groups_gained: string[]
   guess: string

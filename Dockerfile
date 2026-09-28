@@ -32,6 +32,11 @@ RUN cd backend && uv sync --frozen --no-dev
 COPY --chown=app:app backend/ backend/
 COPY --chown=app:app --from=web /web/dist frontend/dist
 
+# Reaction index for the Reactions card (public HF dataset, see backend/scripts/reactions_index.py).
+# Without REACTIONS_REPO the card says the index is not installed.
+ARG REACTIONS_REPO=""
+RUN cd backend && REACTIONS_REPO=${REACTIONS_REPO} uv run --no-sync python scripts/reactions_index.py download
+
 # Build the common-names cache into the image (also proves RDKit and OPSIN work here).
 ARG PREWARM_LIMIT=0
 RUN cd backend && uv run --no-sync python scripts/prewarm.py -j 4 --limit ${PREWARM_LIMIT}

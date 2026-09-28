@@ -10,7 +10,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors, rdDepictor, rdMolDescriptors
 from rdkit.Chem.Draw import rdMolDraw2D
 
-from .chem import ChemError
+from .chem import ChemError, mol_from_smiles
 
 
 def is_reaction(text: str) -> bool:
@@ -159,3 +159,39 @@ def parse_reaction(text: str) -> dict:
         "imbalance": diff,
         "mapped": any(a.GetAtomMapNum() for m in reactants for a in m.GetAtoms()),
     }
+
+
+def classify(reactant_smiles: list[str], product_smiles: list[str]) -> dict:
+    """Describe a reaction by the functional groups it loses and gains."""
+    from . import groups as _groups
+
+    reactants = [mol_from_smiles(s) for s in reactant_smiles]
+    before = {}
+    after = {}
+    for m in reactants:
+        for g in _groups.find_groups(m):
+            before[g["name"]] = before.get(g["name"], 0) + len(g["atoms"])
+    for s in product_smiles:
+        for g in _groups.find_groups(mol_from_smiles(s)):
+            after[g["name"]] = after.get(g["name"], 0) + len(g["atoms"])
+    lost = [f"{k} ({before[k] - after.get(k, 0)})" for k in before if before[k] > after.get(k, 0)]
+    gained = [f"{k} ({after[k] - before.get(k, 0)})" for k in after if after[k] > before.get(k, 0)]
+    if any("Alkene" in g or "Alkyne" in g for g in lost) and not any("Alkene" in g or "Alkyne" in g for g in gained):
+        guess = "Looks like an addition to a multiple bond."
+    elif any("Alkene" in g for g in gained):
+        guess = "Looks like an elimination: a double bond is formed."
+    elif any("halide" in g for g in lost) and gained:
+        guess = "Looks like a nucleophilic substitution: the halide is replaced."
+    elif any(g.startswith("Alcohol") for g in lost) and any(("Aldehyde" in g or "Ketone" in g or "acid" in g) for g in gained):
+        guess = "Looks like an oxidation of the alcohol."
+    elif any(("Aldehyde" in g or "Ketone" in g) for g in lost) and any(g.startswith("Alcohol") for g in gained):
+        guess = "Looks like a reduction of the carbonyl group."
+    elif any("Ester" in g for g in gained) and any("acid" in g for g in lost):
+        guess = "Looks like an esterification."
+    elif any("Ester" in g for g in lost) and any("acid" in g for g in gained):
+        guess = "Looks like an ester hydrolysis."
+    elif len(reactants) == 2 and len(product_smiles) == 1:
+        guess = "Two reactants give one product: an addition or a condensation."
+    else:
+        guess = "Compare the functional groups lost and gained."
+    return {"groups_lost": lost, "groups_gained": gained, "guess": guess}

@@ -159,6 +159,16 @@ class SpectraCache(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class LiteratureCache(Base):
+    """InChIKey -> ChemRxiv search result. Hits are kept 30 days, empty results one day."""
+
+    __tablename__ = "literature_cache"
+
+    inchikey: Mapped[str] = mapped_column(String(32), primary_key=True)
+    result_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 PREWARM_PATH = os.environ.get("CHEM_PREWARM_PATH", str(Path(__file__).resolve().parent.parent / "prewarm.db"))
 
 

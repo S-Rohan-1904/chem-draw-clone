@@ -83,7 +83,14 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 - **Conformational energy**: MMFF94 torsion scan around a chosen bond with a linked Newman projection; energies of the two chairs of a substituted ring.
 - **Conformers and energy** (`backend/app/tools.py`): ETKDG + MMFF94 ensemble of up to 8 distinct conformers with energy above the lowest, Boltzmann population at 298 K and heavy-atom RMSD, each viewable in 3D; "Minimise model" gives the steric energy of the shown geometry before and after minimisation.
 - **Properties**: elemental analysis (atoms, mass and mass % per element) under the usual descriptors.
-- **Reactions**: textbook reaction templates applied to the molecule (regiochemistry by Markovnikov, Zaitsev, Hofmann and ortho/para/meta rules) and one-step retrosynthetic disconnections; reaction SMILES inputs are classified and given an SN1/SN2/E1/E2 note.
+- **Reactions** (`backend/app/reactiondb.py`, `backend/app/literature.py`): two tabs.
+  *Reactions* shows recorded chemistry from Daniel Lowe's text-mined US patent reactions
+  (1976–Sep 2016, [CC0](https://doi.org/10.6084/m9.figshare.5104873)): up to five reaction
+  types that use the molecule and five that make it, ranked by the number of distinct patent
+  reactions, each with one example, preferring the simplest that reports a yield (scheme, patent link, year, yield) and the reacting atoms
+  highlighted. *Literature* lists up to five ChemRxiv preprints found by the molecule's
+  PubChem name, via OpenAlex (Crossref as fallback); titles open the ChemRxiv page. Reaction
+  SMILES inputs get the functional groups lost and gained and a guess at the reaction type.
 - **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.
 - **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
 
@@ -118,6 +125,22 @@ old rows when the payload changes). `CHEM_SPECTRA_LOOKUP=0` keeps everything loc
 nmrshiftdb2 or NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each
 request. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
 
+### Reaction index
+
+The Reactions tab reads `backend/reactions.db` (override with `CHEM_REACTIONS_DB`), built
+once from the USPTO grants file and published as a public Hugging Face dataset:
+
+```bash
+cd backend
+uv run python scripts/build_reactions.py path/to/1976_Sep2016_USPTOgrants_smiles.rsmi -j 8
+HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forge-reactions
+```
+
+`setup.sh` and the Docker build download it when `REACTIONS_REPO=<hf-user>/chem-forge-reactions`
+is set; without it the card says the index is not installed. ChemRxiv lookups are cached per
+molecule for 30 days; `CHEM_LITERATURE_LOOKUP=0` turns them off, and a free
+`OPENALEX_API_KEY` avoids OpenAlex's rate limit on anonymous searches.
+
 ## Deploy (free): Render
 
 Hugging Face Spaces only offer static hosting for free, so the backend runs on a
@@ -138,7 +161,8 @@ Setup:
 2. Render account (https://render.com, sign in with GitHub).
 3. Render dashboard, New, Blueprint, pick this repo. Render reads `render.yaml`.
 4. When prompted, fill `HF_TOKEN` with the token and `HF_DATASET_REPO` with
-   `<hf-user>/chem-draw-data`, `ADMIN_USERS` with the usernames (comma
+   `<hf-user>/chem-draw-data`, `REACTIONS_REPO` with the reaction index dataset
+   (see Reaction index), optionally `OPENALEX_API_KEY`, `ADMIN_USERS` with the usernames (comma
    separated) that may open the Stats tab, and `ADMIN_SIGNUP_CODE` with a
    secret of your choice. `SECRET_KEY` is generated.
 5. Deploy. First build takes about 10 minutes.

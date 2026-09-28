@@ -35,11 +35,12 @@
 .rxn-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
 .rxn-row { display: grid; grid-template-columns: minmax(180px, 1fr) 2fr; gap: 0.8rem; align-items: center; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 8px; }
 .rxn-info { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-.rxn-products { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.rxn-product { display: flex; gap: 0.2rem; align-items: center; flex-wrap: wrap; }
-.rxn-thumb { padding: 0; border: 1px solid transparent; border-radius: 6px; background: var(--paper); cursor: pointer; }
-.rxn-thumb:hover { border-color: var(--accent); }
-.rxn-thumb svg { width: 130px; height: 90px; display: block; }
+.rxn-row.recorded { grid-template-columns: minmax(200px, 1fr) 2.2fr; }
+.rxn-open { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.rxn-scheme { min-width: 0; overflow-x: auto; background: var(--paper); border-radius: 6px; }
+.rxn-scheme svg { display: block; max-width: 100%; height: auto; max-height: 150px; }
+.lit-list { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.lit-list li { display: flex; flex-direction: column; gap: 0.1rem; }
 .rxn-class { margin-top: 0.6rem; padding: 0.5rem 0.7rem; border-radius: 8px; background: var(--paper); }
 .rxn-class p { margin: 0 0 0.2rem; }
 @media (max-width: 720px) {

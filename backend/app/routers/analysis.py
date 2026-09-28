@@ -3,6 +3,7 @@ conformer scans, acid/base sites, isotopes, reaction tools."""
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
+from rdkit import Chem
 from sqlalchemy.orm import Session
 
 from .. import analysis, cache, chem, ratelimit
@@ -110,22 +111,13 @@ def chair_energy(body: ChairEnergyIn, request: Request, db: Session = Depends(ge
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
 
-@router.post("/products", dependencies=[Depends(ratelimit.check)])
-def predict_products(body: SmilesIn):
-    from .. import transforms
+@router.post("/reactions", dependencies=[Depends(ratelimit.check)])
+def recorded_reactions(body: SmilesIn):
+    """Top recorded reactions for the molecule (as reactant and as product) from the USPTO index."""
+    from .. import reactiondb
 
     try:
-        return transforms.predict_products(body.smiles)
-    except chem.ChemError as e:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
-
-
-@router.post("/retro", dependencies=[Depends(ratelimit.check)])
-def retrosynthesis(body: SmilesIn):
-    from .. import transforms
-
-    try:
-        return transforms.retrosynthesis(body.smiles)
+        return reactiondb.lookup(body.smiles)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
 
@@ -137,12 +129,33 @@ class ClassifyIn(BaseModel):
 
 @router.post("/classify")
 def classify_reaction(body: ClassifyIn):
-    from .. import transforms
+    from .. import reaction
 
     try:
-        return transforms.classify(body.reactants, body.products)
+        return reaction.classify(body.reactants, body.products)
     except chem.ChemError as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+
+class LiteratureIn(BaseModel):
+    smiles: str = Field(min_length=1, max_length=4000)
+    name: str = Field(default="", max_length=300)
+
+
+@router.post("/literature", dependencies=[Depends(ratelimit.check)])
+def literature_search(body: LiteratureIn, db: Session = Depends(get_db)):
+    """Top ChemRxiv preprints for the molecule, searched by its common name."""
+    from .. import literature
+
+    try:
+        key = Chem.MolToInchiKey(chem.mol_from_smiles(body.smiles))
+    except chem.ChemError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    row = cache.lookup_name(db, key) if key else None
+    name = (row.title or row.iupac) if row is not None and row.found else body.name.strip()
+    if not name:
+        return {"available": False, "reason": "No name to search ChemRxiv with: this structure has no PubChem entry.", "query": "", "items": [], "source": ""}
+    return cache.get_literature(db, key, name, literature.search)
 
 
 @router.get("/mechanisms")

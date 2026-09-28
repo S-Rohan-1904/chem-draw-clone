@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import align as _align, cache, chem, nameparse, projections, ratelimit, reaction, resolver, resonance, spectra, stereo_explain, suggest
-from ..db import FailedInput, NameCache, NameLookup, get_db
+from ..db import FailedInput, NameCache, get_db
 
 router = APIRouter(prefix="/api/molecule", tags=["molecule"])
 
@@ -130,23 +130,8 @@ def molecule_by_key(inchikey: str, db: Session = Depends(get_db)):
 @router.get("/name/{inchikey}")
 def name_lookup(inchikey: str, request: Request, db: Session = Depends(get_db)):
     """Names for a structure, from PubChem, cached. Misses are retried after a day."""
-    from datetime import datetime, timedelta, timezone
-
-    key = inchikey.strip().upper()
-    row = db.get(NameLookup, key)
-    fresh = row is not None and (row.found or (datetime.now(timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)) < timedelta(days=1))
-    if not fresh:
-        ratelimit.check.take(request)  # only the PubChem round trip costs anything
-        hit = resolver.name_for_inchikey(key)
-        if row is None:
-            row = NameLookup(inchikey=key)
-            db.add(row)
-        row.found = hit is not None
-        row.iupac = (hit or {}).get("iupac", "")
-        row.title = (hit or {}).get("title", "")
-        row.cid = (hit or {}).get("cid")
-        row.created_at = datetime.now(timezone.utc)
-        db.commit()
+    # Only the PubChem round trip costs anything, so only a cache miss is charged.
+    row = cache.lookup_name(db, inchikey, before_fetch=lambda: ratelimit.check.take(request))
     if not row.found:
         return {"found": False}
     return {"found": True, "iupac": row.iupac, "title": row.title, "cid": row.cid, "source": "PubChem"}

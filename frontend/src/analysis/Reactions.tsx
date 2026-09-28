@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Molecule } from '../types'
 import { analysisApi } from './api'
-import type { PredictedReaction, RetroRoute } from './types'
+import type { Literature, RecordedReaction, RecordedReactions } from './types'
 
 interface Props {
   mol: Molecule
@@ -9,99 +9,135 @@ interface Props {
   onHighlight: (atoms: number[] | null, colour?: string) => void
 }
 
+type Tab = 'reactions' | 'literature'
+
+/** Recorded reactions (USPTO patents) and ChemRxiv preprints for the molecule. */
 export function Reactions({ mol, onOpen, onHighlight }: Props) {
-  const [tab, setTab] = useState<'forward' | 'retro'>('forward')
-  const [forward, setForward] = useState<PredictedReaction[] | null>(null)
-  const [retro, setRetro] = useState<RetroRoute[] | null>(null)
-  const [filter, setFilter] = useState('all')
+  const [tab, setTab] = useState<Tab>('reactions')
+  const [rx, setRx] = useState<RecordedReactions | null>(null)
+  const [lit, setLit] = useState<Literature | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setForward(null)
-    setRetro(null)
-    setFilter('all')
-    analysisApi.products(mol.smiles).then((r) => setForward(r.reactions)).catch(() => setForward([]))
-    analysisApi.retro(mol.smiles).then((r) => setRetro(r.routes)).catch(() => setRetro([]))
+    setRx(null)
+    setLit(null)
+    setError(null)
   }, [mol.smiles])
 
-  if (forward === null || retro === null) return null
-  if (forward.length === 0 && retro.length === 0) return null
-  const categories = Array.from(new Set(forward.map((r) => r.category)))
-  const shown = filter === 'all' ? forward : forward.filter((r) => r.category === filter)
+  useEffect(() => {
+    if (tab === 'reactions' ? rx : lit) return
+    let live = true
+    setLoading(true)
+    setError(null)
+    // A typed name is a fallback search term when PubChem has no name for the structure.
+    const name = ['iupac', 'pubchem', 'cactus'].includes(mol.source) ? mol.input_text : ''
+    const call = tab === 'reactions'
+      ? analysisApi.reactions(mol.smiles).then((d) => live && setRx(d))
+      : analysisApi.literature(mol.smiles, name).then((d) => live && setLit(d))
+    call.catch((e: Error) => live && setError(e.message)).finally(() => live && setLoading(false))
+    return () => { live = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, mol.smiles, rx, lit])
 
   return (
     <section className="card">
       <header className="card-head">
         <h2>Reactions</h2>
         <div className="toolbar">
-          <button type="button" className={tab === 'forward' ? 'active' : ''} onClick={() => setTab('forward')}>What can it make ({forward.length})</button>
-          <button type="button" className={tab === 'retro' ? 'active' : ''} onClick={() => setTab('retro')}>Where can it come from ({retro.length})</button>
+          <button type="button" className={tab === 'reactions' ? 'active' : ''} onClick={() => setTab('reactions')}>Reactions</button>
+          <button type="button" className={tab === 'literature' ? 'active' : ''} onClick={() => setTab('literature')}>Literature</button>
         </div>
       </header>
-
-      {tab === 'forward' && (
-        <div className="bonding-body">
-          {forward.length === 0 && <p className="muted">No textbook reaction applies to this molecule.</p>}
-          {categories.length > 1 && (
-            <div className="toolbar">
-              <button type="button" className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>all</button>
-              {categories.map((c) => <button key={c} type="button" className={filter === c ? 'active' : ''} onClick={() => setFilter(c)}>{c}</button>)}
-            </div>
-          )}
-          <ul className="rxn-rows">
-            {shown.map((r) => (
-              <li key={r.name} className="rxn-row" onMouseEnter={() => r.products[0]?.atoms.length && onHighlight(r.products[0].atoms, '#f59e0b')} onMouseLeave={() => onHighlight(null)}>
-                <div className="rxn-info">
-                  <b>{r.name}</b>
-                  <span className="muted small">{r.reagents}</span>
-                  {r.note && <span className="small">{r.note}</span>}
-                </div>
-                <div className="rxn-products">
-                  {r.products.map((p, i) => (
-                    <div key={i} className="rxn-product">
-                      {p.svgs.map((svg, k) => (
-                        <button key={k} type="button" className="rxn-thumb" title={`Open ${p.smiles[k]}`} onClick={() => onOpen(p.smiles[k])}>
-                          <div dangerouslySetInnerHTML={{ __html: svg }} />
-                        </button>
-                      ))}
-                      {p.why && <span className="muted small">{p.why}</span>}
-                    </div>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
-          <p className="muted small">Select a product to load it and continue. Regiochemistry follows the textbook rule named for each reaction; stereochemistry of the products is not assigned.</p>
-        </div>
-      )}
-
-      {tab === 'retro' && (
-        <div className="bonding-body">
-          {retro.length === 0 && <p className="muted">No disconnection found.</p>}
-          <ul className="rxn-rows">
-            {retro.map((r) => (
-              <li key={r.name + r.target_group} className="rxn-row" onMouseEnter={() => r.precursors[0]?.atoms.length && onHighlight(r.precursors[0].atoms, '#7c3aed')} onMouseLeave={() => onHighlight(null)}>
-                <div className="rxn-info">
-                  <b>{r.name}</b>
-                  <span className="muted small">makes the {r.target_group}: {r.reagents}</span>
-                  {r.note && <span className="small">{r.note}</span>}
-                </div>
-                <div className="rxn-products">
-                  {r.precursors.map((p, i) => (
-                    <div key={i} className="rxn-product">
-                      {p.svgs.map((svg, k) => (
-                        <button key={k} type="button" className="rxn-thumb" title={`Open ${p.smiles[k]}`} onClick={() => onOpen(p.smiles[k])}>
-                          <div dangerouslySetInnerHTML={{ __html: svg }} />
-                        </button>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </li>
-            ))}
-          </ul>
-          <p className="muted small">One step back. Select a precursor to load it and take the next step back.</p>
-        </div>
-      )}
+      {error && <p className="warn">{error}</p>}
+      {loading && <p className="muted small">Loading…</p>}
+      {!loading && tab === 'reactions' && rx && <RecordedTab data={rx} onOpen={onOpen} onHighlight={onHighlight} />}
+      {!loading && tab === 'literature' && lit && <LiteratureTab data={lit} />}
     </section>
+  )
+}
+
+function RecordedTab({ data, onOpen, onHighlight }: { data: RecordedReactions; onOpen: Props['onOpen']; onHighlight: Props['onHighlight'] }) {
+  if (!data.available) {
+    return <p className="muted">The reaction index is not installed on this server.</p>
+  }
+  return (
+    <div className="bonding-body">
+      {data.stereo_ignored && (
+        <p className="muted small">No record for this exact stereoisomer: showing reactions of the same structure with any stereochemistry.</p>
+      )}
+      <Section title="Used in" empty="No recorded reactions use this molecule as a starting material." items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
+      <Section title="Made by" empty="No recorded reactions make this molecule." items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
+      <p className="muted small">
+        Reaction types ranked by how many distinct patent reactions show them; one real example each, preferring the simplest one that reports a yield.
+        Source: <a href={data.source.url} target="_blank" rel="noopener noreferrer">{data.source.author}, {data.source.name}</a>, {data.source.licence}.
+        Text-mined from patents, so an occasional entry is wrong.
+      </p>
+    </div>
+  )
+}
+
+function Section({ title, empty, items, direction, onOpen, onHighlight }: {
+  title: string
+  empty: string
+  items: RecordedReaction[]
+  direction: 'uses' | 'makes'
+  onOpen: Props['onOpen']
+  onHighlight: Props['onHighlight']
+}) {
+  return (
+    <>
+      <h3>{title}</h3>
+      {items.length === 0 && <p className="muted small">{empty}</p>}
+      <ol className="rxn-rows recorded">
+        {items.map((r) => {
+          const others = direction === 'uses' ? r.products.slice(0, 1) : r.reactants
+          return (
+            <li key={r.label} className="rxn-row recorded" onMouseEnter={() => r.atoms.length && onHighlight(r.atoms, '#f59e0b')} onMouseLeave={() => onHighlight(null)}>
+              <div className="rxn-info">
+                <b>{r.label}</b>
+                <span className="muted small">seen in {r.count} patent reaction{r.count === 1 ? '' : 's'}</span>
+                <span className="small">
+                  Example: {r.patent_url ? <a href={r.patent_url} target="_blank" rel="noopener noreferrer">{r.patent}</a> : r.patent}
+                  {r.year ? ` (${r.year})` : ''}
+                  {r.yield != null ? `, ${Math.round(r.yield)}% yield` : ''}
+                </span>
+                <span className="rxn-open">
+                  {others.map((s) => (
+                    <button key={s} type="button" className="link small" title={s} onClick={() => onOpen(s)}>
+                      Open {direction === 'uses' ? 'product' : 'starting material'}
+                    </button>
+                  ))}
+                </span>
+              </div>
+              {r.svg && <div className="rxn-scheme" dangerouslySetInnerHTML={{ __html: r.svg }} />}
+            </li>
+          )
+        })}
+      </ol>
+    </>
+  )
+}
+
+function LiteratureTab({ data }: { data: Literature }) {
+  if (!data.available) return <p className="muted">{data.reason}</p>
+  return (
+    <div className="bonding-body">
+      {data.items.length === 0 ? (
+        <p className="muted">No ChemRxiv preprints found for “{data.query}”.</p>
+      ) : (
+        <ol className="lit-list">
+          {data.items.map((p) => (
+            <li key={p.doi}>
+              <a href={p.url} target="_blank" rel="noopener noreferrer"><b>{p.title}</b></a>
+              <span className="muted small">
+                {[p.authors, p.date, p.cited_by != null ? `cited ${p.cited_by}×` : ''].filter(Boolean).join(' · ')}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className="muted small">Searched ChemRxiv for “{data.query}”{data.source ? ` via ${data.source}` : ''}. Preprints are not peer reviewed; links open the ChemRxiv page.</p>
+    </div>
   )
 }

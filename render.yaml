@@ -21,3 +21,7 @@ services:
       # Render's proxy appends the client address to X-Forwarded-For.
       - key: TRUSTED_PROXY_HOPS
         value: "1"
+      - key: REACTIONS_REPO
+        sync: false
+      - key: OPENALEX_API_KEY
+        sync: false

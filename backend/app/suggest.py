@@ -124,28 +124,38 @@ def _parses(name: str) -> bool:
     return bool(opsin.strict.convert(name)[0])
 
 
+# Every candidate is checked with OPSIN, one at a time under the process lock,
+# so the total per diagnosis is capped.
+MAX_PARSE_CHECKS = 40
+
+
 def _spell_candidates(name: str, limit: int = 3) -> list[str]:
     bad = _unsegmentable_words(name)
     if not bad or len(bad) > 2:
         return []
     start, end, word = bad[0]
+    second_fixes = _tile_with_one_fix(bad[1][2].lower())[:10] if len(bad) == 2 else []
+    if len(bad) == 2 and not second_fixes:
+        return []
     results: list[str] = []
+    checks = 0
     for fixed in _tile_with_one_fix(word.lower())[:40]:
-        # keep original capitalisation style for the first letter
         cand = name[:start] + fixed + name[end:]
-        if len(bad) == 2:
-            s2, e2, w2 = bad[1]
-            for fixed2 in _tile_with_one_fix(w2.lower())[:10]:
-                cand2 = cand[:s2] + fixed2 + cand[e2:]
-                if _parses(cand2):
-                    results.append(cand2)
-                    if len(results) >= limit:
-                        return results
-            continue
-        if _parses(cand):
-            results.append(cand)
-            if len(results) >= limit:
-                break
+        tries = [cand]
+        if second_fixes:
+            # Fix the second word too. The first fix can change the length,
+            # which moves the second word.
+            s2, e2, _ = bad[1]
+            shift = len(fixed) - (end - start)
+            tries = [cand[: s2 + shift] + f2 + cand[e2 + shift :] for f2 in second_fixes]
+        for c in tries:
+            if checks >= MAX_PARSE_CHECKS:
+                return results
+            checks += 1
+            if _parses(c):
+                results.append(c)
+                if len(results) >= limit:
+                    return results
     return results
 
 
@@ -194,8 +204,10 @@ def _plain_reason(opsin_error: str, name: str) -> tuple[str, tuple[int, int] | N
     return "This is not a name OPSIN can interpret.", None
 
 
-def diagnose(name: str, opsin_error: str, extra_names: list[str] | None = None) -> Diagnosis:
+def diagnose(name: str, opsin_error: str, extra_names: list[str] | None = None, with_suggestions: bool = True) -> Diagnosis:
     reason, span = _plain_reason(opsin_error, name)
+    if not with_suggestions:
+        return Diagnosis(reason, span)
     suggestions = _rank(name, _spell_candidates(name) + _fuzzy_known(name, extra_names or []))
     return Diagnosis(reason, span, suggestions[:3])
 

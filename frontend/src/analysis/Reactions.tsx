@@ -57,9 +57,11 @@ function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
   if (!data.available) {
     return <p className="muted">The reaction index is not installed on this server.</p>
   }
+  const textbookUses = data.textbook_uses ?? []
+  const textbookMakes = data.textbook_makes ?? []
   return (
     <div className="bonding-body">
-      {data.uses.length === 0 && data.makes.length === 0 && (
+      {data.uses.length === 0 && data.makes.length === 0 && textbookUses.length === 0 && textbookMakes.length === 0 && (
         data.heavy_atoms && data.max_atoms && data.heavy_atoms > data.max_atoms ? (
           <p className="muted small">
             This molecule has {data.heavy_atoms} heavy atoms, and the reaction index covers molecules up to {data.max_atoms}.
@@ -73,17 +75,23 @@ function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
         )
       )}
       {data.stereo_ignored && (
-        <p className="muted small">There is no record for this exact stereoisomer, so reactions of the same structure with any stereochemistry are shown.</p>
+        <p className="muted small">Reactions of every stereoisomer of this structure are shown together. Rows marked "other stereoisomer" have an example recorded for a different stereoisomer, or without stereochemistry.</p>
       )}
-      <Section title="Used in" empty="No recorded reactions use this molecule as a starting material." items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
-      <Section title="Made by" empty={made?.methods.length || wiki?.paragraphs.length ? '' : 'No recorded reactions make this molecule.'} items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
+      <Section title="Used in" empty={textbookUses.length ? '' : 'No recorded reactions use this molecule as a starting material.'} items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
+      {textbookUses.length > 0 && (
+        <Section title="Used in, textbook routes" empty="" items={textbookUses} direction="uses" kind="textbook" onOpen={onOpen} onHighlight={onHighlight} />
+      )}
+      {textbookMakes.length > 0 && (
+        <Section title="Made by, textbook routes" empty="" items={textbookMakes} direction="makes" kind="textbook" onOpen={onOpen} onHighlight={onHighlight} />
+      )}
+      <Section title="Made by" empty={made?.methods.length || wiki?.paragraphs.length || textbookMakes.length ? '' : 'No recorded reactions make this molecule.'} items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
       {made && made.methods.length > 0 && <Methods data={made} onOpen={onOpen} />}
       {wiki && wiki.paragraphs.length > 0 && <Wikipedia data={wiki} onOpen={onOpen} />}
       {data.enzyme_uses.length > 0 && (
-        <Section title="Used in by enzymes" empty="" items={data.enzyme_uses} direction="uses" enzyme onOpen={onOpen} onHighlight={onHighlight} />
+        <Section title="Used in by enzymes" empty="" items={data.enzyme_uses} direction="uses" kind="enzyme" onOpen={onOpen} onHighlight={onHighlight} />
       )}
       {data.enzyme_makes.length > 0 && (
-        <Section title="Made by enzymes" empty="" items={data.enzyme_makes} direction="makes" enzyme onOpen={onOpen} onHighlight={onHighlight} />
+        <Section title="Made by enzymes" empty="" items={data.enzyme_makes} direction="makes" kind="enzyme" onOpen={onOpen} onHighlight={onHighlight} />
       )}
       <p className="muted small">
         Reaction types are ranked by how many distinct recorded reactions show them. Each has one real example, preferring the simplest one that reports a yield.
@@ -99,12 +107,14 @@ function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
   )
 }
 
-function Section({ title, empty, items, direction, enzyme = false, onOpen, onHighlight }: {
+const SEEN_IN = { recorded: 'recorded reaction', enzyme: 'enzyme reaction', textbook: 'Wikipedia route' }
+
+function Section({ title, empty, items, direction, kind = 'recorded', onOpen, onHighlight }: {
   title: string
   empty: string
   items: RecordedReaction[]
   direction: 'uses' | 'makes'
-  enzyme?: boolean
+  kind?: keyof typeof SEEN_IN
   onOpen: Props['onOpen']
   onHighlight: Props['onHighlight']
 }) {
@@ -119,7 +129,10 @@ function Section({ title, empty, items, direction, enzyme = false, onOpen, onHig
             <li key={r.label} className="rxn-row recorded" onMouseEnter={() => r.atoms.length && onHighlight(r.atoms, '#f59e0b')} onMouseLeave={() => onHighlight(null)}>
               <div className="rxn-info">
                 <b>{r.label}</b>
-                <span className="muted small">seen in {r.count} {enzyme ? 'enzyme' : 'recorded'} reaction{r.count === 1 ? '' : 's'}</span>
+                <span className="muted small">
+                  seen in {r.count} {SEEN_IN[kind]}{r.count === 1 ? '' : 's'}
+                  {r.other_stereo && ', other stereoisomer'}
+                </span>
                 <span className="small">
                   Example: {r.ref_url ? <a href={r.ref_url} target="_blank" rel="noopener noreferrer">{r.ref_label}</a> : r.ref_label}
                   {r.year ? ` (${r.year})` : ''}

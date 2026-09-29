@@ -12,6 +12,12 @@ Sources
   https://ftp.expasy.org/databases/rhea/tsv/ (CC BY 4.0). Only the
   left-to-right reaction of each entry, and none with generic R groups (*).
   ref is RHEA:<id>, extra is the EC number(s).
+- wiki: wiki_reactions.tsv from scripts/wiki_reactions.py, equations in English
+  Wikipedia compound articles (CC BY-SA 4.0). ref is <article title>#<line>, extra is
+  the article revision the equation was read from.
+- hsdb: hsdb_reactions.tsv from scripts/hsdb_reactions.py, routes read from
+  PubChem's Methods of Manufacturing (HSDB). ref is <CID>#<line>, extra is the
+  reference the method cites.
 - crd: reactionSmilesFigShare2025.txt from the Chemical Reaction Database,
   van der Lingen, https://doi.org/10.5281/zenodo.18109268 (CC BY 4.0).
   Lines are reactants>agents>products; only reactants>>products is mapped and
@@ -90,9 +96,22 @@ def crd_inputs(path: Path):
             yield f"{left}>>{right}", agents, str(n), "", "", ""
 
 
+def text_inputs(path: Path):
+    """wiki_reactions.py and hsdb_reactions.py output: reaction, where it was read, a detail
+    (revision id or cited reference) and the SMILES of the compound the text is about, kept
+    as extra "<detail>|<SMILES>" so the builder knows which product the text makes."""
+    with open(path, encoding="utf-8") as f:
+        for n, line in enumerate(f, 1):
+            rxn, where, detail, _text, own, *_ = line.rstrip("\n").split("\t") + [""] * 5
+            left, _, right = rxn.partition(">>")
+            left, right = _canonical_side(left), _canonical_side(right)
+            if left and right:
+                yield f"{left}>>{right}", "", f"{where}#{n}", "", "", f"{detail.replace('|', ' ')}|{own}"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("source", choices=["rhea", "crd"])
+    ap.add_argument("source", choices=["rhea", "crd", "wiki", "hsdb"])
     ap.add_argument("input", type=Path, help="Rhea tsv folder, or the CRD text file")
     ap.add_argument("out", type=Path)
     ap.add_argument("--limit", type=int, default=0)
@@ -106,7 +125,7 @@ def main() -> None:
     if args.out.exists():
         with open(args.out, encoding="utf-8") as f:
             done = {line.split("\t")[1] for line in f if "\t" in line}
-    inputs = rhea_inputs(args.input) if args.source == "rhea" else crd_inputs(args.input)
+    inputs = {"rhea": rhea_inputs, "crd": crd_inputs, "wiki": text_inputs, "hsdb": text_inputs}[args.source](args.input)
     mapper = RXNMapper()
     if torch.backends.mps.is_available():  # Apple GPU, several times faster than the CPU
         mapper.device = torch.device("mps")

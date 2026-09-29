@@ -91,8 +91,14 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   that use the molecule and five that make it, ranked by the number of distinct reactions,
   each with one example, preferring the simplest that reports a yield (scheme, source link,
   year, yield) and the reacting atoms highlighted. Enzyme reactions are listed separately with
-  their EC numbers. Under "Made by" the card also shows how the molecule is produced, in
-  text: the manufacturing methods PubChem takes from the Hazardous Substances Data Bank
+  their EC numbers. Textbook routes come first, in their own group: equations written in
+  English Wikipedia compound articles, and preparation sentences whose named compounds balance
+  to the molecule atom for atom, each drawn and linked to the article revision it was read from
+  (`backend/scripts/wiki_reactions.py`, CC BY-SA 4.0), and the same for the sentences of
+  PubChem's Methods of Manufacturing, whose named compounds carry PubChem CIDs
+  (`backend/scripts/hsdb_reactions.py`). Every stereoisomer of a structure is looked up
+  together, and rows whose example is another stereoisomer's say so. Under "Made by" the card also shows how
+  the molecule is produced, in text: the manufacturing methods PubChem takes from the Hazardous Substances Data Bank
   (`backend/app/manufacture.py`), and the production or synthesis section of its English
   Wikipedia article with the scheme pictures in it (`backend/app/wikipedia.py`, article found
   by InChIKey through Wikidata, text CC BY-SA 4.0, pictures credited from Wikimedia Commons).
@@ -148,15 +154,22 @@ Rhea (`rhea-reaction-smiles.tsv`, `rhea-directions.tsv`, `rhea2ec.tsv` from
 <https://ftp.expasy.org/databases/rhea/tsv/>) and the Chemical Reaction Database
 (`reactionSmilesFigShare2025.txt`, Zenodo 18109268) are mapped first with RXNMapper, which
 runs in a throwaway environment so torch never enters the project (CRD takes a few hours;
-the output is appended to, so a stopped run resumes):
+the output is appended to, so a stopped run resumes). The Wikipedia equations are read from
+the wikitext of every English article about a compound with an InChIKey in Wikidata
+(about 22,000; `fetch` downloads them once, `extract` writes `wiki_reactions.tsv`):
 
 ```bash
 cd backend
 MAP='uv run --isolated --no-project --python 3.12 --with rxnmapper --with transformers>=4.40,<4.50 --with rdkit --with setuptools<81 python scripts/map_reactions.py'
 $MAP rhea path/to/rhea-tsv-folder rhea_mapped.tsv
 $MAP crd path/to/reactionSmilesFigShare2025.txt crd_mapped.tsv
+uv run python scripts/wiki_reactions.py fetch wiki && uv run python scripts/wiki_reactions.py extract wiki
+$MAP wiki wiki/wiki_reactions.tsv wiki_mapped.tsv
+uv run python scripts/hsdb_reactions.py fetch hsdb && uv run python scripts/hsdb_reactions.py extract hsdb
+$MAP hsdb hsdb/hsdb_reactions.tsv hsdb_mapped.tsv
 uv run python scripts/build_reactions.py -j 8 --uspto 1976_Sep2016_USPTOgrants_smiles.rsmi \
-    2001_Sep2016_USPTOapplications_smiles.rsmi --crd crd_mapped.tsv --rhea rhea_mapped.tsv
+    2001_Sep2016_USPTOapplications_smiles.rsmi --crd crd_mapped.tsv --rhea rhea_mapped.tsv \
+    --wiki wiki_mapped.tsv --hsdb hsdb_mapped.tsv
 HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forge-reactions
 ```
 

@@ -196,7 +196,7 @@ export interface RecordedReaction {
   reactants: string[]
   agents: string[]
   products: string[]
-  source: 'uspto' | 'crd' | 'rhea'
+  source: 'uspto' | 'crd' | 'rhea' | 'wiki' | 'hsdb'
   ref: string
   ref_label: string
   ref_url: string
@@ -205,6 +205,8 @@ export interface RecordedReaction {
   yield: number | null
   svg: string
   atoms: number[]
+  /** The example is recorded for another stereoisomer, or without stereochemistry (older servers leave it out). */
+  other_stereo?: boolean
 }
 
 export interface RecordedReactions {
@@ -213,6 +215,9 @@ export interface RecordedReactions {
   makes: RecordedReaction[]
   enzyme_uses: RecordedReaction[]
   enzyme_makes: RecordedReaction[]
+  /** Equations written in Wikipedia compound articles (older servers leave these out). */
+  textbook_uses?: RecordedReaction[]
+  textbook_makes?: RecordedReaction[]
   stereo_ignored: boolean
   sources: { name: string; author: string; url: string; licence: string }[]
   heavy_atoms?: number

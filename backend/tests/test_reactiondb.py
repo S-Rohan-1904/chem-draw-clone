@@ -220,3 +220,60 @@ def test_old_index_without_sources(monkeypatch, tmp_path):
     finally:
         reactiondb._connect.cache_clear()
         reactiondb._schema.cache_clear()
+
+
+def test_builder_rejects_a_product_that_is_also_the_solvent():
+    """CRD 504201 lists xylene as its product and as its solvent; the map from maleic anhydride is forced."""
+    row = ("[O:9]=[C:10]1[CH:11]=[CH:1][C:13](=[O:14])[O:15]1>Cc1ccc(C)cc1.Cc1cccc(C)c1.Cc1ccccc1C>"
+           "[CH3:1][c:2]1[cH:3][cH:4][cH:5][cH:6][c:7]1[CH3:8].[O:9]=[C:10]1[CH:11]=[CH:12][C:13](=[O:14])[O:15]1"
+           "\t504201\t\t\t\t0.880")
+    assert build_reactions.process(build_reactions.mapped_record(row, "crd")) == []
+
+
+def test_named_change_ranks_before_others_seen_as_often(tmp_path):
+    """Cyclohexanol: three types seen once each. Hydrogenating phenol comes first, then the
+    formate (loses 2 atoms), then the benzyl ether (loses 7), not alphabetical order."""
+    rows = [
+        "c1ccc(C[O:1][CH:2]2[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]2)cc1>ClCCl.[Br-].[Li+].CC(=O)Br>"
+        "[OH:1][CH:2]1[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]1\t1131409\t\t\t\t0.887",
+        "O=C[O:1][CH:2]1[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]1>O.CC(C)=O>[OH:1][CH:2]1[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]1"
+        "\t1311530\t\t\t\t0.867",
+        "[OH:1][c:2]1[cH:3][cH:4][cH:5][cH:6][cH:7]1>[Pd]>[OH:1][CH:2]1[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]1\t1\t\t\t\t0.9",
+    ]
+    out = tmp_path / "reactions.db"
+    build_reactions.build([build_reactions.mapped_record(r, "crd") for r in rows], out, jobs=1)
+    import sqlite3
+
+    labels = [r[0] for r in sqlite3.connect(out).execute(
+        "SELECT label FROM top WHERE direction = 'makes' ORDER BY rank")]
+    assert labels == ["Phenol → Alcohol", "Ester → Alcohol", "Ether → Alcohol"]
+
+
+def test_every_stereoisomer_is_pooled(tmp_path, monkeypatch):
+    """The professor's rule: show reactions of any stereochemistry, and say which rows are another's."""
+    rows = [  # (R)-butan-2-ol by ketone reduction, butan-2-ol without stereo by ester hydrolysis
+        "[CH3:1][C:2](=[O:3])[CH2:4][CH3:5]>[H][H]>[CH3:1][C@@H:2]([OH:3])[CH2:4][CH3:5]\t1\t\t\t\t0.9",
+        "[CH3:1][CH:2]([O:3]C(C)=O)[CH2:4][CH3:5]>O>[CH3:1][CH:2]([OH:3])[CH2:4][CH3:5]\t2\t\t\t\t0.9",
+    ]
+    out = tmp_path / "reactions.db"
+    build_reactions.build([build_reactions.mapped_record(r, "crd") for r in rows], out, jobs=1)
+    monkeypatch.setenv("CHEM_REACTIONS_DB", str(out))
+    reactiondb._connect.cache_clear()
+    reactiondb._schema.cache_clear()
+    try:
+        r = reactiondb.lookup("C[C@@H](O)CC")  # (R)
+        stereo = {x["label"]: x["other_stereo"] for x in r["makes"]}
+        assert stereo == {"Ketone → Alcohol": False, "Ester → Alcohol": True} and r["stereo_ignored"]
+        s = reactiondb.lookup("C[C@H](O)CC")  # (S): nothing of its own, both shown
+        assert len(s["makes"]) == 2 and all(x["other_stereo"] for x in s["makes"])
+        plain = reactiondb.lookup("CC(O)CC")  # no stereo given: the (R) record is found too
+        assert {x["label"] for x in plain["makes"]} == {"Ketone → Alcohol", "Ester → Alcohol"}
+    finally:
+        reactiondb._connect.cache_clear()
+        reactiondb._schema.cache_clear()
+
+
+def test_hsdb_route_cites_pubchem_and_its_reference():
+    ref = reactiondb.reference("hsdb", "702#15", "Kirk-Othmer Encyclopedia of Chemical Technology. 4th ed.; p. 820")
+    assert ref["ref_label"] == "PubChem CID 702, citing Kirk-Othmer Encyclopedia of Chemical Technology. 4th ed."
+    assert ref["ref_url"] == "https://pubchem.ncbi.nlm.nih.gov/compound/702#section=Methods-of-Manufacturing"

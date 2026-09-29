@@ -2,16 +2,19 @@
 
 reactions.db is built offline by scripts/build_reactions.py from Daniel
 Lowe's text-mined US patent reactions (1976-Sep 2016, CC0), the Chemical
-Reaction Database (CC BY 4.0) and Rhea enzyme reactions (CC BY 4.0). For
+Reaction Database (CC BY 4.0), Rhea enzyme reactions (CC BY 4.0) and the
+equations written in Wikipedia compound articles (CC BY-SA 4.0). For
 each molecule it holds up to five reaction types in each direction, "uses"
 (the molecule is a reactant) and "makes" (it is the product), ranked by how
 many distinct reactions show that type, each with one real example. Enzyme
-reactions are ranked in a group of their own. Indexes built before the extra
+reactions and Wikipedia's textbook equations are ranked in groups of their own. Indexes built before the extra
 sources (no source column) still work.
 
-The lookup is by InChIKey; when a molecule with stereocentres has no entry
-for its exact stereoisomer, other stereoisomers of the same skeleton (first
-InChIKey block, same protonation) are used and the result says so.
+The lookup is by structure without stereochemistry (first InChIKey block, same
+protonation): every stereoisomer's reactions are pooled, the exact stereoisomer's
+example is preferred, and each item says when its example is another
+stereoisomer's. Records rarely hold the stereoisomer a student draws, and the
+reaction types are the same.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ import re
 import sqlite3
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import quote
 
 from rdkit import Chem
 
@@ -42,6 +46,18 @@ SOURCES = {
         "author": "Rik van der Lingen",
         "url": "https://doi.org/10.5281/zenodo.18109268",
         "licence": "CC BY 4.0",
+    },
+    "wiki": {
+        "name": "Equations in chemical compound articles",
+        "author": "Wikipedia contributors",
+        "url": "https://en.wikipedia.org/wiki/Wikipedia:Copyrights",
+        "licence": "CC BY-SA 4.0",
+    },
+    "hsdb": {
+        "name": "Hazardous Substances Data Bank, Methods of Manufacturing",
+        "author": "U.S. National Library of Medicine, via PubChem",
+        "url": "https://pubchem.ncbi.nlm.nih.gov/source/11933",
+        "licence": "U.S. government work",
     },
     "rhea": {
         "name": "Rhea, the reaction knowledgebase",
@@ -94,6 +110,19 @@ def reference(source: str, ref: str, extra: str = "") -> dict:
         rid = ref.removeprefix("RHEA:")
         ec = [e for e in (extra or "").split() if e]
         return {"ref": ref, "ref_label": f"Rhea {rid}", "ref_url": f"https://www.rhea-db.org/rhea/{rid}", "ec": ec}
+    detail = (extra or "").rpartition("|")[0] if "|" in (extra or "") else (extra or "")
+    if source == "wiki":
+        title = ref.partition("#")[0]
+        url = f"https://en.wikipedia.org/w/index.php?title={quote(title.replace(' ', '_'))}"
+        if detail.strip().isdigit():
+            url += f"&oldid={detail.strip()}"
+        return {"ref": title, "ref_label": f"Wikipedia: {title}", "ref_url": url, "ec": []}
+    if source == "hsdb":
+        cid = ref.partition("#")[0]
+        cited = detail.split(";")[0].strip()
+        label = f"PubChem CID {cid}" + (f", citing {cited[:80]}" if cited else "")
+        return {"ref": cid, "ref_label": label, "ec": [],
+                "ref_url": f"https://pubchem.ncbi.nlm.nih.gov/compound/{cid}#section=Methods-of-Manufacturing"}
     if source == "crd":
         return {"ref": ref, "ref_label": f"CRD reaction {ref}", "ref_url": SOURCES["crd"]["url"], "ec": []}
     return {"ref": ref, "ref_label": ref, "ref_url": patent_url(ref) if ref else "", "ec": []}
@@ -143,27 +172,29 @@ def _item(row: sqlite3.Row, query_smiles: str, mol: Chem.Mol, draw: bool = True)
 
 
 _QUERY = """
-    SELECT m.smiles AS query_smiles, t.label, t.count, t.centre, r.smiles, r.source, r.ref, r.year, r.yield, r.extra
+    SELECT m.inchikey, m.smiles AS query_smiles, t.label, t.count, t.rank, t.centre, r.smiles, r.source, r.ref, r.year,
+           r.yield, r.extra
     FROM mol m JOIN top t ON t.mol_id = m.id JOIN rxn r ON r.id = t.rxn_id
     WHERE m.{column} = ? AND substr(m.inchikey, 27, 1) = ? AND t.direction = ? AND t.grp = ?
     ORDER BY t.count DESC, t.rank
 """
 # Indexes built from USPTO alone: no source columns, no groups.
 _QUERY_V1 = """
-    SELECT m.smiles AS query_smiles, t.label, t.count, t.centre, r.smiles, 'uspto' AS source, r.patent AS ref,
-           r.year, r.yield, '' AS extra
+    SELECT m.inchikey, m.smiles AS query_smiles, t.label, t.count, t.rank, t.centre, r.smiles, 'uspto' AS source,
+           r.patent AS ref, r.year, r.yield, '' AS extra
     FROM mol m JOIN top t ON t.mol_id = m.id JOIN rxn r ON r.id = t.rxn_id
     WHERE m.{column} = ? AND substr(m.inchikey, 27, 1) = ? AND t.direction = ? AND ? = 'chem'
     ORDER BY t.count DESC, t.rank
 """
-GROUPS = {"chem": ("uses", "makes"), "enzyme": ("enzyme_uses", "enzyme_makes")}
+GROUPS = {"chem": ("uses", "makes"), "enzyme": ("enzyme_uses", "enzyme_makes"),
+          "textbook": ("textbook_uses", "textbook_makes")}
 
 
 def lookup(smiles: str, limit: int = 5, draw: bool = True) -> dict:
     mol = mol_from_smiles(smiles)
     path = str(db_path())
     con = _connect(path)
-    empty = {"uses": [], "makes": [], "enzyme_uses": [], "enzyme_makes": [], "stereo_ignored": False}
+    empty = {field: [] for fields in GROUPS.values() for field in fields} | {"stereo_ignored": False}
     if con is None:
         return {"available": False, **empty, "sources": [SOURCES["uspto"]]}
     has_source, used = _schema(path)
@@ -173,30 +204,32 @@ def lookup(smiles: str, limit: int = 5, draw: bool = True) -> dict:
     if not key:
         return {"available": True, **empty, "sources": sources}
 
-    def fetch(column: str, value: str, direction: str, group: str) -> list[dict]:
+    def fetch(direction: str, group: str) -> list[dict]:
+        # Every stereoisomer of the structure, and the one without stereochemistry, is looked up:
+        # records rarely hold the exact stereoisomer asked for, and the chemistry is the same.
         # The last InChIKey letter is the protonation state: pyridine and pyridinium share a skeleton.
-        rows = con.execute(query.format(column=column), (value, key[-1], direction, group)).fetchall()
-        items: list[dict] = []
-        seen: set[str] = set()
-        # Several stereoisomers can share a skeleton: merge by label, keep the most common example.
+        rows = con.execute(query.format(column="skeleton"), (key[:14], key[-1], direction, group)).fetchall()
+        # Merge the stereoisomers by reaction type: counts add up, and the example is the exact
+        # stereoisomer's when it has one, else the most common one's.
+        merged: dict[str, dict] = {}
         for row in rows:
-            if row["label"] in seen:
-                continue
-            seen.add(row["label"])
-            items.append(_item(row, row["query_smiles"], mol, draw))
-            if len(items) == limit:
-                break
+            m = merged.setdefault(row["label"], {"count": 0, "rank": row["rank"], "row": row})
+            m["count"] += row["count"]
+            if m["row"]["inchikey"] != key and row["inchikey"] == key:
+                m["row"], m["rank"] = row, row["rank"]
+        order = sorted(merged.values(), key=lambda m: (-m["count"], m["row"]["inchikey"] != key, m["rank"]))
+        items = []
+        for m in order[:limit]:
+            item = _item(m["row"], m["row"]["query_smiles"], mol, draw)
+            item["count"] = m["count"]
+            item["other_stereo"] = m["row"]["inchikey"] != key
+            items.append(item)
         return items
 
     result: dict[str, list[dict]] = {}
-    stereo_ignored = False
     for group, fields in GROUPS.items():
         for direction, field in zip(("uses", "makes"), fields):
-            items = fetch("inchikey", key, direction, group)
-            if not items and key[15:25] != "UHFFFAOYSA":
-                # No record for this exact stereoisomer: fall back to any stereoisomer of the same skeleton.
-                items = fetch("skeleton", key[:14], direction, group)
-                stereo_ignored = stereo_ignored or bool(items)
-            result[field] = items
+            result[field] = fetch(direction, group)
+    stereo_ignored = any(x["other_stereo"] for items in result.values() for x in items)
     return {"available": True, **result, "stereo_ignored": stereo_ignored, "sources": sources,
             "heavy_atoms": mol.GetNumHeavyAtoms(), "max_atoms": MAX_ATOMS}

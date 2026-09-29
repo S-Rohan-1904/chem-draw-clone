@@ -9,24 +9,30 @@ up in the product from solvents and reagents:
 - crd: van der Lingen, Chemical Reaction Database, 1.44M reactions from
   patents and papers, https://doi.org/10.5281/zenodo.18109268, CC BY 4.0.
 - rhea: Rhea enzyme reactions, https://www.rhea-db.org, CC BY 4.0.
-CRD and Rhea come unmapped; scripts/map_reactions.py maps them first.
+- wiki: equations and preparation sentences in English Wikipedia compound
+  articles, read by scripts/wiki_reactions.py (CC BY-SA 4.0).
+- hsdb: routes in PubChem's Methods of Manufacturing (HSDB, U.S. National
+  Library of Medicine), read by scripts/hsdb_reactions.py.
+CRD, Rhea and the text sources come unmapped; scripts/map_reactions.py maps them first.
 
 A reaction seen in several sources (grants and applications, or USPTO and
 CRD) is counted once. For every molecule the index keeps up to five reaction
 types in each direction ("uses": the molecule is a reactant, "makes": it is
 the product), ranked by how many distinct reactions show that type, each with
 one real example (one with a reported yield, then the smallest, then best
-yield). Enzyme reactions are ranked separately and shown in their own group.
+yield). Enzyme reactions and the textbook routes (Wikipedia, HSDB) are ranked
+separately and shown in groups of their own.
 
 Runs once on a developer machine (about half an hour on 8 cores), not on the server.
 
-Usage: uv run python scripts/build_reactions.py --uspto GRANTS.rsmi APPS.rsmi [--crd CRD.tsv] [--rhea RHEA.tsv]
+Usage: uv run python scripts/build_reactions.py --uspto GRANTS.rsmi APPS.rsmi [--crd CRD.tsv] [--rhea RHEA.tsv] [--wiki WIKI.tsv]
            [--out reactions.db] [-j 8] [--limit N] [--max-atoms 60]
 """
 
 from __future__ import annotations
 
 import argparse
+import re
 import sqlite3
 import sys
 import time
@@ -49,8 +55,18 @@ SOURCES = {
     "uspto": "Lowe, Chemical reactions from US patents (1976-Sep2016), figshare, doi:10.6084/m9.figshare.5104873, CC0",
     "crd": "van der Lingen, Chemical Reaction Database, Zenodo, doi:10.5281/zenodo.18109268, CC BY 4.0",
     "rhea": "Rhea, the reaction knowledgebase, https://www.rhea-db.org, CC BY 4.0",
+    "wiki": "Equations in English Wikipedia chemical compound articles, https://en.wikipedia.org, CC BY-SA 4.0",
+    "hsdb": "Hazardous Substances Data Bank, Methods of Manufacturing, U.S. National Library of Medicine, via PubChem",
 }
 ENZYME_SOURCES = {"rhea"}
+# Sources whose every product counts (an enzyme makes both the phosphate and ADP; an equation
+# written in a textbook lists the products that matter), and the card group each belongs to.
+ALL_PRODUCTS = {"rhea"}
+# Text sources name the compound they are about (extra is "<detail>|<SMILES>"): that compound is
+# the product; a coproduct in another article's equation (ethanol from hydrolysing ethyl formate)
+# is not a route to it.
+TEXT_SOURCES = {"wiki", "hsdb"}
+GROUP = {"rhea": "enzyme", "wiki": "textbook", "hsdb": "textbook"}
 MAX_PRODUCT_ATOMS = 60
 MAX_AGENTS = 5
 # RXNMapper confidence below which a mapped CRD or Rhea row is dropped. Off by default: the
@@ -58,6 +74,9 @@ MAX_AGENTS = 5
 # maps from wrong ones (a mis-mapped transaminase 0.69, a correct hexokinase 0.25).
 MIN_CONFIDENCE = 0.0
 TOP = 5
+# Labels that name only a bond, not the groups that change; ranked after named changes seen as often.
+GENERIC_LABEL = re.compile(r"^New |bond broken$|→ new [A-Z][a-z]?-[A-Z][a-z]? bond$")
+SOURCE_ORDER = {"wiki": 0, "hsdb": 0, "uspto": 0, "rhea": 0, "crd": 1}
 
 
 # --- one reaction ------------------------------------------------------------
@@ -235,7 +254,9 @@ def process(rec: tuple, max_atoms: int = MAX_PRODUCT_ATOMS) -> list[dict]:
     right = [m for m in right_all if m is not None and any(a.GetAtomMapNum() for a in m.GetAtoms())]
     if not right:
         return []
-    if source in ENZYME_SOURCES:
+    if source in TEXT_SOURCES:
+        products = _text_products(right, rec[5])
+    elif source in ALL_PRODUCTS:
         products = sorted((m for m in right if m.GetNumHeavyAtoms() >= 2), key=lambda m: -m.GetNumHeavyAtoms())
     else:
         products = [max(right, key=lambda m: m.GetNumHeavyAtoms())]
@@ -245,6 +266,23 @@ def process(rec: tuple, max_atoms: int = MAX_PRODUCT_ATOMS) -> list[dict]:
         if view is not None:
             out.append(view)
     return out
+
+
+def _text_products(right: list, extra: str) -> list:
+    """The product a text source is about: its own compound when that is made, else the
+    largest product when it is strictly the largest."""
+    own_smiles = (extra or "").rpartition("|")[2]
+    own = Chem.MolFromSmiles(own_smiles) if own_smiles else None
+    if own is not None:
+        own_key = _inchikey(Chem.MolToSmiles(own), own)[:14]
+        for m in right:
+            plain = _unmapped(m)
+            if _inchikey(Chem.MolToSmiles(plain), plain)[:14] == own_key:
+                return [m]
+    sizes = sorted((m.GetNumHeavyAtoms() for m in right), reverse=True)
+    if len(sizes) == 1 or sizes[0] > sizes[1]:
+        return [max(right, key=lambda m: m.GetNumHeavyAtoms())]
+    return []
 
 
 def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: int) -> dict | None:
@@ -311,6 +349,10 @@ def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: in
             s = Chem.MolToSmiles(plain(m))
             if s not in agent_smiles:
                 agent_smiles.append(s)
+    if p_smiles in agent_smiles:
+        # Product listed among the solvents and reagents: the "product" is usually the solvent
+        # (xylene, pyridine, cyclohexane), mapped by force onto a reactant it cannot come from.
+        return None
     agent_smiles = agent_smiles[:MAX_AGENTS]
     if any(s == p_smiles for s, _ in r_smiles):
         return None  # product listed among the reactants: a mis-mapped or no-change entry
@@ -352,8 +394,10 @@ def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: in
     if not obs:
         return None
     size = sum(m.GetNumHeavyAtoms() for m in plain_r) + plain_p.GetNumHeavyAtoms()
-    group = "enzyme" if source in ENZYME_SOURCES else "chem"
-    return {"rxn": (rxn_smiles, source, ref, year, yld, extra), "size": size, "key": key, "group": group, "obs": obs}
+    lost = size - 2 * plain_p.GetNumHeavyAtoms()  # heavy atoms of the reactants not in the product
+    group = GROUP.get(source, "chem")
+    return {"rxn": (rxn_smiles, source, ref, year, yld, extra), "size": size, "lost": lost, "key": key, "group": group,
+            "obs": obs}
 
 
 def _chunk(args: tuple[list[tuple], int]) -> list[dict]:
@@ -374,6 +418,7 @@ class Index:
         self.seen: set[int] = set()
         self.rxns: list[tuple] = []
         self.sizes: list[int] = []  # heavy atoms in reactants + product, to prefer simple examples
+        self.excess: list[int] = []  # heavy atoms the reactants lose on the way to the product
         self.mols: dict[str, tuple[str, str]] = {}  # inchikey -> (skeleton, smiles)
         # (inchikey, direction, group, label) -> [count, rxn_id, centre]
         self.agg: dict[tuple[str, str, str, str], list] = {}
@@ -390,6 +435,7 @@ class Index:
         rid = len(self.rxns)
         self.rxns.append(r["rxn"])
         self.sizes.append(r["size"])
+        self.excess.append(r["lost"])
         year, yld = r["rxn"][3], r["rxn"][4]
         rank = (yld is not None, -r["size"], yld or 0, year)
         for ik, skel, smi, _heavy, direction, label, centre in r["obs"]:
@@ -405,6 +451,14 @@ class Index:
             # slips rarely carry one), then the simplest, then best yield, then most recent.
             if rank > (byld is not None, -self.sizes[cur[1]], byld or 0, byear):
                 cur[1], cur[2] = rid, centre
+
+    def _order(self, count: int, label: str, rid: int, _centre: str) -> tuple:
+        """Sort key for a molecule's reaction types. Most seen first; small molecules often have
+        several types seen once, and then a named change comes before a bare bond count
+        ("Phenol → Alcohol" before "C-C bond broken"), a direct step before one that cuts
+        a larger molecule down, and patent chemistry before the Chemical Reaction Database."""
+        rxn = self.rxns[rid]
+        return (-count, bool(GENERIC_LABEL.search(label)), self.excess[rid], SOURCE_ORDER.get(rxn[1], 9), label)
 
     def write(self, out: Path) -> None:
         by_mol: dict[tuple[str, str, str], list] = defaultdict(list)
@@ -427,7 +481,7 @@ class Index:
         rxn_ids: dict[int, int] = {}
         top_rows = []
         for (ik, direction, group), rows in by_mol.items():
-            rows.sort(key=lambda r: (-r[0], r[1]))
+            rows.sort(key=lambda r: self._order(*r))
             mid = mol_ids.get(ik)
             if mid is None:
                 mid = mol_ids[ik] = len(mol_ids) + 1
@@ -509,6 +563,8 @@ def main() -> None:
     ap.add_argument("--uspto", type=Path, nargs="*", default=[], help="Lowe .rsmi files (grants first, then applications)")
     ap.add_argument("--crd", type=Path, nargs="*", default=[], help="CRD mapped by map_reactions.py")
     ap.add_argument("--rhea", type=Path, nargs="*", default=[], help="Rhea mapped by map_reactions.py")
+    ap.add_argument("--wiki", type=Path, nargs="*", default=[], help="Wikipedia equations mapped by map_reactions.py")
+    ap.add_argument("--hsdb", type=Path, nargs="*", default=[], help="PubChem HSDB routes mapped by map_reactions.py")
     ap.add_argument("--out", type=Path, default=ROOT / "reactions.db")
     ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="read only the first N rows of each file (for a trial run)")
@@ -517,7 +573,8 @@ def main() -> None:
     ap.add_argument("--max-atoms", type=int, default=MAX_PRODUCT_ATOMS, help="index molecules up to this many heavy atoms")
     args = ap.parse_args()
 
-    inputs = [(p, "uspto") for p in args.uspto] + [(p, "crd") for p in args.crd] + [(p, "rhea") for p in args.rhea]
+    inputs = [(p, "uspto") for p in args.uspto] + [(p, "crd") for p in args.crd] + [(p, "rhea") for p in args.rhea] \
+        + [(p, "wiki") for p in args.wiki] + [(p, "hsdb") for p in args.hsdb]
     if not inputs:
         ap.error("give at least one input file")
     t0 = time.time()

@@ -66,6 +66,16 @@ installed separately and is not distributed with this repository.
   reactions (left-to-right direction, no generic R groups) are atom-mapped with RXNMapper
   and added to the reaction index, each linked to its Rhea entry and EC numbers.
   `backend/tests/fixtures_reactions_rhea.tsv` holds two mapped rows.
+- **Wikipedia**, English Wikipedia articles about chemical compounds, by Wikipedia
+  contributors, text under CC BY-SA 4.0. `backend/scripts/wiki_reactions.py` reads the
+  reaction equations and preparation sentences in these articles (found through Wikidata
+  InChIKeys, CC0) and turns them into reaction SMILES for the reaction index. Each reaction
+  shown links to the article revision it came from.
+- **Hazardous Substances Data Bank** (HSDB), U.S. National Library of Medicine, through
+  PubChem (<https://pubchem.ncbi.nlm.nih.gov/source/11933>), a U.S. government work.
+  `backend/scripts/hsdb_reactions.py` turns the sentences of its Methods of Manufacturing,
+  whose compounds carry PubChem CIDs, into reactions for the reaction index; each one links
+  to the compound's PubChem section and names the reference the method cites.
 
 ## Online services
 

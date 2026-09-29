@@ -158,3 +158,40 @@ Index 1948724 reactions, 2109129 molecules, built 2026-09-29. Reactions scored i
 | Used in, with enzyme reactions | 90.2% | 64.4% |
 | Made by | 58.4% | 23.8% |
 | Made by, with enzyme reactions | 68.4% | 31.1% |
+
+## Textbook routes from Wikipedia and PubChem, ranking fixes, every stereoisomer pooled (2026-09-29)
+
+Index 1952056 reactions, 2110102 molecules, built 2026-09-29. Reactions scored in 1 s. Precision sheet `docs/benchmark/precision_textbook_routes_from_wikipedia_and_pubchem__ranking_fixes__every_stereoisomer_pooled.csv`.
+
+**teaching** (621 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 89.9% | 72.8% |
+| Used in, with textbook routes | 90.2% | 74.2% |
+| Used in, with enzyme reactions too | 90.8% | 75.7% |
+| Made by | 53.5% | 25.0% |
+| Made by, with textbook routes | 76.7% | 29.1% |
+| Made by, with enzyme reactions too | 80.4% | 37.4% |
+
+**drugs** (50 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 92.0% | 24.0% |
+| Used in, with textbook routes | 92.0% | 24.0% |
+| Used in, with enzyme reactions too | 92.0% | 24.0% |
+| Made by | 98.0% | 48.0% |
+| Made by, with textbook routes | 98.0% | 48.0% |
+| Made by, with enzyme reactions too | 100.0% | 48.0% |
+
+**all** (671 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 90.0% | 69.2% |
+| Used in, with textbook routes | 90.3% | 70.5% |
+| Used in, with enzyme reactions too | 90.9% | 71.8% |
+| Made by | 56.8% | 26.7% |
+| Made by, with textbook routes | 78.2% | 30.6% |
+| Made by, with enzyme reactions too | 81.8% | 38.2% |

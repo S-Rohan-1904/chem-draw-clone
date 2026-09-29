@@ -66,11 +66,32 @@ def _resolve(name: str) -> str:
         return ""
 
 
+def _single(rows: list[dict]) -> list[dict]:
+    """One row per molecule. Some teaching entries name several molecules at once
+    ("methanol ethanol propan-1-ol propan-2-ol") and resolve to a dotted SMILES that
+    no index entry can match; score each molecule, once per set."""
+    out, seen = [], set()
+    for row in rows:
+        parts = row["smiles"].split(".")
+        names = row["name"].split(" ") if len(parts) > 1 else [row["name"]]
+        if len(names) != len(parts):
+            names = [f"{row['name']} ({i + 1})" for i in range(len(parts))]
+        for name, smi in zip(names, parts):
+            mol = Chem.MolFromSmiles(smi)
+            if mol is None:
+                continue
+            key = (row["set"], Chem.MolToInchiKey(mol))
+            if key not in seen:
+                seen.add(key)
+                out.append({"name": name, "set": row["set"], "smiles": smi})
+    return out
+
+
 def molecule_set(jobs: int) -> list[dict]:
     """[{name, set, smiles}], resolving and saving the set on first use."""
     if MOLECULES.exists():
         with open(MOLECULES, encoding="utf-8") as f:
-            return [row for row in csv.DictReader(f, delimiter="\t") if row["smiles"]]
+            return _single([row for row in csv.DictReader(f, delimiter="\t") if row["smiles"]])
     names = [n.strip() for n in NAMES.read_text(encoding="utf-8").splitlines() if n.strip()]
     entries = [(n, "teaching") for n in names] + [(n, "drugs") for n in DRUGS]
     with ThreadPoolExecutor(jobs) as pool:
@@ -84,7 +105,7 @@ def molecule_set(jobs: int) -> list[dict]:
     missing = [r["name"] for r in rows if not r["smiles"]]
     if missing:
         print(f"{len(missing)} names did not resolve and are left out: {', '.join(missing[:20])}")
-    return [r for r in rows if r["smiles"]]
+    return _single([r for r in rows if r["smiles"]])
 
 
 # --- scoring -------------------------------------------------------------------
@@ -98,7 +119,7 @@ def score_reactions(row: dict) -> dict:
 
 def score_literature(row: dict) -> dict:
     """Items found by each literature source, searched the way the /literature endpoint does."""
-    from app import literature, literature_journals, literature_patents
+    from app import literature, literature_journals, literature_patents, manufacture, wikipedia
 
     key = Chem.MolToInchiKey(chem.mol_from_smiles(row["smiles"]))
     info = resolver.name_for_inchikey(key) or {}
@@ -107,7 +128,10 @@ def score_literature(row: dict) -> dict:
     chemrxiv, _ = literature.search(names, more=lambda: [resolver.title_for_skeleton(key), *literature.synonyms(cid)])
     journals, _ = literature_journals.search(cid, names)
     patents, _ = literature_patents.search(reactiondb.lookup(row["smiles"], draw=False), cid)
-    return {"chemrxiv": len(chemrxiv["items"]), "journals": len(journals["items"]), "patents": len(patents["items"])}
+    made, _ = manufacture.search(cid, key)
+    wiki, _ = wikipedia.search(key)
+    return {"chemrxiv": len(chemrxiv["items"]), "journals": len(journals["items"]), "patents": len(patents["items"]),
+            "pubchem methods": len(made["methods"]), "wikipedia": len(wiki["paragraphs"])}
 
 
 # --- report --------------------------------------------------------------------
@@ -128,8 +152,15 @@ def summarise(rows: list[dict], results: list[dict], lit: list[dict] | None) -> 
         lines.append("|---|---|---|")
         for d in ("uses", "makes"):
             counts = [len(results[i][d]) for i in idx]
-            lines.append(f"| {'Used in' if d == 'uses' else 'Made by'} | {_pct(sum(x >= 1 for x in counts), n)} | {_pct(sum(x >= 5 for x in counts), n)} |")
+            both = [len(results[i][d]) + len(results[i].get(f"enzyme_{d}", [])) for i in idx]
+            name = "Used in" if d == "uses" else "Made by"
+            lines.append(f"| {name} | {_pct(sum(x >= 1 for x in counts), n)} | {_pct(sum(x >= 5 for x in counts), n)} |")
+            lines.append(f"| {name}, with enzyme reactions | {_pct(sum(x >= 1 for x in both), n)} | {_pct(sum(x >= 5 for x in both), n)} |")
         if lit:
+            # Made by anything the card shows: a recorded reaction, a PubChem method or the Wikipedia section.
+            made = sum(1 for i in idx if results[i]["makes"] or results[i].get("enzyme_makes")
+                       or lit[i].get("pubchem methods") or lit[i].get("wikipedia"))
+            lines.append(f"| Made by, with PubChem methods and Wikipedia | {_pct(made, n)} | |")
             sources = sorted({k for i in idx for k in lit[i]})
             lines.append("")
             lines.append("| literature source | at least 1 item |")

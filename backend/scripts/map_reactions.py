@@ -96,6 +96,7 @@ def main() -> None:
     ap.add_argument("input", type=Path, help="Rhea tsv folder, or the CRD text file")
     ap.add_argument("out", type=Path)
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--batch", type=int, default=BATCH, help="reactions per model call")
     args = ap.parse_args()
 
     import torch
@@ -136,6 +137,21 @@ def main() -> None:
             n_done += 1
         batch.clear()
 
+    # Reactions of similar length go in the same batch, so little of each batch is padding.
+    pool: list[tuple] = []
+
+    def drain(out) -> None:
+        pool.sort(key=lambda it: len(it[0]))
+        for item in pool:
+            batch.append(item)
+            if len(batch) >= args.batch:
+                flush(out)
+        flush(out)
+        pool.clear()
+        out.flush()
+        rate = n_done / max(time.time() - t0, 1e-9)
+        print(f"  {n_done} mapped, {n_skip} skipped, {rate:.0f}/s", flush=True)
+
     with open(args.out, "a", encoding="utf-8") as out:
         for i, item in enumerate(inputs):
             if args.limit and i >= args.limit:
@@ -146,14 +162,10 @@ def main() -> None:
                 n_skip += 1
                 out.write(f"\t{item[2]}\t\t\t\t\n")
                 continue
-            batch.append(item)
-            if len(batch) >= BATCH:
-                flush(out)
-                if (n_done + n_skip) % (BATCH * 50) < BATCH:
-                    out.flush()
-                    rate = n_done / max(time.time() - t0, 1e-9)
-                    print(f"  {n_done} mapped, {n_skip} skipped, {rate:.0f}/s", flush=True)
-        flush(out)
+            pool.append(item)
+            if len(pool) >= args.batch * 100:
+                drain(out)
+        drain(out)
     print(f"{n_done} mapped, {n_skip} skipped in {time.time() - t0:.0f} s -> {args.out}", file=sys.stderr)
 
 

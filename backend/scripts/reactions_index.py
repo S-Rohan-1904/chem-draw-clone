@@ -1,7 +1,8 @@
 """Publish or fetch the reaction index (reactions.db) through a Hugging Face dataset.
 
-The index is built from CC0 data, so the dataset can be public; the server
-then downloads it at image build time without a token.
+The index is built from openly licensed data (USPTO CC0, CRD and Rhea CC BY 4.0),
+so the dataset can be public; the server then downloads it at image build time
+without a token.
 
   upload:   HF_TOKEN=... uv run python scripts/reactions_index.py upload <user>/chem-forge-reactions
   download: uv run python scripts/reactions_index.py download <user>/chem-forge-reactions

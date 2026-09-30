@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 
 client = TestClient(app)
+BUTAN_2_OL = "BTANRVKWQNVYAZ"  # InChIKey skeleton shared by (2R)- and (2S)-butan-2-ol
 
 
 def _seed():
@@ -20,8 +21,15 @@ def test_quiz_flow():
         _seed()
         q = client.get("/api/quiz/question", params={"level": 1}).json()
         assert q["svg"].startswith("<?xml") and q["stereo_count"] == 0
-        q3 = client.get("/api/quiz/question", params={"level": 3}).json()
-        assert q3["stereo_count"] >= 1
+        # Other test modules share this database, so level 3 may pick their stereo molecules;
+        # skip those until a butan-2-ol comes up.
+        seen: list[str] = []
+        while True:
+            q3 = client.get("/api/quiz/question", params={"level": 3, "exclude": ",".join(seen)}).json()
+            assert q3["stereo_count"] >= 1
+            if q3["id"].startswith(BUTAN_2_OL):
+                break
+            seen.append(q3["id"])
 
         # find the target of q3 by trying both butanols
         r_ok = None

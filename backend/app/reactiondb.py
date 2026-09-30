@@ -22,6 +22,7 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+import threading
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote
@@ -72,6 +73,11 @@ def db_path() -> Path:
     return Path(os.environ.get("CHEM_REACTIONS_DB", str(DEFAULT_PATH)))
 
 
+# One read-only connection is shared by the request threads; a connection must not run two
+# statements at once ("bad parameter or other API misuse"), so queries take turns.
+_LOCK = threading.Lock()
+
+
 @lru_cache(maxsize=1)
 def _connect(path: str) -> sqlite3.Connection | None:
     if not Path(path).exists():
@@ -89,10 +95,11 @@ def available() -> bool:
 def _schema(path: str) -> tuple[bool, list[str]]:
     """(has source columns, sources in the index)."""
     con = _connect(path)
-    cols = {r["name"] for r in con.execute("PRAGMA table_info(rxn)")}
-    if "source" not in cols:
-        return False, ["uspto"]
-    row = con.execute("SELECT value FROM meta WHERE key = 'sources'").fetchone()
+    with _LOCK:
+        cols = {r["name"] for r in con.execute("PRAGMA table_info(rxn)")}
+        if "source" not in cols:
+            return False, ["uspto"]
+        row = con.execute("SELECT value FROM meta WHERE key = 'sources'").fetchone()
     return True, (row["value"].split(",") if row else ["uspto"])
 
 
@@ -208,7 +215,8 @@ def lookup(smiles: str, limit: int = 5, draw: bool = True) -> dict:
         # Every stereoisomer of the structure, and the one without stereochemistry, is looked up:
         # records rarely hold the exact stereoisomer asked for, and the chemistry is the same.
         # The last InChIKey letter is the protonation state: pyridine and pyridinium share a skeleton.
-        rows = con.execute(query.format(column="skeleton"), (key[:14], key[-1], direction, group)).fetchall()
+        with _LOCK:
+            rows = con.execute(query.format(column="skeleton"), (key[:14], key[-1], direction, group)).fetchall()
         # Merge the stereoisomers by reaction type: counts add up, and the example is the exact
         # stereoisomer's when it has one, else the most common one's.
         merged: dict[str, dict] = {}

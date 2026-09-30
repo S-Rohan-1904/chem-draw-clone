@@ -96,16 +96,14 @@ def test_stereo_prefixes_dropped_from_search():
     assert literature.search_name("protoporphyrin IX") == "protoporphyrin IX"
 
 
-def test_tries_next_name_when_first_finds_nothing(monkeypatch):
+def test_all_names_go_in_one_search_and_the_one_papers_use_is_shown(monkeypatch):
     asked = []
+    hit = {"results": [{**w, "title": w["title"].replace("Benzaldehyde", "Protoporphyrin IX")} for w in OPENALEX_HIT["results"]]}
 
     def handler(request: httpx.Request) -> httpx.Response:
-        f = request.url.params.get("filter", "")
-        asked.append(f)
-        if request.url.host == "api.openalex.org" and "protoporphyrin" in f:
-            return httpx.Response(200, json=OPENALEX_HIT)
         if request.url.host == "api.openalex.org":
-            return httpx.Response(200, json={"results": []})
+            asked.append(request.url.params.get("filter", ""))
+            return httpx.Response(200, json=hit)
         return httpx.Response(200, json={"message": {"items": []}})
 
     _patch_client(monkeypatch, httpx.MockTransport(handler))
@@ -113,7 +111,24 @@ def test_tries_next_name_when_first_finds_nothing(monkeypatch):
     data, complete = literature.search(["3-[18-(2-Carboxyethyl)-7,12-bis(ethenyl)porphyrin-2-yl]propanoic acid", "protoporphyrin ix"],
                                        more=lambda: extra.append(1) or ["never needed"])
     assert complete and data["query"] == "protoporphyrin ix" and len(data["items"]) == 5
+    assert len(asked) == 1 and ' OR "protoporphyrin ix")' in asked[0]
     assert extra == [], "the stereo-free lookup only runs when every name came back empty"
+
+
+def test_other_names_are_one_more_search(monkeypatch):
+    asked = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "api.openalex.org":
+            asked.append(request.url.params.get("search") or request.url.params.get("filter", ""))
+            return httpx.Response(200, json={"results": []})
+        return httpx.Response(200, json={"message": {"items": []}})
+
+    _patch_client(monkeypatch, httpx.MockTransport(handler))
+    data, complete = literature.search(["Cyclohexanol", "cyclohexan-1-ol"], more=lambda: ["Cyclohexyl alcohol", "Hexalin"])
+    assert complete and data["items"] == [] and data["query"] == "Cyclohexanol / cyclohexan-1-ol / Cyclohexyl alcohol / Hexalin"
+    # names, other names, full text: three searches however many names there are
+    assert len(asked) == 3 and "Hexalin" in asked[1] and asked[2] == "Cyclohexanol"
 
 
 def test_falls_back_to_stereo_free_record(monkeypatch):

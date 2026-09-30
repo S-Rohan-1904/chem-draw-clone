@@ -4,7 +4,9 @@ ChemRxiv's own API sits behind a browser challenge and refuses server
 requests, so the search goes through OpenAlex (titles and abstracts,
 ranked by relevance, filtered to the ChemRxiv source) and falls back to
 Crossref (titles only, filtered to ChemRxiv's DOI prefix 10.26434) when
-OpenAlex fails or its free daily budget is spent. Never raises.
+OpenAlex fails or its daily budget is spent. Each OpenAlex search costs
+the same, so a molecule's names go in one query: at most three searches
+per molecule (its names, PubChem's other names, the full text). Never raises.
 """
 
 from __future__ import annotations
@@ -149,13 +151,17 @@ def _dedupe(items: list[dict]) -> list[dict]:
     return out
 
 
-def _openalex(client: httpx.Client, name: str, fulltext: bool = False) -> list[dict] | None:
+def _openalex(client: httpx.Client, names: list[str], fulltext: bool = False) -> list[dict] | None:
+    """Every OpenAlex search costs the same share of the daily budget, so all the names
+    go in one query joined by OR rather than one query each."""
     if fulltext:
         # Title, abstract and body text; a plain term, since phrase quotes match nothing here.
-        params = {"search": name, "filter": f"primary_location.source.id:{CHEMRXIV_SOURCE}"}
+        params = {"search": names[0], "filter": f"primary_location.source.id:{CHEMRXIV_SOURCE}"}
     else:
         # Commas separate OpenAlex filters, so they cannot appear inside the term.
-        params = {"filter": f"primary_location.source.id:{CHEMRXIV_SOURCE},title_and_abstract.search:{_term(name.replace(',', ' '))}"}
+        terms = [_term(n.replace(",", " ")) for n in names]
+        term = terms[0] if len(terms) == 1 else "(" + " OR ".join(terms) + ")"
+        params = {"filter": f"primary_location.source.id:{CHEMRXIV_SOURCE},title_and_abstract.search:{term}"}
     params.update({"sort": "relevance_score:desc", "per_page": str(LIMIT * 2), "mailto": MAILTO,
                    "select": "doi,title,authorships,publication_date,cited_by_count,abstract_inverted_index"})
     key = os.environ.get("OPENALEX_API_KEY")
@@ -169,6 +175,7 @@ def _openalex(client: httpx.Client, name: str, fulltext: bool = False) -> list[d
         doi = _bare_doi(w.get("doi"))
         if not doi or not w.get("title"):
             continue
+        abstract = _abstract(w.get("abstract_inverted_index"))
         items.append({
             "title": w["title"],
             "authors": _authors([(a.get("author") or {}).get("display_name", "") for a in w.get("authorships") or []]),
@@ -176,7 +183,7 @@ def _openalex(client: httpx.Client, name: str, fulltext: bool = False) -> list[d
             "doi": doi,
             "url": chemrxiv_url(doi),
             "cited_by": w.get("cited_by_count"),
-            "snippet": snippet(_abstract(w.get("abstract_inverted_index")), name),
+            "snippet": next((s for s in (snippet(abstract, n) for n in names) if s), ""),
         })
     return items
 
@@ -214,46 +221,68 @@ def _crossref(client: httpx.Client, name: str) -> list[dict] | None:
     return items
 
 
-def _one(client: httpx.Client, name: str) -> tuple[list[dict] | None, str]:
-    for label, fn in (("OpenAlex", _openalex), ("Crossref", _crossref)):
+def _named(items: list[dict], names: list[str]) -> str:
+    """The name most of the preprints use (in title or snippet); the first name on a tie or none."""
+    counts = [sum(_squash(n) in _squash(it["title"] + " " + it["snippet"]) for it in items) for n in names]
+    return names[counts.index(max(counts))]
+
+
+def _batch(client: httpx.Client, names: list[str]) -> tuple[list[dict] | None, str, str]:
+    """(items, source, the name they were found by) for one set of names; None items if both services failed.
+    OpenAlex takes the names in one query; Crossref, the free fallback, one name at a time."""
+    try:
+        items = _openalex(client, names)
+    except (httpx.HTTPError, ValueError):
+        items = None
+    if items is not None:
+        items = _dedupe(items)[:LIMIT]
+        return items, "OpenAlex", _named(items, names) if items else ""
+    reached = False
+    for name in names:
         try:
-            items = fn(client, name)
+            found = _crossref(client, name)
         except (httpx.HTTPError, ValueError):
-            items = None
-        if items is not None:
-            return _dedupe(items)[:LIMIT], label
-    return None, ""
+            found = None
+        if found is None:
+            continue
+        reached = True
+        if found:
+            return _dedupe(found)[:LIMIT], "Crossref", name
+    return ([] if reached else None), "", ""
 
 
 def search(names: list[str], more=None) -> tuple[dict, bool]:
-    """(payload, complete). Tries each name in turn (a molecule's catalogue title
-    is not always what papers call it) and stops at the first with results.
-    `more()` supplies further names, fetched only if these all come back empty.
+    """(payload, complete). Searches all the names at once (a molecule's catalogue
+    title is not always what papers call it). `more()` supplies further names,
+    fetched and searched only if these come back empty.
     Incomplete means the services failed: do not cache."""
     tried: list[str] = []
     base = {"available": True, "query": "", "items": [], "source": "", "_v": VERSION}
     if not enabled():
         return {**base, "available": False, "reason": "Literature lookup is turned off on this server."}, False
+
+    def fresh(candidates) -> list[str]:
+        out: list[str] = []
+        for c in candidates:
+            name = search_name(c or "")
+            if name and name.lower() not in {t.lower() for t in tried + out} and len(tried) + len(out) < MAX_NAMES:
+                out.append(name)
+        return out
+
     failed = False
     try:
         with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
-            pending = list(names)
-            fetched_more = False
-            while pending or (more is not None and not fetched_more):
-                if not pending:
-                    fetched_more = True
-                    pending = list(more())
+            for batch in (lambda: fresh(names), lambda: fresh(more()) if more is not None else []):
+                batch = batch()
+                if not batch:
                     continue
-                name = search_name(pending.pop(0))
-                if not name or name.lower() in (t.lower() for t in tried) or len(tried) >= MAX_NAMES:
-                    continue
-                tried.append(name)
-                items, label = _one(client, name)
+                tried += batch
+                items, label, query = _batch(client, batch)
                 if items is None:
                     failed = True
                     continue
                 if items:
-                    return {**base, "query": name, "items": items, "source": label}, True
+                    return {**base, "query": query, "items": items, "source": label}, True
     except Exception:  # noqa: BLE001 - best effort
         failed = True
     if not tried:
@@ -263,7 +292,7 @@ def search(names: list[str], more=None) -> tuple[dict, bool]:
     # No title or abstract names the molecule: fall back to preprints that mention it in the text.
     try:
         with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
-            items = _openalex(client, tried[0], fulltext=True)
+            items = _openalex(client, tried[:1], fulltext=True)
     except (httpx.HTTPError, ValueError):
         items = None
     if items:

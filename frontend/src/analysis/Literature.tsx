@@ -123,7 +123,7 @@ function JournalList({ data }: { data: Journals }) {
         {data.match === 'pubchem'
           ? `Articles PubChem links to this exact structure (${data.total.toLocaleString()} in all), ranked by citations, with recent articles and titles that name the molecule first.`
           : `PubChem links no articles to this structure, so these are articles whose title names “${data.query}”.`}
-        {' '}Details from <a href="https://openalex.org" target="_blank" rel="noopener noreferrer">OpenAlex</a>.
+        {' '}Details from <a href="https://europepmc.org" target="_blank" rel="noopener noreferrer">Europe PMC</a>.
       </p>
     </div>
   )

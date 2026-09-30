@@ -195,3 +195,67 @@ Index 1952056 reactions, 2110102 molecules, built 2026-09-29. Reactions scored i
 | Made by | 56.8% | 26.7% |
 | Made by, with textbook routes | 78.2% | 30.6% |
 | Made by, with enzyme reactions too | 81.8% | 38.2% |
+
+## Journals from Europe PMC (2026-09-30)
+
+Index 1952056 reactions, 2110102 molecules, built 2026-09-29. Reactions scored in 2 s. Precision sheet `docs/benchmark/precision_journals_from_europe_pmc.csv`.
+
+**teaching** (621 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 89.9% | 72.8% |
+| Used in, with textbook routes | 90.2% | 74.2% |
+| Used in, with enzyme reactions too | 90.8% | 75.7% |
+| Made by | 53.5% | 25.0% |
+| Made by, with textbook routes | 76.7% | 29.1% |
+| Made by, with enzyme reactions too | 80.4% | 37.4% |
+| Made by, with PubChem methods and Wikipedia | 86.3% | |
+
+| literature source | at least 1 item |
+|---|---|
+| chemrxiv | 55.6% |
+| journals | 91.3% |
+| patents | 90.0% |
+| pubchem methods | 61.5% |
+| wikipedia | 61.5% |
+
+**drugs** (50 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 92.0% | 24.0% |
+| Used in, with textbook routes | 92.0% | 24.0% |
+| Used in, with enzyme reactions too | 92.0% | 24.0% |
+| Made by | 98.0% | 48.0% |
+| Made by, with textbook routes | 98.0% | 48.0% |
+| Made by, with enzyme reactions too | 100.0% | 48.0% |
+| Made by, with PubChem methods and Wikipedia | 100.0% | |
+
+| literature source | at least 1 item |
+|---|---|
+| chemrxiv | 48.0% |
+| journals | 100.0% |
+| patents | 100.0% |
+| pubchem methods | 72.0% |
+| wikipedia | 26.0% |
+
+**all** (671 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 90.0% | 69.2% |
+| Used in, with textbook routes | 90.3% | 70.5% |
+| Used in, with enzyme reactions too | 90.9% | 71.8% |
+| Made by | 56.8% | 26.7% |
+| Made by, with textbook routes | 78.2% | 30.6% |
+| Made by, with enzyme reactions too | 81.8% | 38.2% |
+| Made by, with PubChem methods and Wikipedia | 87.3% | |
+
+| literature source | at least 1 item |
+|---|---|
+| chemrxiv | 55.0% |
+| journals | 92.0% |
+| patents | 90.8% |
+| pubchem methods | 62.3% |
+| wikipedia | 58.9% |

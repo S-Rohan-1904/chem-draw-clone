@@ -21,13 +21,19 @@ def _patch(monkeypatch, handler):
     monkeypatch.setattr(literature_patents, "enabled", lambda: True)
 
 
-def _work(pmid, title, year, cites, **extra):
+def _work(pmid, title, year, cites, pub_type="journal article"):
     return {
-        "doi": f"https://doi.org/10.1000/{pmid}", "title": title, "publication_year": year, "publication_date": f"{year}-01-01",
-        "cited_by_count": cites, "type": "article", "authorships": [{"author": {"display_name": "A Author"}}],
-        "primary_location": {"source": {"display_name": "J. Chem."}}, "ids": {"pmid": f"https://pubmed.ncbi.nlm.nih.gov/{pmid}"},
-        **extra,
+        "pmid": str(pmid), "doi": f"10.1000/{pmid}", "title": title + ".", "pubYear": str(year), "firstPublicationDate": f"{year}-01-01",
+        "citedByCount": cites, "pubType": pub_type, "authorString": "Author A, Other B, Third C, Fourth D.", "journalTitle": "J Chem",
     }
+
+
+def _europepmc(works):
+    return httpx.Response(200, json={"hitCount": len(works), "resultList": {"result": works}})
+
+
+def _query(request):
+    return dict(httpx.QueryParams(request.content.decode()))
 
 
 def test_journals_come_from_pubchem_links_and_favour_titles_naming_the_molecule(monkeypatch):
@@ -36,30 +42,33 @@ def test_journals_come_from_pubchem_links_and_favour_titles_naming_the_molecule(
     def handler(request):
         if request.url.host == "pubchem.ncbi.nlm.nih.gov":
             return httpx.Response(200, json={"InformationList": {"Information": [{"CID": 7966, "PubMedID": [3, 1, 2, 4]}]}})
-        asked.append(request.url.params["filter"])
-        return httpx.Response(200, json={"results": [
-            _work(1, "Heavy metal adsorption on nanotubes", 2010, 900),
+        asked.append(_query(request)["query"])
+        return _europepmc([
+            _work(1, "Heavy metal adsorption on nanotubes", 2010, 900, pub_type="review; journal article"),
             _work(2, "Oxidation of cyclohexanol to cyclohexanone", 2011, 50),
-            _work(3, "A retracted cyclohexanol paper", 2012, 10, is_retracted=True),
+            _work(3, "A retracted cyclohexanol paper", 2012, 10, pub_type="retracted publication; journal article"),
             _work(4, "Polymorphism in cyclohexanol", 2008, 35),
-        ]})
+        ])
 
     _patch(monkeypatch, handler)
     data, complete = literature_journals.search(7966, ["Cyclohexanol"])
     assert complete and data["match"] == "pubchem" and data["total"] == 4
-    assert asked == ["ids.pmid:1|2|3|4"]
+    assert asked == ["SRC:MED AND (EXT_ID:1 OR EXT_ID:2 OR EXT_ID:3 OR EXT_ID:4)"]
     titles = [i["title"] for i in data["items"]]
     assert titles[:2] == ["Oxidation of cyclohexanol to cyclohexanone", "Polymorphism in cyclohexanol"]
     assert "A retracted cyclohexanol paper" not in titles
-    assert data["items"][0]["url"] == "https://doi.org/10.1000/2" and data["items"][0]["journal"] == "J. Chem."
+    first = data["items"][0]
+    assert first["url"] == "https://doi.org/10.1000/2" and first["journal"] == "J Chem" and first["year"] == 2011
+    assert first["authors"] == "Author A, Other B, Third C et al." and data["items"][-1]["type"] == "review"
 
 
 def test_journals_title_search_when_pubchem_has_no_links(monkeypatch):
     def handler(request):
         if request.url.host == "pubchem.ncbi.nlm.nih.gov":
             return httpx.Response(404, json={})
-        assert request.url.params["filter"].lower().startswith("title.search:2-butanol")
-        return httpx.Response(200, json={"results": [_work(1, "Dehydration of 2-butanol", 2015, 5), _work(2, "Butanal chemistry", 2016, 99)]})
+        q = _query(request)
+        assert q["query"].lower() == 'title:"2-butanol" and src:med' and q["sort"] == "CITED desc"
+        return _europepmc([_work(1, "Dehydration of 2-butanol", 2015, 5), _work(2, "Butanal chemistry", 2016, 99)])
 
     _patch(monkeypatch, handler)
     data, complete = literature_journals.search(1234, ["(R)-2-Butanol"])
@@ -67,7 +76,25 @@ def test_journals_title_search_when_pubchem_has_no_links(monkeypatch):
     assert [i["title"] for i in data["items"]] == ["Dehydration of 2-butanol"]
 
 
+def test_journals_retry_a_busy_service(monkeypatch):
+    monkeypatch.setattr(literature_journals.time, "sleep", lambda s: None)
+    tries = []
+
+    def handler(request):
+        if request.url.host == "pubchem.ncbi.nlm.nih.gov":
+            tries.append(1)
+            if len(tries) < 3:
+                return httpx.Response(503, json={"Fault": {"Code": "PUGREST.ServerBusy"}})
+            return httpx.Response(200, json={"InformationList": {"Information": [{"CID": 7966, "PubMedID": [2]}]}})
+        return _europepmc([_work(2, "Oxidation of cyclohexanol", 2011, 50)])
+
+    _patch(monkeypatch, handler)
+    data, complete = literature_journals.search(7966, ["Cyclohexanol"])
+    assert complete and len(tries) == 3 and len(data["items"]) == 1
+
+
 def test_journals_failure_is_not_cached(monkeypatch):
+    monkeypatch.setattr(literature_journals.time, "sleep", lambda s: None)
     _patch(monkeypatch, lambda request: httpx.Response(503, json={}))
     data, complete = literature_journals.search(7966, ["Cyclohexanol"])
     assert not complete and not data["available"]

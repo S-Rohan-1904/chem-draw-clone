@@ -138,8 +138,8 @@ def test_endpoint_uses_pubchem_name_and_caches(monkeypatch):
         assert rx["query"] == "Benzaldehyde" and len(rx["items"]) == 5 and rx["cached"] is False
         again = client.post("/api/analysis/literature", json={"smiles": "O=Cc1ccccc1"}).json()
         assert all(again[k]["cached"] is True for k in again)
-        # One OpenAlex call for ChemRxiv, one for journals (PubChem has no PubMed links in this mock).
-        assert calls.count("api.openalex.org") == 2
+        # One OpenAlex call for ChemRxiv; journals search Europe PMC (PubChem has no PubMed links in this mock).
+        assert calls.count("api.openalex.org") == 1 and calls.count("www.ebi.ac.uk") == 1
 
 
 def test_endpoint_without_any_name(monkeypatch):

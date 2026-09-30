@@ -108,7 +108,7 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   *ChemRxiv*: up to five preprints found by the molecule's PubChem name (then synonyms), via
   OpenAlex (Crossref as fallback), each with the abstract sentence that names it.
   *Journals*: articles PubChem links to the exact structure (PubMed), with details from
-  OpenAlex, ranked by citations with recent articles and titles naming the molecule first.
+  Europe PMC, ranked by citations with recent articles and titles naming the molecule first.
   *Patents*: the US patents whose worked examples make or use the molecule, from the reaction
   index, with titles from PubChem, plus a link to PubChem's full patent list.
 - **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.

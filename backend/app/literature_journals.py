@@ -2,31 +2,33 @@
 
 PubChem links each compound to PubMed articles (MeSH indexing and depositor
 links for that exact structure). Their metadata (title, journal, year,
-citations) comes from OpenAlex in batches of 100 PubMed ids. Popular
-compounds have tens of thousands of links, so a spread of at most 300 is
-looked up: the newest half and an even sample of the rest. Articles are
+citations) comes from Europe PMC in batches of 100 PubMed ids; Europe PMC has
+no daily quota, unlike OpenAlex, whose budget the ChemRxiv search spends.
+The batches are fetched at once. Popular compounds have tens of thousands of links, so a spread of at most 300
+is looked up: the newest half and an even sample of the rest. Articles are
 ranked by citations, with a boost for recent ones and for titles that name
-the molecule. When PubChem has no links, OpenAlex is searched for articles
-whose title names the molecule. Never raises.
+the molecule. When PubChem has no links, Europe PMC is searched for articles
+whose title names the molecule. Busy services are retried briefly. Never raises.
 """
 
 from __future__ import annotations
 
 import math
-import os
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 
 import httpx
 
-from .literature import MAILTO, _authors, _bare_doi, _squash, _timeout, enabled, search_name
+from .literature import MAILTO, _authors, _squash, _timeout, enabled, search_name
 
 PUBCHEM_PMIDS = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/xrefs/PubMedID/JSON"
-OPENALEX = "https://api.openalex.org/works"
+EUROPEPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/searchPOST"
 LOOKUP = 300  # PubMed ids looked up per molecule
-BATCH = 100  # OpenAlex allows 100 values in one OR filter
+BATCH = 100
 KEEP = 20
-VERSION = 1
-SELECT = "id,doi,title,publication_year,publication_date,cited_by_count,type,authorships,primary_location,ids,is_retracted"
+VERSION = 2
+RETRIES = 2  # extra tries when a service says it is busy (429 or 5xx)
 
 
 def _spread(pmids: list[int]) -> list[int]:
@@ -39,34 +41,41 @@ def _spread(pmids: list[int]) -> list[int]:
     return [rest[int(i * step)] for i in range(LOOKUP - len(newest))] + newest
 
 
-def _params(extra: dict) -> dict:
-    params = {"select": SELECT, "mailto": MAILTO, **extra}
-    key = os.environ.get("OPENALEX_API_KEY")
-    if key:
-        params["api_key"] = key
-    return params
+def _request(client: httpx.Client, method: str, url: str, **kwargs) -> httpx.Response:
+    """The response, retried after a short wait while the service is busy."""
+    for attempt in range(RETRIES + 1):
+        r = client.request(method, url, **kwargs)
+        if (r.status_code != 429 and r.status_code < 500) or attempt == RETRIES:
+            return r
+        try:
+            wait = min(float(r.headers.get("Retry-After", "")), 5.0)
+        except ValueError:
+            wait = 1.0 + attempt
+        time.sleep(wait)
+    return r
 
 
 def _item(w: dict) -> dict | None:
-    if not w.get("title") or w.get("is_retracted"):
+    types = [t.strip() for t in (w.get("pubType") or "").split(";")]
+    if not w.get("title") or "retracted publication" in types or "retraction of publication" in types:
         return None
-    doi = _bare_doi(w.get("doi"))
-    pmid = ((w.get("ids") or {}).get("pmid") or "").rsplit("/", 1)[-1]
-    source = ((w.get("primary_location") or {}).get("source") or {}).get("display_name") or ""
+    doi = (w.get("doi") or "").lower()
+    pmid = w.get("pmid") or ""
     url = f"https://doi.org/{doi}" if doi else (f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else "")
     if not url:
         return None
+    year = w.get("pubYear")
     return {
-        "title": w["title"],
-        "authors": _authors([(a.get("author") or {}).get("display_name", "") for a in w.get("authorships") or []]),
-        "journal": source,
-        "year": w.get("publication_year"),
-        "date": w.get("publication_date") or "",
+        "title": w["title"].strip().removesuffix("."),
+        "authors": _authors([a.strip().removesuffix(".") for a in (w.get("authorString") or "").split(",")]),
+        "journal": w.get("journalTitle") or "",
+        "year": int(year) if year and year.isdigit() else None,
+        "date": w.get("firstPublicationDate") or "",
         "doi": doi,
         "pmid": pmid,
         "url": url,
-        "cited_by": w.get("cited_by_count") or 0,
-        "type": w.get("type") or "",
+        "cited_by": w.get("citedByCount") or 0,
+        "type": "review" if "review" in types else "article",
     }
 
 
@@ -82,29 +91,33 @@ def _score(item: dict, names: list[str]) -> float:
     return s
 
 
+def _europepmc(client: httpx.Client, query: str, size: int, sort: str = "") -> list[dict] | None:
+    data = {"query": query, "format": "json", "resultType": "lite", "pageSize": str(size)}
+    if sort:
+        data["sort"] = sort
+    r = _request(client, "POST", EUROPEPMC, data=data)
+    if r.status_code != 200:
+        return None
+    return [it for it in (_item(w) for w in r.json().get("resultList", {}).get("result", [])) if it]
+
+
 def _by_pmid(client: httpx.Client, pmids: list[int]) -> list[dict] | None:
-    out = []
-    for i in range(0, len(pmids), BATCH):
-        chunk = pmids[i:i + BATCH]
-        r = client.get(OPENALEX, params=_params({"filter": "ids.pmid:" + "|".join(map(str, chunk)), "per_page": str(BATCH)}))
-        if r.status_code != 200:
-            return None
-        out += [it for it in (_item(w) for w in r.json().get("results", [])) if it]
-    return out
+    queries = ["SRC:MED AND (" + " OR ".join(f"EXT_ID:{p}" for p in pmids[i:i + BATCH]) + ")" for i in range(0, len(pmids), BATCH)]
+    with ThreadPoolExecutor(len(queries) or 1) as pool:
+        batches = list(pool.map(lambda q: _europepmc(client, q, BATCH), queries))
+    if any(b is None for b in batches):
+        return None
+    return [it for b in batches for it in b]
 
 
 def _by_title(client: httpx.Client, name: str) -> list[dict] | None:
-    term = name.replace(",", " ")
-    r = client.get(OPENALEX, params=_params({
-        "filter": f"title.search:{term},type:article|review",
-        "sort": "cited_by_count:desc",
-        "per_page": "50",
-    }))
-    if r.status_code != 200:
+    term = name.replace('"', " ")
+    found = _europepmc(client, f'TITLE:"{term}" AND SRC:MED', 50, sort="CITED desc")
+    if found is None:
         return None
     wanted = _squash(name)
-    # OpenAlex stems words ("butanol" finds "butanal"); keep titles that name the molecule exactly.
-    return [it for it in (_item(w) for w in r.json().get("results", [])) if it and wanted in _squash(it["title"])]
+    # Title search matches words in any form ("butanol" can find "butanal"); keep titles that name the molecule exactly.
+    return [it for it in found if wanted in _squash(it["title"])]
 
 
 def search(cid: int | None, names: list[str]) -> tuple[dict, bool]:
@@ -118,7 +131,7 @@ def search(cid: int | None, names: list[str]) -> tuple[dict, bool]:
         with httpx.Client(timeout=_timeout(), follow_redirects=True, headers={"User-Agent": f"Chem Illustrator (mailto:{MAILTO})"}) as client:
             pmids: list[int] = []
             if cid:
-                r = client.get(PUBCHEM_PMIDS.format(cid))
+                r = _request(client, "GET", PUBCHEM_PMIDS.format(cid))
                 if r.status_code == 200:
                     info = r.json().get("InformationList", {}).get("Information", [{}])[0]
                     pmids = [int(p) for p in info.get("PubMedID", [])]

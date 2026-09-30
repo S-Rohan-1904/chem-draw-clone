@@ -97,8 +97,12 @@ naming the source, and use of each service is subject to its provider's terms.
   National Institute of Standards and Technology, Gaithersburg, MD.
   <https://doi.org/10.18434/T4D303>. NIST reference data is not relicensed
   under this project's MIT License.
+- **Europe PMC** (EMBL-EBI): titles, authors, journals, years and citation counts of the
+  journal articles PubChem links, and the title search when PubChem links none, for the
+  Literature card. Ferguson, C. et al. Europe PMC in 2020. *Nucleic Acids Res.* **2021**,
+  49 (D1), D1507–D1514. Each article links to its DOI or PubMed page.
 - **OpenAlex** (OurResearch), with **Crossref** as a fallback: finding ChemRxiv
-  preprints, and details of the journal articles PubChem links, for the Literature card. OpenAlex metadata is released under CC0.
+  preprints for the Literature card. OpenAlex metadata is released under CC0.
   Priem, J.; Piwowar, H.; Orr, R. OpenAlex: A fully-open index of scholarly works,
   authors, venues, institutions, and concepts. arXiv:2205.01833, **2022**.
   Only titles, authors, dates, journals, citation counts, DOIs and a short abstract excerpt

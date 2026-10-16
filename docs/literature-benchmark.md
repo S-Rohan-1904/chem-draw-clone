@@ -2,6 +2,11 @@
 
 Coverage and top-5 quality of the Literature card, produced by `backend/scripts/eval_literature.py` over 60 teaching molecules, 20 drugs, 12 building blocks, 8 natural products and 2 unknown structures. Each run is appended below.
 
+L0 is main before the five journal sources; L2 is the latest run comparable with it. L3 ran after OpenAlex's
+daily budget for the key was nearly spent, so its OpenAlex-backed numbers are low (see its note); rerun it on a
+fresh day. A run uses about 2,000 of the key's 10,000 daily OpenAlex credits (the card's searches with an empty
+cache, plus the facts the script reads for the top-5 articles).
+
 ## L0 baseline: main before this change (2026-10-16)
 
 Scored with this script against the code on main at b4e39f4 (three sources: ChemRxiv by name, PubMed links

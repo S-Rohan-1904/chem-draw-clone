@@ -19,7 +19,7 @@ function isPending(d: LiteratureData): boolean {
 
 function Pending({ names }: { names: string[] }) {
   if (names.length === 0) return null
-  return <p className="muted small">Still searching {names.join(' and ')}; the list fills in when {names.length > 1 ? 'they answer' : 'it answers'}.</p>
+  return <p className="muted small">Still searching {names.join(' and ')}: the list fills in when {names.length > 1 ? 'they answer' : 'it answers'}.</p>
 }
 
 /** Preprints, journal articles and patents about the molecule. */
@@ -198,7 +198,7 @@ function JournalList({ data }: { data: Journals }) {
         {Object.entries(data.sources).map(([name, s]) => (
           <span key={name}>
             {name}: {s.pending ? 'searching…' : !s.available ? <span className="hint-bad">not reachable</span> : s.count}
-            {s.stale ? ' (earlier search; not reachable now)' : ''}
+            {s.stale ? ' (earlier search, not reachable now)' : ''}
           </span>
         ))}
       </p>
@@ -240,7 +240,7 @@ function PatentList({ data }: { data: Patents }) {
       <MoreButton total={data.items.length} open={open} onToggle={() => setOpen(!open)} />
       <p className="muted small">
         US patents whose worked examples make or use this molecule (reaction records, to 2016), and patents of every year and
-        country that contain it (SureChEMBL{sure.total ? `, ${sure.total.toLocaleString()} in all; the most relevant of the newest 200 shown` : ''}).
+        country that contain it (SureChEMBL{sure.total ? `, ${sure.total.toLocaleString()} in all, the most relevant of the newest 200 shown` : ''}).
         Patents that name the molecule or are about making something come first.
         {!sure.available && <> <span className="hint-bad">SureChEMBL is not reachable right now.</span></>}
         {data.pubchem_url && <> <a href={data.pubchem_url} target="_blank" rel="noopener noreferrer">PubChem lists more patents that mention it</a>.</>}

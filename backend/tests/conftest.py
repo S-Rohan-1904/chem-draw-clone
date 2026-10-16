@@ -10,3 +10,7 @@ os.environ.setdefault("CHEM_NAME_LOOKUP", "0")
 # Do not import the prebuilt cache into test databases.
 os.environ.setdefault("CHEM_PREWARM_PATH", "/nonexistent/prewarm.db")
 os.environ.setdefault("CHEM_SPECTRA_LOOKUP", "0")
+# The Open Reaction Database paper index is a local build; tests use their own fixtures.
+os.environ.setdefault("CHEM_ORD_DB", "/nonexistent/ord_papers.db")
+# Literature services too; tests that need them patch each module's enabled() and mock HTTP.
+os.environ.setdefault("CHEM_LITERATURE_LOOKUP", "0")

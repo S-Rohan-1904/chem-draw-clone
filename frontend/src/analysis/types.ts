@@ -280,12 +280,16 @@ export interface Preprint {
 
 export interface ChemRxiv {
   available: boolean
+  /** Still searching when the card answered; the page asks again. */
+  pending?: boolean
   reason?: string
   query: string
   items: Preprint[]
   source: string
   match?: 'fulltext'
 }
+
+export type JournalMatch = 'structure' | 'title' | 'abstract' | 'text'
 
 export interface JournalArticle {
   title: string
@@ -298,6 +302,28 @@ export interface JournalArticle {
   url: string
   cited_by: number
   type: string
+  /** Free full text (Europe PMC, the publisher or a repository), or '' */
+  oa_url: string
+  snippet: string
+  /** How it was found: the exact structure, its name in the title or abstract, or a mention in the text. */
+  match: JournalMatch
+  sources: string[]
+  /** The title names the molecule itself. */
+  about: boolean
+  /** The title is about making something (synthesis, preparation, process). */
+  making: boolean
+  ord?: { roles: string[]; reactions: number }
+}
+
+export interface JournalSource {
+  available: boolean
+  count: number
+  total: number
+  reason: string
+  /** Shown from an earlier search because the service is down now. */
+  stale: boolean
+  /** Still searching when the card answered; the page asks again. */
+  pending: boolean
 }
 
 export interface Journals {
@@ -305,8 +331,8 @@ export interface Journals {
   reason?: string
   items: JournalArticle[]
   total: number
-  match: 'pubchem' | 'title' | ''
   query: string
+  sources: Record<string, JournalSource>
 }
 
 export interface PatentItem {
@@ -317,6 +343,9 @@ export interface PatentItem {
   date: string
   assignee: string
   reactions: { direction: 'uses' | 'makes'; label: string }[]
+  sources: string[]
+  about: boolean
+  making: boolean
 }
 
 export interface Patents {
@@ -324,6 +353,8 @@ export interface Patents {
   items: PatentItem[]
   cid: number | null
   pubchem_url: string
+  pending: boolean
+  surechembl: { available: boolean; total: number; reason: string; pending: boolean }
 }
 
 export interface Literature {

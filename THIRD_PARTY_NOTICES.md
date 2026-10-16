@@ -66,6 +66,12 @@ installed separately and is not distributed with this repository.
   reactions (left-to-right direction, no generic R groups) are atom-mapped with RXNMapper
   and added to the reaction index, each linked to its Rhea entry and EC numbers.
   `backend/tests/fixtures_reactions_rhea.tsv` holds two mapped rows.
+- **Open Reaction Database** (ORD), <https://open-reaction-database.org>, data released under
+  CC BY-SA 4.0. Kearnes, S. M. et al. The Open Reaction Database. *J. Am. Chem. Soc.* **2021**,
+  143 (45), 18820–18826. `backend/scripts/ord_papers.py` reads the non-patent datasets and
+  writes `backend/app/data/ord_papers.db`, which links each compound's InChIKey to the DOIs of
+  the papers whose reactions use or make it, with the paper details from OpenAlex. That file
+  is an adaptation of the ORD data and is distributed under CC BY-SA 4.0, not the MIT licence.
 - **Wikipedia**, English Wikipedia articles about chemical compounds, by Wikipedia
   contributors, text under CC BY-SA 4.0. `backend/scripts/wiki_reactions.py` reads the
   reaction equations and preparation sentences in these articles (found through Wikidata
@@ -100,9 +106,18 @@ naming the source, and use of each service is subject to its provider's terms.
 - **Europe PMC** (EMBL-EBI): titles, authors, journals, years and citation counts of the
   journal articles PubChem links, and the title search when PubChem links none, for the
   Literature card. Ferguson, C. et al. Europe PMC in 2020. *Nucleic Acids Res.* **2021**,
-  49 (D1), D1507–D1514. Each article links to its DOI or PubMed page.
+  49 (D1), D1507–D1514. Each article links to its DOI or PubMed page, and open-access ones to
+  their full text on Europe PMC. Europe PMC's text-mined ChEBI tags find articles that mention a
+  compound in the text; the compound's ChEBI entry comes from **UniChem** and its name from the
+  **Ontology Lookup Service** (both EMBL-EBI).
+- **ChEMBL** (EMBL-EBI), data under CC BY-SA 4.0: the journal articles ChEMBL curates for a
+  compound (title, journal, year, DOI, PubMed id). Zdrazil, B. et al. The ChEMBL Database in 2023.
+  *Nucleic Acids Res.* **2024**, 52 (D1), D1180–D1192.
+- **SureChEMBL** (EMBL-EBI): patents worldwide that contain a compound, with titles, dates and
+  assignees. Papadatos, G. et al. SureChEMBL: a large-scale, chemically annotated patent document
+  database. *Nucleic Acids Res.* **2016**, 44 (D1), D1220–D1228.
 - **OpenAlex** (OurResearch), with **Crossref** as a fallback: finding ChemRxiv
-  preprints for the Literature card. OpenAlex metadata is released under CC0.
+  preprints and chemistry journal articles for the Literature card, and open-access copies. OpenAlex metadata is released under CC0.
   Priem, J.; Piwowar, H.; Orr, R. OpenAlex: A fully-open index of scholarly works,
   authors, venues, institutions, and concepts. arXiv:2205.01833, **2022**.
   Only titles, authors, dates, journals, citation counts, DOIs and a short abstract excerpt

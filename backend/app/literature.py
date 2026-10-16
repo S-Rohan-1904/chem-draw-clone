@@ -85,6 +85,24 @@ def _squash(text: str) -> str:
     return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
+_PRIMES = str.maketrans({"′": "'", "’": "'", "‘": "'", "‐": "-", "‑": "-", "‒": "-", "–": "-", "−": "-"})
+
+
+def _plain(text: str) -> str:
+    return re.sub(r"\s+", " ", text.translate(_PRIMES).lower())
+
+
+def names_it(text: str, names: list[str]) -> bool:
+    """Whether the text names the molecule itself, not a bigger one built on it:
+    "1-(4-bromophenyl)ethanone" names it, "2-bromo-1-(4-bromophenyl)ethanone" does not."""
+    plain = _plain(text)
+    for name in names:
+        n = _plain(name).strip()
+        if n and re.search(r"(?<![\w\-)\]'])" + re.escape(n) + r"(?![a-z0-9(\[])", plain):
+            return True
+    return False
+
+
 def _abstract(inverted: dict | None) -> str:
     """OpenAlex stores abstracts as {word: [positions]}; put the words back in order."""
     if not inverted:

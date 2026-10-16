@@ -6,7 +6,7 @@ os.environ["CHEM_DB_PATH"] = os.path.join(tempfile.mkdtemp(), "t.db")
 import httpx  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app import literature, resolver  # noqa: E402
+from app import literature, literature_chembl, literature_journals, literature_mentions, literature_openalex, literature_surechembl, resolver  # noqa: E402
 from app.main import app  # noqa: E402
 
 client = TestClient(app)
@@ -54,7 +54,8 @@ def _patch_client(monkeypatch, transport):
         return real(*args, **kwargs)
 
     monkeypatch.setattr(literature.httpx, "Client", fake)
-    monkeypatch.setattr(literature, "enabled", lambda: True)
+    for module in (literature, literature_journals, literature_openalex, literature_chembl, literature_mentions, literature_surechembl):
+        monkeypatch.setattr(module, "enabled", lambda: True)
 
 
 def test_openalex_results_link_to_chemrxiv(monkeypatch):
@@ -151,18 +152,24 @@ def test_endpoint_uses_pubchem_name_and_caches(monkeypatch):
         assert set(r) == {"chemrxiv", "journals", "patents"}
         rx = r["chemrxiv"]
         assert rx["query"] == "Benzaldehyde" and len(rx["items"]) == 5 and rx["cached"] is False
+        assert r["journals"]["sources"]["OpenAlex"]["available"] and r["journals"]["items"]
+        asked = len(calls)
         again = client.post("/api/analysis/literature", json={"smiles": "O=Cc1ccccc1"}).json()
-        assert all(again[k]["cached"] is True for k in again)
-        # One OpenAlex call for ChemRxiv; journals search Europe PMC (PubChem has no PubMed links in this mock).
-        assert calls.count("api.openalex.org") == 1 and calls.count("www.ebi.ac.uk") == 1
+        assert again["chemrxiv"]["cached"] is True
+        # One OpenAlex call for ChemRxiv and one for chemistry journals; the second request asks
+        # again only the sources that failed against this mock (not cached), never OpenAlex.
+        assert calls.count("api.openalex.org") == 2 and "api.openalex.org" not in calls[asked:]
 
 
 def test_endpoint_without_any_name(monkeypatch):
+    # No service knows the structure: every lookup by structure answers "not found".
+    _patch_client(monkeypatch, httpx.MockTransport(lambda request: httpx.Response(404, json={})))
     monkeypatch.setattr(resolver, "name_for_inchikey", lambda key: None)
     with client:
         r = client.post("/api/analysis/literature", json={"smiles": "CC(C)(C)C(C)(C)C(C)(C)C1CC1"}).json()
         assert r["chemrxiv"]["available"] is False and "no name to search" in r["chemrxiv"]["reason"]
-        assert r["journals"]["available"] is False and r["patents"]["items"] == []
+        assert r["journals"]["items"] == [] and "no PubChem entry" in r["journals"]["sources"]["PubMed"]["reason"]
+        assert r["patents"]["items"] == []
 
 
 def test_crossref_fallback_is_retried_next_day(monkeypatch):

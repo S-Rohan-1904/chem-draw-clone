@@ -13,7 +13,9 @@ whose title names the molecule. Busy services are retried briefly. Never raises.
 
 from __future__ import annotations
 
+import html
 import math
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -27,7 +29,7 @@ EUROPEPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest/searchPOST"
 LOOKUP = 300  # PubMed ids looked up per molecule
 BATCH = 100
 KEEP = 20
-VERSION = 2
+VERSION = 3
 RETRIES = 2  # extra tries when a service says it is busy (429 or 5xx)
 
 
@@ -55,6 +57,11 @@ def _request(client: httpx.Client, method: str, url: str, **kwargs) -> httpx.Res
     return r
 
 
+def clean_title(title: str) -> str:
+    """Europe PMC titles carry escaped HTML (&lt;sup&gt;2&lt;/sup&gt;): unescape, drop the tags."""
+    return re.sub(r"<[^>]+>", "", html.unescape(html.unescape(title))).strip().removesuffix(".")
+
+
 def _item(w: dict) -> dict | None:
     types = [t.strip() for t in (w.get("pubType") or "").split(";")]
     if not w.get("title") or "retracted publication" in types or "retraction of publication" in types:
@@ -65,8 +72,9 @@ def _item(w: dict) -> dict | None:
     if not url:
         return None
     year = w.get("pubYear")
+    pmcid = w.get("pmcid") or ""
     return {
-        "title": w["title"].strip().removesuffix("."),
+        "title": clean_title(w["title"]),
         "authors": _authors([a.strip().removesuffix(".") for a in (w.get("authorString") or "").split(",")]),
         "journal": w.get("journalTitle") or "",
         "year": int(year) if year and year.isdigit() else None,
@@ -76,6 +84,8 @@ def _item(w: dict) -> dict | None:
         "url": url,
         "cited_by": w.get("citedByCount") or 0,
         "type": "review" if "review" in types else "article",
+        # Europe PMC hosts the full text of open-access articles in PMC.
+        "oa_url": f"https://europepmc.org/article/PMC/{pmcid}" if pmcid and w.get("isOpenAccess") == "Y" else "",
     }
 
 

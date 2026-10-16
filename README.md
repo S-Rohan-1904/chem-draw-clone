@@ -104,13 +104,25 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   by InChIKey through Wikidata, text CC BY-SA 4.0, pictures credited from Wikimedia Commons).
   Compounds named in either open with a click. Reaction SMILES inputs get the functional groups lost and gained and a
   guess at the reaction type.
-- **Literature** (`backend/app/literature*.py`): a card below Reactions with three lists.
+- **Literature** (`backend/app/literature*.py`, merged in `literature_card.py`): a card below Reactions with three lists.
   *ChemRxiv*: up to five preprints found by the molecule's PubChem name (then synonyms), via
   OpenAlex (Crossref as fallback), each with the abstract sentence that names it.
-  *Journals*: articles PubChem links to the exact structure (PubMed), with details from
-  Europe PMC, ranked by citations with recent articles and titles naming the molecule first.
-  *Patents*: the US patents whose worked examples make or use the molecule, from the reaction
-  index, with titles from PubChem, plus a link to PubChem's full patent list.
+  *Journals*: one ranked list from five sources, each article listed once with every source that found it:
+  PubMed articles PubChem links to the exact structure, ChEMBL's curated medicinal chemistry papers (by InChIKey),
+  papers whose reactions in the Open Reaction Database use or make it (`ord_papers.db`, see below), chemistry
+  journal articles naming it in the title or abstract (OpenAlex, limited to Chemistry, Chemical Engineering and
+  Materials Science, ChemRxiv excluded), and articles that mention it anywhere in the text (Europe PMC's ChEBI
+  tagging, through UniChem). Titles that name the molecule itself (not a bigger molecule built on the name) and
+  titles about making it rank first, then citations and recent work. Each article says how it was found and links
+  a free full text copy when Europe PMC or OpenAlex knows one; the list filters by "about it", "making", reviews
+  and free full text, and sorts by relevance, date or citations. Details from Europe PMC.
+  *Patents*: the US patents whose worked examples make or use the molecule, from the reaction index, with titles
+  from PubChem, merged with SureChEMBL's patents of every year and country that contain the structure (the
+  most relevant of the newest 200, with dates and assignees), plus a link to PubChem's full patent list.
+  PubChem's Thieme, Wiley and Springer Nature reference tables would add more chemistry journals, but the service
+  behind them now answers with a reCAPTCHA, so they are not used.
+  Each source is cached for 30 days on its own; when a service is down, its last result is shown, marked as earlier.
+  `scripts/eval_literature.py` scores coverage and top-5 quality into `docs/literature-benchmark.md`.
 - **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.
 - **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
 
@@ -171,6 +183,16 @@ uv run python scripts/build_reactions.py -j 8 --uspto 1976_Sep2016_USPTOgrants_s
     2001_Sep2016_USPTOapplications_smiles.rsmi --crd crd_mapped.tsv --rhea rhea_mapped.tsv \
     --wiki wiki_mapped.tsv --hsdb hsdb_mapped.tsv
 HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forge-reactions
+```
+
+The Open Reaction Database paper index (`backend/app/data/ord_papers.db`, override with `CHEM_ORD_DB`) links the
+molecules in the ORD's non-patent datasets (CC BY-SA 4.0) to the papers they come from. It is small and kept in
+the repository; rebuild it with:
+
+```bash
+cd backend
+ORD='uv run --isolated --no-project --python 3.12 --with ord-schema --with rdkit --with httpx --with huggingface_hub python scripts/ord_papers.py'
+$ORD fetch path/to/ord-raw && $ORD build path/to/ord-raw
 ```
 
 `setup.sh` and the Docker build download it when `REACTIONS_REPO=<hf-user>/chem-forge-reactions`

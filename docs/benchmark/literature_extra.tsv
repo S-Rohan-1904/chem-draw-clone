@@ -1,0 +1,23 @@
+name	set	smiles
+4-bromoacetophenone	building blocks	CC(=O)c1ccc(Br)cc1
+2-bromopyridine	building blocks	Brc1ccccn1
+4-iodoanisole	building blocks	COc1ccc(I)cc1
+1-Boc-piperazine	building blocks	CC(C)(C)OC(=O)N1CCNCC1
+phenylboronic acid	building blocks	OB(O)c1ccccc1
+4-methoxyphenylboronic acid	building blocks	COc1ccc(B(O)O)cc1
+2-chloro-5-nitropyridine	building blocks	O=[N+]([O-])c1ccc(Cl)nc1
+methyl 4-formylbenzoate	building blocks	COC(=O)c1ccc(C=O)cc1
+1-Boc-4-piperidone	building blocks	CC(C)(C)OC(=O)N1CCC(=O)CC1
+4-(bromomethyl)benzonitrile	building blocks	N#Cc1ccc(CBr)cc1
+2-aminothiazole	building blocks	Nc1nccs1
+3-bromothiophene	building blocks	Brc1ccsc1
+artemisinin	natural products	C[C@@H]1CC[C@H]2[C@@H](C)C(=O)O[C@@H]3O[C@@]4(C)CC[C@@H]1[C@]32OO4
+quinine	natural products	COc1ccc2nccc([C@@H](O)[C@@H]3C[C@@H]4CCN3C[C@@H]4C=C)c2c1
+camptothecin	natural products	CC[C@@]1(O)C(=O)OCc2c1cc1-c3nc4ccccc4cc3Cn1c2=O
+capsaicin	natural products	COc1cc(CNC(=O)CCCC/C=C/C(C)C)ccc1O
+curcumin	natural products	COc1cc(/C=C/C(=O)CC(=O)/C=C/c2ccc(O)c(OC)c2)ccc1O
+resveratrol	natural products	Oc1ccc(/C=C/c2cc(O)cc(O)c2)cc1
+epibatidine	natural products	Clc1ccc(cn1)C1CC2CCC1N2
+podophyllotoxin	natural products	COc1cc(cc(OC)c1OC)[C@H]1[C@@H]2[C@H](COC2=O)[C@H](O)c2cc3OCOc3cc12
+unnamed thiouracil	unknown	CC1=CC(=O)N(C2CC2)C(=S)N1CC#C
+unnamed pyrimidine	unknown	FC(F)(F)c1cc(C2(O)CCOCC2)ncn1

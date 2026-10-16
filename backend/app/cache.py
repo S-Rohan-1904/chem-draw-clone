@@ -203,7 +203,8 @@ def lookup_name(db: Session, inchikey: str, before_fetch: Callable[[], None] | N
 
 # Literature cache rows: the ChemRxiv search under the bare InChIKey (as before the other
 # sources existed), the others under the key plus a suffix.
-LITERATURE_KINDS = {"chemrxiv": "", "journals": "/j", "patents": "/p", "manufacture": "/m", "wikipedia": "/w"}
+LITERATURE_KINDS = {"chemrxiv": "", "journals": "/j", "patents": "/p", "manufacture": "/m", "wikipedia": "/w",
+                    "chembl": "/c", "openalex": "/o", "mentions": "/e", "surechembl": "/s"}
 
 
 def cached_literature(db: Session, inchikey: str, kind: str = "chemrxiv") -> dict | None:
@@ -223,7 +224,14 @@ def cached_literature(db: Session, inchikey: str, kind: str = "chemrxiv") -> dic
 
 
 def store_literature(db: Session, inchikey: str, kind: str, data: dict, complete: bool) -> dict:
-    """Keep a finished search (failures are not kept) and return it for the response."""
+    """Keep a finished search (failures are not kept) and return it for the response.
+    When the service is down, an expired result of the same version is better than none: it is returned, marked stale."""
+    if not complete and not data.get("available", True):
+        row = db.get(LiteratureCache, inchikey + LITERATURE_KINDS[kind])
+        old = json.loads(row.result_json) if row is not None else None
+        if old is not None and old.get("_v") == literature_version(kind):
+            old["cached"] = old["stale"] = True
+            return old
     if complete:
         db.merge(LiteratureCache(inchikey=inchikey + LITERATURE_KINDS[kind], result_json=json.dumps(data),
                                  created_at=datetime.now(timezone.utc)))
@@ -245,8 +253,10 @@ def get_literature(db: Session, inchikey: str, search, kind: str = "chemrxiv") -
 
 
 def literature_version(kind: str = "chemrxiv") -> int:
-    from . import literature, literature_journals, literature_patents, manufacture, wikipedia
+    from . import (literature, literature_chembl, literature_journals, literature_mentions, literature_openalex, literature_patents,
+                   literature_surechembl, manufacture, wikipedia)
 
     modules = {"chemrxiv": literature, "journals": literature_journals, "patents": literature_patents,
-               "manufacture": manufacture, "wikipedia": wikipedia}
+               "manufacture": manufacture, "wikipedia": wikipedia, "chembl": literature_chembl, "openalex": literature_openalex,
+               "mentions": literature_mentions, "surechembl": literature_surechembl}
     return modules[kind].VERSION

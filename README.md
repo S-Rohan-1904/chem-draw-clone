@@ -122,6 +122,9 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   PubChem's Thieme, Wiley and Springer Nature reference tables would add more chemistry journals, but the service
   behind them now answers with a reCAPTCHA, so they are not used.
   Each source is cached for 30 days on its own; when a service is down, its last result is shown, marked as earlier.
+  The card answers within `CHEM_LITERATURE_BUDGET` seconds (default 10): a slower source (ChEMBL's API can take
+  half a minute for a popular drug) is shown as still searching, finishes in the background and is cached, and the
+  page asks again, up to three times, 12 seconds apart.
   `scripts/eval_literature.py` scores coverage and top-5 quality into `docs/literature-benchmark.md`.
 - **Reaction SMILES** (`A.B>>C`): drawn with agents over the arrow and an atom balance check. Atom-map numbers colour matching atoms on both sides. A stoichiometry grid takes coefficients and masses and returns mmol, equivalents, the limiting reagent, theoretical yield and percent yield.
 - **Mechanisms tab**: twenty curved-arrow mechanisms drawn step by step with captions.
@@ -185,6 +188,14 @@ uv run python scripts/build_reactions.py -j 8 --uspto 1976_Sep2016_USPTOgrants_s
 HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forge-reactions
 ```
 
+`setup.sh` and the Docker build download it when `REACTIONS_REPO=<hf-user>/chem-forge-reactions`
+is set; without it the card says the index is not installed. Literature lookups are cached per
+molecule and source for 30 days; `CHEM_LITERATURE_LOOKUP=0` turns them off, and a free
+`OPENALEX_API_KEY` avoids OpenAlex's rate limit on anonymous searches. A molecule not yet cached costs
+up to four OpenAlex searches (up to three for ChemRxiv, one for chemistry journals) out of a key's 10,000
+credits a day; when they run out, the OpenAlex sources show as not reachable (or their last result) and
+the other sources still answer.
+
 The Open Reaction Database paper index (`backend/app/data/ord_papers.db`, override with `CHEM_ORD_DB`) links the
 molecules in the ORD's non-patent datasets (CC BY-SA 4.0) to the papers they come from. It is small and kept in
 the repository; rebuild it with:
@@ -194,11 +205,6 @@ cd backend
 ORD='uv run --isolated --no-project --python 3.12 --with ord-schema --with rdkit --with httpx --with huggingface_hub python scripts/ord_papers.py'
 $ORD fetch path/to/ord-raw && $ORD build path/to/ord-raw
 ```
-
-`setup.sh` and the Docker build download it when `REACTIONS_REPO=<hf-user>/chem-forge-reactions`
-is set; without it the card says the index is not installed. Literature lookups are cached per
-molecule and source for 30 days; `CHEM_LITERATURE_LOOKUP=0` turns them off, and a free
-`OPENALEX_API_KEY` avoids OpenAlex's rate limit on anonymous searches.
 
 ## Deploy: Azure VM
 

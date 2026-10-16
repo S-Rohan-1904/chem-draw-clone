@@ -2,6 +2,8 @@
 
 Coverage of the Reactions and Literature cards over the teaching set (app/data/common_names.txt) and 50 drugs, produced by `backend/scripts/eval_reactions.py`. Each run is appended below.
 
+The literature columns here call each source module the way the card did before October 2026 (journals from PubMed links only, patents from the reaction index only). The Literature card as it is now (five journal sources, SureChEMBL patents, ranking) is scored in [literature-benchmark.md](literature-benchmark.md).
+
 ## M0 baseline (2026-09-28)
 
 Index 945347 reactions, 1169824 molecules, built 2026-09-28. Reactions scored in 11 s. Precision sheet `docs/benchmark/precision_m0_baseline.csv`.

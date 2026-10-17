@@ -16,3 +16,5 @@ os.environ.setdefault("CHEM_ORD_DB", "/nonexistent/ord_papers.db")
 os.environ.setdefault("CHEM_LITERATURE_LOOKUP", "0")
 # The NMR shift index is a local build; tests of the rules run without it and build their own.
 os.environ.setdefault("CHEM_NMR_ENV_DB", "/nonexistent/nmr_env.db")
+# xtb is a separate program; tests that need it ask for it explicitly (test_vibrations.py).
+os.environ.setdefault("CHEM_XTB", "/nonexistent/xtb")

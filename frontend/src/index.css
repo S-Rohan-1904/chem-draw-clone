@@ -394,3 +394,22 @@ button.chip { font: inherit; cursor: pointer; }
 .nmr-measured { background: var(--green-soft); color: var(--green); }
 .nmr-index { background: var(--accent-soft); color: var(--accent); }
 .nmr-rules { background: var(--warn-soft); color: var(--warn); }
+.spectrum line.stick.neg { stroke: #b91c1c; }
+.spectrum line.baseline { stroke: #9ca3af; stroke-width: 1; }
+.spectrum .curve.sim { stroke: #1d4ed8; }
+.spectrum .axis line.grid { stroke: #e5e7eb; }
+.spectrum line.diagonal { stroke: #d1d5db; stroke-dasharray: 3 3; }
+.spectrum .xpeak { fill: #1d4ed8; opacity: 0.8; cursor: pointer; }
+.spectrum .xpeak.diag { fill: #9ca3af; }
+.spectrum .xpeak.sel, .spectrum .xpeak:hover { fill: #f59e0b; opacity: 1; }
+.nmr-zoom { margin-top: 0.5rem; }
+.nmr-zoom svg { margin-top: 0.3rem; }
+.spectrum .curve.calc { stroke: #059669; }
+.spectrum .mode-hit { fill: transparent; cursor: pointer; }
+.spectrum .mode-hit:hover, .spectrum .mode-hit.sel { fill: #059669; opacity: 0.18; }
+.mode-panel { margin-top: 0.5rem; }
+.mode-viewer { position: relative; width: 100%; height: 260px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.spectrum .curve.uv { stroke: #7c3aed; stroke-width: 2; cursor: pointer; }
+.spectrum line.uv-max { stroke: #7c3aed; stroke-dasharray: 3 3; }
+.spectrum h3.sub { font-size: 0.9rem; margin: 0.9rem 0 0.2rem; }
+.peak-table tr.muted td { color: var(--muted); }

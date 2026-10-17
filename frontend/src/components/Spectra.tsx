@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { IrSpectrum, Molecule, MsNode, MsSpectrum, NmrSpectrum } from '../types'
+import type { IrSpectrum, Molecule, MsNode, MsSpectrum, NmrSpectrum, UvSpectrum } from '../types'
+import { type DeptMode, deptSign } from './dept'
+import { ModeViewer } from './IrModes'
+import { TwoD, Zoom } from './NmrExtras'
+import { UvVis } from './UvVis'
 
 interface Props {
   mol: Molecule
   onHighlight: (atoms: number[] | null) => void
 }
 
-type Tab = 'h' | 'c' | 'ir' | 'ms'
+type Tab = 'h' | 'c' | '2d' | 'ir' | 'ms' | 'uv'
 
 const W = 640
 const H = 260
@@ -20,6 +24,7 @@ export function Spectra({ mol, onHighlight }: Props) {
   const [nmr, setNmr] = useState<NmrSpectrum | null>(null)
   const [ir, setIr] = useState<IrSpectrum | null>(null)
   const [ms, setMs] = useState<MsSpectrum | null>(null)
+  const [uv, setUv] = useState<UvSpectrum | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,46 +32,50 @@ export function Spectra({ mol, onHighlight }: Props) {
     setNmr(null)
     setIr(null)
     setMs(null)
+    setUv(null)
     setError(null)
   }, [mol.smiles])
 
   useEffect(() => {
-    const need = tab === 'ir' ? !ir : tab === 'ms' ? !ms : !nmr
+    const need = tab === 'ir' ? !ir : tab === 'ms' ? !ms : tab === 'uv' ? !uv : !nmr
     if (!need) return
     let live = true
     setLoading(true)
     setError(null)
-    const kind = tab === 'ir' ? 'ir' : tab === 'ms' ? 'ms' : 'nmr'
+    const kind = tab === 'ir' ? 'ir' : tab === 'ms' ? 'ms' : tab === 'uv' ? 'uv' : 'nmr'
     api.spectra(mol.smiles, kind)
       .then((d) => {
         if (!live) return
         if (kind === 'ir') setIr(d as IrSpectrum)
         else if (kind === 'ms') setMs(d as MsSpectrum)
+        else if (kind === 'uv') setUv(d as UvSpectrum)
         else setNmr(d as NmrSpectrum)
       })
       .catch((e: Error) => live && setError(e.message))
       .finally(() => live && setLoading(false))
     return () => { live = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, mol.smiles, nmr, ir, ms])
+  }, [tab, mol.smiles, nmr, ir, ms, uv])
 
   return (
     <section className="card spectra">
       <header className="card-head">
         <h2>Spectra</h2>
         <div className="toolbar">
-          {(['h', 'c', 'ir', 'ms'] as Tab[]).map((t) => (
+          {(['h', 'c', '2d', 'ir', 'ms', 'uv'] as Tab[]).map((t) => (
             <button key={t} type="button" className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
-              {t === 'h' ? '¹H NMR' : t === 'c' ? '¹³C NMR' : t === 'ir' ? 'IR' : 'Mass spec'}
+              {t === 'h' ? '¹H NMR' : t === 'c' ? '¹³C NMR' : t === '2d' ? '2D NMR' : t === 'ir' ? 'IR' : t === 'ms' ? 'Mass spec' : 'UV-Vis'}
             </button>
           ))}
         </div>
       </header>
       {error && <p className="warn">{error}</p>}
       {loading && <p className="muted small">Loading…</p>}
-      {!loading && (tab === 'h' || tab === 'c') && nmr && <Nmr data={nmr} nucleus={tab} onHighlight={onHighlight} />}
+      {!loading && (tab === 'h' || tab === 'c') && nmr && <Nmr key={tab} data={nmr} nucleus={tab} onHighlight={onHighlight} />}
+      {!loading && tab === '2d' && nmr && <TwoD data={nmr} onHighlight={onHighlight} />}
       {!loading && tab === 'ir' && ir && <Ir data={ir} onHighlight={onHighlight} />}
       {!loading && tab === 'ms' && ms && <Ms data={ms} onHighlight={onHighlight} />}
+      {!loading && tab === 'uv' && uv && <UvVis data={uv} onHighlight={onHighlight} />}
     </section>
   )
 }
@@ -102,6 +111,8 @@ function range(a: number, b: number, step: number): number[] {
 function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' | 'c'; onHighlight: Props['onHighlight'] }) {
   const peaks = data[nucleus].peaks
   const [sel, setSel] = useState<number | null>(null)
+  const [zoom, setZoom] = useState<number | null>(null)
+  const [dept, setDept] = useState<DeptMode>('bb')
   const max = nucleus === 'h' ? 12 : 220
   const sx = (ppm: number) => PAD.l + ((max - Math.min(Math.max(ppm, 0), max)) / max) * PW
   const top = Math.max(...peaks.map((p) => p.integration), 1)
@@ -113,20 +124,38 @@ function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' |
   }
   return (
     <div className="spectrum">
+      {nucleus === 'c' && peaks.some((p) => p.hs !== undefined) && (
+        <div className="toolbar small">
+          {([['bb', 'All carbons'], ['135', 'DEPT-135'], ['90', 'DEPT-90']] as [DeptMode, string][]).map(([m, label]) => (
+            <button key={m} type="button" className={dept === m ? 'active' : ''} onClick={() => setDept(m)}>{label}</button>
+          ))}
+        </div>
+      )}
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nucleus === 'h' ? '1H' : '13C'} NMR`}>
+        {dept !== 'bb' && <line x1={PAD.l} x2={PAD.l + PW} y1={PAD.t + PH / 2} y2={PAD.t + PH / 2} className="baseline" />}
         <Axis x0={0} x1={max} ticks={nucleus === 'h' ? range(0, 12, 1) : range(0, 220, 20)} unit="δ / ppm" reversed />
         {peaks.map((p, i) => {
           const h = (p.integration / top) * (PH - 24)
           const x = sx(p.shift)
           return (
-            <g key={i} className={`peak ${sel === i ? 'sel' : ''}`} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)} onClick={() => hover(sel === i ? null : i)}>
+            <g key={i} className={`peak ${sel === i ? 'sel' : ''}`} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)} onClick={() => { hover(i); setZoom(zoom === i ? null : i) }}>
               <rect x={x - 6} y={PAD.t} width={12} height={PH} className="hit" />
-              <Multiplet x={x} y0={PAD.t + PH} h={h} mult={nucleus === 'h' ? p.multiplicity ?? 's' : 's'} couplings={nucleus === 'h' ? p.couplings : undefined} />
+              {dept === 'bb'
+                ? <Multiplet x={x} y0={PAD.t + PH} h={h} mult={nucleus === 'h' ? p.multiplicity ?? 's' : 's'} couplings={nucleus === 'h' ? p.couplings : undefined} />
+                : deptSign(p.hs, dept) !== 0 && <line x1={x} x2={x} y1={PAD.t + PH / 2} y2={PAD.t + PH / 2 - deptSign(p.hs, dept) * (PH / 2 - 10)} className={`stick${deptSign(p.hs, dept) < 0 ? ' neg' : ''}`} />}
               {nucleus === 'h' && (labelled[i] || sel === i) && <text x={x} y={PAD.t + PH - h - 6} textAnchor="middle" className="int">{p.integration}H</text>}
             </g>
           )
         })}
       </svg>
+      {nucleus === 'h' && data.simulation && (zoom !== null && peaks[zoom]
+        ? <Zoom data={data} peak={peaks[zoom]} />
+        : <p className="muted small">Click a signal to see it as a spectrometer would, at 60 to 600 MHz.</p>)}
+      {dept !== 'bb' && (
+        <p className="muted small">
+          {dept === '135' ? 'DEPT-135: CH and CH3 point up, CH2 points down, carbons without hydrogens disappear.' : 'DEPT-90: only CH carbons show.'}
+        </p>
+      )}
       <table className="peak-table">
         <thead><tr><th>δ (ppm)</th><th>{nucleus === 'h' ? 'H' : 'C'}</th>{nucleus === 'h' && <th>mult.</th>}<th>environment</th>{data.source !== 'rules' && <th>shift from</th>}</tr></thead>
         <tbody>
@@ -190,9 +219,12 @@ function Multiplet({ x, y0, h, mult, couplings }: { x: number; y0: number; h: nu
 // ---------------------------------------------------------------- IR
 
 function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHighlight'] }) {
-  const [showPred, setShowPred] = useState(true)
+  const calc = data.calculated ?? null
+  const [showPred, setShowPred] = useState(!calc)
   const [showExp, setShowExp] = useState(true)
+  const [showCalc, setShowCalc] = useState(true)
   const [sel, setSel] = useState<number | null>(null)
+  const [mode, setMode] = useState<number | null>(null)
   const sx = (cm: number) => PAD.l + ((4000 - Math.min(Math.max(cm, 400), 4000)) / 3600) * PW
   const sy = (t: number) => PAD.t + (1 - Math.min(Math.max(t, 0), 1)) * PH
   const hover = (i: number | null) => {
@@ -212,11 +244,23 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
   })
   const path = (X: number[], Y: number[]) => X.map((x, i) => `${i ? 'L' : 'M'}${sx(x).toFixed(1)},${sy(Y[i]).toFixed(1)}`).join(' ')
   const exp = data.experimental
+  // Calculated transmittance: Lorentzian absorption bands (12 cm-1 half width) scaled so the strongest dips to about 10 %.
+  const topI = calc ? Math.max(...calc.modes.map((m) => m.intensity), 1e-9) : 1
+  const calcY = calc ? xs.map((x) => {
+    const a = calc.modes.reduce((s, m) => s + (m.intensity / topI) * (144 / ((x - m.freq) ** 2 + 144)), 0)
+    return 10 ** -a
+  }) : []
+  const strong = calc ? calc.modes.map((m, i) => ({ m, i })).filter(({ m }) => m.intensity >= 0.03 * topI) : []
+  const pickMode = (i: number | null) => {
+    setMode(i)
+    onHighlight(i === null || !calc ? null : calc.modes[i].atoms)
+  }
   return (
     <div className="spectrum">
       <div className="toolbar">
         <label className="check"><input type="checkbox" checked={showPred} onChange={(e) => setShowPred(e.target.checked)} /> predicted bands</label>
         {exp && <label className="check"><input type="checkbox" checked={showExp} onChange={(e) => setShowExp(e.target.checked)} /> experimental (NIST{exp.state ? `, ${exp.state}` : ''})</label>}
+        {calc && <label className="check"><input type="checkbox" checked={showCalc} onChange={(e) => setShowCalc(e.target.checked)} /> calculated ({calc.method})</label>}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="IR spectrum">
         <Axis x0={400} x1={4000} ticks={range(4000, 500, -500)} unit="wavenumber / cm⁻¹" reversed />
@@ -226,7 +270,36 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
         ))}
         {showPred && <path d={path(xs, pred)} className="curve pred" />}
         {showExp && exp && <path d={path(exp.x, exp.y)} className="curve exp" />}
+        {showCalc && calc && <path d={path(xs, calcY)} className="curve calc" />}
+        {showCalc && strong.map(({ m, i }) => (
+          <rect key={`m${i}`} x={sx(m.freq) - 4} y={PAD.t} width={8} height={PH} className={`mode-hit${mode === i ? ' sel' : ''}`}
+            onClick={() => pickMode(mode === i ? null : i)} />
+        ))}
       </svg>
+      {calc && (mode !== null ? (
+        <div className="mode-panel">
+          <ModeViewer calc={calc} mode={mode} />
+          <p className="small">
+            <b>{calc.modes[mode].freq.toFixed(0)} cm⁻¹</b>, {calc.modes[mode].intensity.toFixed(0)} km/mol. The highlighted atoms move most.{' '}
+            <button type="button" className="link small" onClick={() => pickMode(null)}>Close</button>
+          </p>
+        </div>
+      ) : (
+        <p className="muted small">Click a band of the calculated spectrum to watch that vibration in 3D.</p>
+      ))}
+      {calc && (
+        <table className="peak-table">
+          <thead><tr><th>calc. cm⁻¹</th><th>intensity (km/mol)</th><th>vibration</th></tr></thead>
+          <tbody>
+            {strong.sort((a, b) => b.m.freq - a.m.freq).map(({ m, i }) => (
+              <tr key={i} className={mode === i ? 'sel' : ''} onClick={() => pickMode(mode === i ? null : i)}>
+                <td>{m.freq.toFixed(0)}</td><td>{m.intensity.toFixed(0)}</td>
+                <td><button type="button" className="link small">Show</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <table className="peak-table">
         <thead><tr><th>cm⁻¹</th><th>band</th><th>intensity</th></tr></thead>
         <tbody>
@@ -240,6 +313,7 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
       <p className="muted small">
         {data.note}{' '}
         {exp && <a href={exp.url} target="_blank" rel="noreferrer">View at NIST</a>}
+        {calc && ` Calculated with ${calc.method} (a semiempirical quantum method, xtb) on an optimised structure, frequencies scaled by ${calc.scale}. Bands are usually within about 50 cm⁻¹ of experiment, nitriles about 5 % high.`}
       </p>
     </div>
   )
@@ -295,6 +369,46 @@ function Ms({ data, onHighlight }: { data: MsSpectrum; onHighlight: Props['onHig
         <b>{data.formula}</b>, exact mass {data.exact_mass}, M⁺• at m/z {data.nominal_mass}
         {data.isotopes.length > 1 && <> · isotope pattern {data.isotopes.map((p) => `${p.nominal} (${Math.round(p.rel)}%)`).join(', ')}</>}
       </p>
+      {data.rules && (
+        <p className="small">
+          {data.rules.dbe} ring{data.rules.dbe === 1 ? '' : 's'} plus double bonds. Nitrogen rule: nominal mass {data.rules.nominal} is{' '}
+          {data.rules.nominal % 2 ? 'odd' : 'even'}, so an {data.rules.nitrogen % 2 ? 'odd' : 'even'} number of nitrogens ({data.rules.nitrogen}).
+        </p>
+      )}
+      {data.esi && (
+        <>
+          <h3 className="sub">Electrospray (ESI) ions</h3>
+          <table className="peak-table">
+            <thead><tr><th>ion</th><th>m/z</th><th /></tr></thead>
+            <tbody>
+              {data.esi.map((ion) => (
+                <tr key={ion.label} className={ion.likely ? '' : 'muted'}>
+                  <td>{ion.likely ? <b>{ion.label}</b> : ion.label}</td><td>{ion.mz.toFixed(4)}</td><td className="small">{ion.likely ? `likely: ${ion.why}` : ion.why}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!data.esi.some((i) => i.likely) && <p className="muted small">Nothing here takes or loses a proton or holds a metal ion well, so ESI barely sees this molecule. EI or APCI suit it better.</p>}
+        </>
+      )}
+      {data.hrms && data.hrms.candidates.length > 0 && (
+        <>
+          <h3 className="sub">Formulas that fit the exact mass (±{data.hrms.ppm} ppm)</h3>
+          <table className="peak-table">
+            <thead><tr><th>formula</th><th>error (ppm)</th><th>rings + double bonds</th></tr></thead>
+            <tbody>
+              {data.hrms.candidates.map((c) => (
+                <tr key={c.formula}><td>{c.actual ? <b>{c.formula} (this molecule)</b> : c.formula}</td><td>{c.ppm.toFixed(2)}</td><td>{c.dbe}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="muted small">
+            {data.hrms.total === 1 ? 'Only one formula' : `${data.hrms.total} formulas`} with C, H, N, O and S (other elements at this molecule's counts)
+            fit within {data.hrms.ppm} ppm and pass the nitrogen rule and a whole number of rings plus double bonds. High-resolution MS
+            narrows the formula down this way; isotope patterns and the other spectra settle it.
+          </p>
+        </>
+      )}
       <table className="peak-table ms-tree">
         <thead><tr><th>m/z</th><th>ion</th><th>from</th><th>loss</th><th>why</th></tr></thead>
         <tbody>

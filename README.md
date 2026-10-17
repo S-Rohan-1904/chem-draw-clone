@@ -131,7 +131,7 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 
 ## Spectra
 
-Every built molecule gets a Spectra card with four tabs. Hovering a peak or band
+Every built molecule gets a Spectra card with six tabs. Hovering a peak or band
 highlights the atoms responsible in the 2D drawing.
 
 - **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
@@ -151,9 +151,23 @@ highlights the atoms responsible in the 2D drawing.
   ortho / meta, 2.5 Hz aldehyde; O-H and N-H are broad singlets. Equivalent partners that
   differ in J (axial / equatorial, cis / trans on a =CH2) are split apart. The spectrum
   draws each multiplet from its J values, exaggerated for visibility.
+- **Spin simulation** (`backend/app/spinsim.py`): clicking a 1H signal shows it as a spectrometer would at
+  60, 100, 300, 400 or 600 MHz, from the full spin Hamiltonian (every shift and coupling, diagonalised
+  exactly per group of coupled protons, up to 10 at a time), so roofing, AB quartets and extra lines appear
+  at low field. Larger groups are drawn first order; exchangeable protons are broad.
+- **DEPT and 2D**: the 13C tab switches to DEPT-135 (CH and CH3 up, CH2 down) and DEPT-90 (CH only). The 2D NMR
+  tab draws COSY (H-C-C-H and separate geminal signals), HSQC (each carbon and its protons) and HMBC
+  (carbons two or three bonds from a proton) from the structure and the shifts; pointing at a cross peak
+  highlights both atoms.
 - **IR**: characteristic bands from the functional groups present, drawn as a synthetic
   transmittance curve, with the experimental spectrum from the NIST Chemistry WebBook
-  overlaid when NIST has one.
+  overlaid when NIST has one. With [xtb](https://github.com/grimme-lab/xtb) installed, the
+  spectrum is also calculated (`backend/app/vibrations.py`): the structure is optimised with
+  GFN2-xTB and its normal modes computed (frequencies scaled by 0.985, usually within about
+  50 cm⁻¹ of experiment), and clicking a band animates that vibration in 3D. Up to 80 atoms,
+  one calculation at a time (`CHEM_XTB_JOBS`); about 5 s for ibuprofen. The Docker image installs
+  xtb from conda-forge; locally, point `CHEM_XTB` at the binary (for example
+  `micromamba create -p ~/.local/share/xtb-env -c conda-forge xtb=6.7.1`).
 - **Mass spec**: molecular-ion isotope pattern (Cl/Br/S visible), NIST's experimental EI
   spectrum when available, and a fragmentation tree (`backend/app/msfrag.py`): single-bond
   cleavages ranked by stability (acylium, benzylic/allylic, alpha to a heteroatom), the
@@ -161,6 +175,15 @@ highlights the atoms responsible in the 2D drawing.
   ions (acylium −CO, tropylium −C2H2, alkyl −C2H4). Each ion is drawn with its charge and,
   with Cl / Br, its isotope cluster; an ion reachable both directly and stepwise is listed
   once under its precursor.
+
+- **ESI and high resolution** (`backend/app/msinfo.py`): the usual electrospray ions ([M+H]+, [M+Na]+,
+  [M-H]-, adducts) with exact m/z, the likely ones marked from the groups present (a basic nitrogen takes
+  a proton, an acid loses one, oxygen-rich molecules hold sodium); rings plus double bonds and the
+  nitrogen rule; and every CHNOS formula within 5 ppm of the exact mass that passes both rules.
+- **UV-Vis** (`backend/app/uvvis.py`): λmax estimated with the Woodward-Fieser rules for conjugated
+  dienes and α,β-unsaturated carbonyls (Fieser-Kuhn above four C=C), with every increment listed and the
+  atoms it counts highlighted. Butadiene 217 nm, mesityl oxide 239 (measured 237), β-carotene 453 (452).
+  Isolated and aromatic chromophores get a note instead of a number.
 
 Results are cached per molecule (`SPECTRA_VERSION` in `backend/app/cache.py` invalidates
 old rows when the payload changes). `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no

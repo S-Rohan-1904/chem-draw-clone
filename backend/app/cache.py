@@ -149,7 +149,7 @@ def get_by_inchikey(db: Session, inchikey: str) -> dict | None:
 
 
 # Bump when the spectra payload gains fields, so stale rows are rebuilt.
-SPECTRA_VERSION = 4
+SPECTRA_VERSION = 7
 
 
 def get_spectra(db: Session, smiles: str, kind: str, builder) -> dict:

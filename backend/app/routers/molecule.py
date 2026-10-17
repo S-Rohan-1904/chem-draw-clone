@@ -50,7 +50,7 @@ class ProjectionIn(BaseModel):
 
 class SpectraIn(BaseModel):
     smiles: str = Field(min_length=1, max_length=4000)
-    kind: Literal["nmr", "ir", "ms"]
+    kind: Literal["nmr", "ir", "ms", "uv"]
 
 
 class PngIn(BaseModel):

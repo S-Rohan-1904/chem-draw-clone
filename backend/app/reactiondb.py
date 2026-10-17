@@ -10,6 +10,12 @@ many distinct reactions show that type, each with one real example. Enzyme
 reactions and Wikipedia's textbook equations are ranked in groups of their own. Indexes built before the extra
 sources (no source column) still work.
 
+Hand-reviewed textbook routes (app/data/curated_reactions.tsv, see app/curated.py) are a
+group of their own too. When one makes the exact stereoisomer asked for, it replaces the
+other textbook routes for that molecule, which are unreviewed and often blind to
+stereochemistry. A molecule the curated file marks as having no common preparation gets
+that note instead of an empty "Made by".
+
 The lookup is by structure without stereochemistry (first InChIKey block, same
 protonation): every stereoisomer's reactions are pooled, the exact stereoisomer's
 example is preferred, and each item says when its example is another
@@ -29,7 +35,7 @@ from urllib.parse import quote
 
 from rdkit import Chem
 
-from . import reaction
+from . import curated, reaction
 from .chem import mol_from_smiles
 
 DEFAULT_PATH = Path(__file__).resolve().parent.parent / "reactions.db"
@@ -65,6 +71,12 @@ SOURCES = {
         "author": "SIB Swiss Institute of Bioinformatics",
         "url": "https://www.rhea-db.org",
         "licence": "CC BY 4.0",
+    },
+    "curated": {
+        "name": "Reviewed textbook routes",
+        "author": "Chem Illustrator",
+        "url": "https://github.com/S-Rohan-1904/chem-draw-clone/blob/main/backend/app/data/curated_reactions.tsv",
+        "licence": "MIT",
     },
 }
 
@@ -118,6 +130,10 @@ def reference(source: str, ref: str, extra: str = "") -> dict:
         ec = [e for e in (extra or "").split() if e]
         return {"ref": ref, "ref_label": f"Rhea {rid}", "ref_url": f"https://www.rhea-db.org/rhea/{rid}", "ec": ec}
     detail = (extra or "").rpartition("|")[0] if "|" in (extra or "") else (extra or "")
+    if source == "curated":
+        # extra is "<reference>|<note>|<product SMILES>"; ref is the row id in the curated file.
+        cited, _, note = detail.partition("|")
+        return {"ref": ref, "ref_label": cited.strip() or ref, "ref_url": "", "ec": [], "note": note.strip()}
     if source == "wiki":
         title = ref.partition("#")[0]
         url = f"https://en.wikipedia.org/w/index.php?title={quote(title.replace(' ', '_'))}"
@@ -194,20 +210,22 @@ _QUERY_V1 = """
     ORDER BY t.count DESC, t.rank
 """
 GROUPS = {"chem": ("uses", "makes"), "enzyme": ("enzyme_uses", "enzyme_makes"),
-          "textbook": ("textbook_uses", "textbook_makes")}
+          "textbook": ("textbook_uses", "textbook_makes"), "curated": ("curated_uses", "curated_makes")}
 
 
 def lookup(smiles: str, limit: int = 5, draw: bool = True) -> dict:
     mol = mol_from_smiles(smiles)
     path = str(db_path())
     con = _connect(path)
-    empty = {field: [] for fields in GROUPS.values() for field in fields} | {"stereo_ignored": False}
+    key = Chem.MolToInchiKey(mol)
+    note = curated.no_preparation(key)
+    empty = {field: [] for fields in GROUPS.values() for field in fields} | {"stereo_ignored": False,
+                                                                           "no_preparation": note}
     if con is None:
         return {"available": False, **empty, "sources": [SOURCES["uspto"]]}
     has_source, used = _schema(path)
     sources = [SOURCES[k] for k in used if k in SOURCES]
     query = _QUERY if has_source else _QUERY_V1
-    key = Chem.MolToInchiKey(mol)
     if not key:
         return {"available": True, **empty, "sources": sources}
 
@@ -238,6 +256,11 @@ def lookup(smiles: str, limit: int = 5, draw: bool = True) -> dict:
     for group, fields in GROUPS.items():
         for direction, field in zip(("uses", "makes"), fields):
             result[field] = fetch(direction, group)
+    # A reviewed route for this very stereoisomer replaces the unreviewed textbook routes.
+    if any(not x["other_stereo"] for x in result["curated_makes"]):
+        result["textbook_makes"] = []
+    made = any(result[f] for f in ("makes", "enzyme_makes", "textbook_makes", "curated_makes"))
     stereo_ignored = any(x["other_stereo"] for items in result.values() for x in items)
     return {"available": True, **result, "stereo_ignored": stereo_ignored, "sources": sources,
+            "no_preparation": "" if made else note,
             "heavy_atoms": mol.GetNumHeavyAtoms(), "max_atoms": MAX_ATOMS}

@@ -13,6 +13,8 @@ up in the product from solvents and reagents:
   articles, read by scripts/wiki_reactions.py (CC BY-SA 4.0).
 - hsdb: routes in PubChem's Methods of Manufacturing (HSDB, U.S. National
   Library of Medicine), read by scripts/hsdb_reactions.py.
+- curated: hand-reviewed textbook routes, app/data/curated_reactions.tsv
+  (scripts/curated_reactions.py), stereochemistry included.
 CRD, Rhea and the text sources come unmapped; scripts/map_reactions.py maps them first.
 
 A reaction seen in several sources (grants and applications, or USPTO and
@@ -20,13 +22,13 @@ CRD) is counted once. For every molecule the index keeps up to five reaction
 types in each direction ("uses": the molecule is a reactant, "makes": it is
 the product), ranked by how many distinct reactions show that type, each with
 one real example (one with a reported yield, then the smallest, then best
-yield). Enzyme reactions and the textbook routes (Wikipedia, HSDB) are ranked
-separately and shown in groups of their own.
+yield). Enzyme reactions, the textbook routes (Wikipedia, HSDB) and the reviewed
+textbook routes (curated) are ranked separately and shown in groups of their own.
 
 Runs once on a developer machine (about half an hour on 8 cores), not on the server.
 
 Usage: uv run python scripts/build_reactions.py --uspto GRANTS.rsmi APPS.rsmi [--crd CRD.tsv] [--rhea RHEA.tsv] [--wiki WIKI.tsv]
-           [--out reactions.db] [-j 8] [--limit N] [--max-atoms 60]
+           [--hsdb HSDB.tsv] [--curated CURATED.tsv] [--out reactions.db] [-j 8] [--limit N] [--max-atoms 60]
 """
 
 from __future__ import annotations
@@ -57,6 +59,7 @@ SOURCES = {
     "rhea": "Rhea, the reaction knowledgebase, https://www.rhea-db.org, CC BY 4.0",
     "wiki": "Equations and sentences in English Wikipedia chemistry articles, https://en.wikipedia.org, CC BY-SA 4.0",
     "hsdb": "Hazardous Substances Data Bank, Methods of Manufacturing, U.S. National Library of Medicine, via PubChem",
+    "curated": "Reviewed textbook routes, app/data/curated_reactions.tsv in https://github.com/S-Rohan-1904/chem-draw-clone, MIT",
 }
 ENZYME_SOURCES = {"rhea"}
 # Sources whose every product counts (an enzyme makes both the phosphate and ADP; an equation
@@ -65,9 +68,13 @@ ALL_PRODUCTS = {"rhea"}
 # Text sources name the compound they are about (extra is "<detail>|<SMILES>"): that compound is
 # the product; a coproduct in another article's equation (ethanol from hydrolysing ethyl formate)
 # is not a route to it.
-TEXT_SOURCES = {"wiki", "hsdb"}
-GROUP = {"rhea": "enzyme", "wiki": "textbook", "hsdb": "textbook"}
+TEXT_SOURCES = {"wiki", "hsdb", "curated"}
+GROUP = {"rhea": "enzyme", "wiki": "textbook", "hsdb": "textbook", "curated": "curated"}
 MAX_PRODUCT_ATOMS = 60
+# Reviewed routes are few and chosen by hand, so they may be larger (tristearin) and have more
+# reactants (four Grignard reagents on SiCl4) than the text-mined records are allowed.
+CURATED_MAX_ATOMS = 120
+CURATED_MAX_REACTANTS = 6
 MAX_AGENTS = 5
 # RXNMapper confidence below which a mapped CRD or Rhea row is dropped. Off by default: the
 # score falls with molecule size (Rhea's cofactors), and on Rhea it did not separate right
@@ -76,7 +83,7 @@ MIN_CONFIDENCE = 0.0
 TOP = 5
 # Labels that name only a bond, not the groups that change; ranked after named changes seen as often.
 GENERIC_LABEL = re.compile(r"^New |bond broken$|→ new [A-Z][a-z]?-[A-Z][a-z]? bond$")
-SOURCE_ORDER = {"wiki": 0, "hsdb": 0, "uspto": 0, "rhea": 0, "crd": 1}
+SOURCE_ORDER = {"wiki": 0, "hsdb": 0, "curated": 0, "uspto": 0, "rhea": 0, "crd": 1}
 
 
 # --- one reaction ------------------------------------------------------------
@@ -285,9 +292,35 @@ def _text_products(right: list, extra: str) -> list:
     return []
 
 
+def _stereo_changes(reactants: list, product: Chem.Mol) -> set[int]:
+    """Map numbers of double bonds whose E/Z label differs between reactants and product
+    ((Z)- to (E)-cyclooctene): the only change in an isomerisation."""
+    def labels(m: Chem.Mol) -> dict[frozenset, str]:
+        Chem.AssignStereochemistry(m, cleanIt=True, force=True)
+        return {frozenset((b.GetBeginAtom().GetAtomMapNum(), b.GetEndAtom().GetAtomMapNum())): str(b.GetStereo())
+                for b in m.GetBonds() if b.GetBondType() == Chem.BondType.DOUBLE}
+    before: dict[frozenset, str] = {}
+    for m in reactants:
+        before.update(labels(m))
+    return {mp for k, st in labels(product).items() if k in before and before[k] != st for mp in k if mp}
+
+
+def _fallback_label(reactants: list, product: Chem.Mol, centre_maps: set[int], stereo: bool) -> str:
+    """A label for a reviewed route whose change names no functional group or heavy-atom bond."""
+    if stereo:
+        return "Double bond geometry changed"
+    aromatic = {a.GetAtomMapNum() for m in reactants for a in m.GetAtoms() if a.GetIsAromatic()}
+    if any(a.GetAtomMapNum() in centre_maps & aromatic and not a.GetIsAromatic() for a in product.GetAtoms()):
+        return "Aromatic ring hydrogenated"
+    return "Reviewed textbook route"
+
+
 def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: int) -> dict | None:
     _, source, ref, year, yld, extra = rec
-    if product.GetNumHeavyAtoms() > MAX_PRODUCT_ATOMS:
+    reviewed = source == "curated"
+    if reviewed:
+        max_atoms = CURATED_MAX_ATOMS
+    if product.GetNumHeavyAtoms() > (CURATED_MAX_ATOMS if reviewed else MAX_PRODUCT_ATOMS):
         return None
     pmaps = {a.GetAtomMapNum() for a in product.GetAtoms() if a.GetAtomMapNum()}
 
@@ -297,7 +330,7 @@ def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: in
             reactants.append(m)
         elif m is not None:
             others.append(m)
-    if not reactants or len(reactants) > 4:
+    if not reactants or len(reactants) > (CURATED_MAX_REACTANTS if reviewed else 4):
         return None
     rmaps = {a.GetAtomMapNum() for m in reactants for a in m.GetAtoms() if a.GetAtomMapNum() in pmaps}
 
@@ -321,6 +354,10 @@ def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: in
                     r_bonds[frozenset((mp, nb.GetAtomMapNum()))] = (a, nb)
                 else:
                     broken[_pair(a, nb)] += 1  # bond to a leaving group
+    stereo_only = False
+    if not centre_maps and reviewed:
+        centre_maps = _stereo_changes(reactants, product)
+        stereo_only = bool(centre_maps)
     if not centre_maps:
         return None
     formed: Counter = Counter()
@@ -382,12 +419,16 @@ def _view(rec: tuple, left: list, agents: list, product: Chem.Mol, max_atoms: in
             if frozenset((a1.GetAtomMapNum(), a2.GetAtomMapNum())) not in r_bonds and (a1.GetIdx() in p_mine or a2.GetIdx() in p_mine):
                 mine_formed[_pair(a1, a2)] += 1
         label = _label(before, _groups_touching(plain_p, p_mine), mine_formed, broken)
+        if not label and reviewed:
+            label = _fallback_label([m], product, mine, stereo_only)
         if label:
             ik = _inchikey(smi, plain)
             if ik:
                 obs.append((ik, ik[:14], smi, plain.GetNumHeavyAtoms(), "uses", label, ",".join(str(pos[i]) for i in sorted(centre))))
     if plain_p.GetNumHeavyAtoms() <= max_atoms:
         label = _label(before_all, after_all, formed, broken)
+        if not label and reviewed:
+            label = _fallback_label(reactants, product, centre_maps, stereo_only)
         ik = _inchikey(p_smiles, plain_p)
         if label and ik:
             obs.append((ik, ik[:14], p_smiles, plain_p.GetNumHeavyAtoms(), "makes", label, ",".join(str(p_pos[i]) for i in sorted(p_centre))))
@@ -425,7 +466,9 @@ class Index:
         self.stats = Counter()
 
     def add(self, r: dict) -> None:
-        h = hash(r["key"])
+        # A reviewed route is kept even when a patent or Wikipedia recorded the same reaction:
+        # it is shown in its own group.
+        h = hash(("curated", r["key"]) if r["group"] == "curated" else r["key"])
         if h in self.seen:
             self.stats["duplicates"] += 1
             return
@@ -565,6 +608,7 @@ def main() -> None:
     ap.add_argument("--rhea", type=Path, nargs="*", default=[], help="Rhea mapped by map_reactions.py")
     ap.add_argument("--wiki", type=Path, nargs="*", default=[], help="Wikipedia equations mapped by map_reactions.py")
     ap.add_argument("--hsdb", type=Path, nargs="*", default=[], help="PubChem HSDB routes mapped by map_reactions.py")
+    ap.add_argument("--curated", type=Path, nargs="*", default=[], help="reviewed textbook routes mapped by map_reactions.py")
     ap.add_argument("--out", type=Path, default=ROOT / "reactions.db")
     ap.add_argument("-j", "--jobs", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="read only the first N rows of each file (for a trial run)")
@@ -574,7 +618,7 @@ def main() -> None:
     args = ap.parse_args()
 
     inputs = [(p, "uspto") for p in args.uspto] + [(p, "crd") for p in args.crd] + [(p, "rhea") for p in args.rhea] \
-        + [(p, "wiki") for p in args.wiki] + [(p, "hsdb") for p in args.hsdb]
+        + [(p, "wiki") for p in args.wiki] + [(p, "hsdb") for p in args.hsdb] + [(p, "curated") for p in args.curated]
     if not inputs:
         ap.error("give at least one input file")
     t0 = time.time()

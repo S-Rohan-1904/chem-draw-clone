@@ -189,18 +189,23 @@ def summarise(rows: list[dict], results: list[dict], lit: list[dict] | None) -> 
         lines.append("|---|---|---|")
         for d in ("uses", "makes"):
             counts = [len(results[i][d]) for i in idx]
-            textbook = [len(results[i][d]) + len(results[i].get(f"textbook_{d}", [])) for i in idx]
+            # Textbook routes: Wikipedia and HSDB, and the reviewed routes of app/data/curated_reactions.tsv.
+            textbook = [len(results[i][d]) + len(results[i].get(f"textbook_{d}", [])) + len(results[i].get(f"curated_{d}", []))
+                        for i in idx]
             both = [x + len(results[i].get(f"enzyme_{d}", [])) for x, i in zip(textbook, idx)]
             name = "Used in" if d == "uses" else "Made by"
             lines.append(f"| {name} | {_pct(sum(x >= 1 for x in counts), n)} | {_pct(sum(x >= 5 for x in counts), n)} |")
-            if any(results[i].get(f"textbook_{d}") for i in idx):
+            if any(results[i].get(f"textbook_{d}") or results[i].get(f"curated_{d}") for i in idx):
                 lines.append(f"| {name}, with textbook routes | {_pct(sum(x >= 1 for x in textbook), n)} | "
                              f"{_pct(sum(x >= 5 for x in textbook), n)} |")
             lines.append(f"| {name}, with enzyme reactions too | {_pct(sum(x >= 1 for x in both), n)} | {_pct(sum(x >= 5 for x in both), n)} |")
+            if d == "makes" and any(results[i].get("no_preparation") for i in idx):
+                noted = sum(1 for x, i in zip(both, idx) if x >= 1 or results[i].get("no_preparation"))
+                lines.append(f"| {name}, or a reviewed no common preparation note | {_pct(noted, n)} | |")
         if lit:
             # Made by anything the card shows: a recorded reaction, a PubChem method or the Wikipedia section.
             made = sum(1 for i in idx if results[i]["makes"] or results[i].get("enzyme_makes") or results[i].get("textbook_makes")
-                       or lit[i].get("pubchem methods") or lit[i].get("wikipedia"))
+                       or results[i].get("curated_makes") or lit[i].get("pubchem methods") or lit[i].get("wikipedia"))
             lines.append(f"| Made by, with PubChem methods and Wikipedia | {_pct(made, n)} | |")
             sources = sorted({k for i in idx for k in lit[i]})
             lines.append("")

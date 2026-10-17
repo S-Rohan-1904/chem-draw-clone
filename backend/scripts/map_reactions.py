@@ -18,6 +18,9 @@ Sources
 - hsdb: hsdb_reactions.tsv from scripts/hsdb_reactions.py, routes read from
   PubChem's Methods of Manufacturing (HSDB). ref is <CID>#<line>, extra is the
   reference the method cites.
+- curated: app/data/curated_reactions.tsv, the hand-reviewed textbook routes
+  (scripts/curated_reactions.py). Only route rows; the agents are put back as for CRD.
+  ref is the row id, extra is "<reference>|<note>|<product SMILES>".
 - crd: reactionSmilesFigShare2025.txt from the Chemical Reaction Database,
   van der Lingen, https://doi.org/10.5281/zenodo.18109268 (CC BY 4.0).
   Lines are reactants>agents>products; only reactants>>products is mapped and
@@ -109,9 +112,22 @@ def text_inputs(path: Path):
                 yield f"{left}>>{right}", "", f"{where}#{n}", "", "", f"{detail.replace('|', ' ')}|{own}"
 
 
+def curated_inputs(path: Path):
+    with open(path, encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            parts = (row.get("reaction_smiles") or "").split(">")
+            if row.get("kind") != "route" or len(parts) != 3:
+                continue
+            left, right = _canonical_side(parts[0]), _canonical_side(parts[2])
+            agents = _canonical_side(parts[1]) or ""
+            if left and right:
+                extra = "|".join(row.get(k, "").replace("|", "/") for k in ("reference", "note", "product_smiles"))
+                yield f"{left}>>{right}", agents, row["id"], "", "", extra
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("source", choices=["rhea", "crd", "wiki", "hsdb"])
+    ap.add_argument("source", choices=["rhea", "crd", "wiki", "hsdb", "curated"])
     ap.add_argument("input", type=Path, help="Rhea tsv folder, or the CRD text file")
     ap.add_argument("out", type=Path)
     ap.add_argument("--limit", type=int, default=0)
@@ -125,7 +141,8 @@ def main() -> None:
     if args.out.exists():
         with open(args.out, encoding="utf-8") as f:
             done = {line.split("\t")[1] for line in f if "\t" in line}
-    inputs = {"rhea": rhea_inputs, "crd": crd_inputs, "wiki": text_inputs, "hsdb": text_inputs}[args.source](args.input)
+    inputs = {"rhea": rhea_inputs, "crd": crd_inputs, "wiki": text_inputs, "hsdb": text_inputs,
+              "curated": curated_inputs}[args.source](args.input)
     mapper = RXNMapper()
     if torch.backends.mps.is_available():  # Apple GPU, several times faster than the CPU
         mapper.device = torch.device("mps")

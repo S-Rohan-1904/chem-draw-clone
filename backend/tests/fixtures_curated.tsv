@@ -1,0 +1,5 @@
+id	kind	name	product_smiles	reaction_smiles	reference	note	reviewed_by	reviewed_on
+R004	route	(2R,3S)-2,3-dibromobutane (meso)	C[C@H](Br)[C@@H](C)Br	C/C=C/C.BrBr>ClCCl>C[C@H](Br)[C@@H](C)Br	Clayden, Greeves and Warren, Organic Chemistry, 2nd ed., Oxford University Press, 2012, electrophilic addition to alkenes (stereospecific anti addition)	Anti addition to trans-but-2-ene gives the meso dibromide only.	Test Reviewer	2026-10-17
+R047	route	(E)-cyclooctene	C1=C/CCCCCC/1	C1=C\CCCCCC/1>COC(=O)c1ccccc1>C1=C/CCCCCC/1	Royzen, Yap and Fox, J. Am. Chem. Soc. 2008, 130, 3760	Photoisomerisation reaches a Z and E mixture, and silver removes the strained E isomer as it forms.	Test Reviewer	2026-10-17
+R097	route	cyclohexane	C1CCCCC1	c1ccccc1.[H][H].[H][H].[H][H]>[Ni]>C1CCCCC1	Smith, March's Advanced Organic Chemistry, 8th ed., Wiley, 2020, hydrogenation of aromatic rings	The industrial route.	Test Reviewer	2026-10-17
+R121	no_preparation	(3R)-3-methylhexane	CCC[C@H](C)CC			A branched alkane used as a naming example. It is a petroleum component with no common laboratory preparation. No textbook route gives one enantiomer.	Test Reviewer	2026-10-17

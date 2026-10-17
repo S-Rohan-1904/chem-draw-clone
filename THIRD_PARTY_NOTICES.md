@@ -45,6 +45,12 @@ these packages unmodified.
 | pytest, pytest-xdist (development and testing) | MIT / MIT | Tests |
 | RXNMapper, with PyTorch and Transformers (index building only, in a separate environment) | MIT / BSD-3-Clause / Apache-2.0 | Atom-mapping the Rhea and CRD reactions |
 
+The calculated IR spectra use **xtb** (Grimme group, University of Bonn, LGPL-3.0-or-later,
+<https://github.com/grimme-lab/xtb>), run as a separate program. The Docker image installs the
+unmodified conda-forge build of xtb 6.7.1 under /opt/xtb, with its licence files; the source is
+at the link above. Bannwarth, C.; Ehlert, S.; Grimme, S. GFN2-xTB. *J. Chem. Theory Comput.*
+**2019**, 15, 1652–1671.
+
 Chem Illustrator also needs a Java runtime (for example OpenJDK) to run OPSIN. It is
 installed separately and is not distributed with this repository.
 

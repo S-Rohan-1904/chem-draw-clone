@@ -320,9 +320,30 @@ export interface IrBand {
   atoms: number[]
 }
 
+export interface IrMode {
+  /** Scaled harmonic frequency, cm-1 */
+  freq: number
+  /** km/mol */
+  intensity: number
+  /** Heavy atoms that move most */
+  atoms: number[]
+  /** Displacement per atom (heavy atoms first, then hydrogens), as in atoms below */
+  disp: [number, number, number][]
+}
+
+export interface IrCalculated {
+  method: string
+  scale: number
+  seconds: number
+  atoms: { el: string; x: number; y: number; z: number }[]
+  modes: IrMode[]
+}
+
 export interface IrSpectrum {
   predicted: IrBand[]
   experimental: { x: number[]; y: number[]; state: string | null; title: string; url: string } | null
+  /** Normal modes from GFN2-xTB, or null when the server has no xtb or the molecule is too big. */
+  calculated?: IrCalculated | null
   note: string
   cached: boolean
 }
@@ -348,7 +369,29 @@ export interface MsSpectrum {
   isotopes: { mz: number; nominal: number; rel: number }[]
   fragments: { mz: number; nominal: number; formula: string; loss: string; atoms: number[]; score: number; why: string }[]
   tree: MsNode[]
+  /** Electrospray ions with exact m/z, the likely ones marked. */
+  esi?: { label: string; mz: number; likely: boolean; why: string }[]
+  /** Rings plus double bonds and the nitrogen rule (null for ions). */
+  rules?: { dbe: number; nitrogen: number; nominal: number; nitrogen_rule: boolean } | null
+  /** Formulas that fit the exact mass within ppm. */
+  hrms?: { ppm: number; total: number; candidates: { formula: string; ppm: number; dbe: number; actual: boolean }[] }
   experimental: { peaks: { mz: number; rel: number }[]; url: string } | null
+  note: string
+  cached: boolean
+}
+
+export interface UvPart {
+  label: string
+  nm: number
+  atoms: number[]
+}
+
+export interface UvSpectrum {
+  /** diene, enone or polyene; null when no rule applies */
+  rule: 'diene' | 'enone' | 'polyene' | null
+  lambda_max: number | null
+  parts: UvPart[]
+  chromophore: number[]
   note: string
   cached: boolean
 }

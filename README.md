@@ -131,22 +131,43 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 
 ## Spectra
 
-Every built molecule gets a Spectra card with four tabs. Hovering a peak or band
+Every built molecule gets a Spectra card with six tabs. Hovering a peak or band
 highlights the atoms responsible in the 2D drawing.
 
 - **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
-  integrations are computed locally. Shifts come from the nmrshiftdb2 HOSE-code
-  prediction service when reachable, otherwise from additive substituent rules
-  (teaching accuracy only).
+  integrations are computed locally. Shifts come, per signal, from the first of these that has one,
+  all offline (`backend/app/nmr_env.py`, index `backend/app/data/nmr_env.db`):
+  the compound's own assigned spectrum when it is one of the 43,000 compounds in nmrshiftdb2
+  (marked measured, with the record number and solvent; shifts are as deposited, and a few records'
+  1H assignments look shuffled); a prediction from atoms with the same
+  surroundings up to four bonds out in those spectra (marked predicted, with a ± calibrated on held-out
+  molecules); additive substituent rules (marked estimated). On 4,355 molecules held out of the
+  index, predictions are off by 2.5 ppm (13C) and 0.24 ppm (1H) on average, against 8.9 and 0.66 ppm
+  for the rules (`docs/spectra-benchmark.md`, `backend/scripts/eval_spectra.py`). Rebuild the index from
+  nmrshiftdb2's `nmrshiftdb2withsignals.sd` with `uv run python scripts/nmr_env.py build <file>`.
 - **Couplings** (`backend/app/couplings.py`): first-order J values and multiplet patterns
   (d, dd, td, ...). 7 Hz across freely rotating bonds, Karplus J from the dihedral in the
   lowest-energy MMFF conformer inside rings, 16 / 10.5 Hz trans / cis on alkenes, 8 / 2 Hz
   ortho / meta, 2.5 Hz aldehyde; O-H and N-H are broad singlets. Equivalent partners that
   differ in J (axial / equatorial, cis / trans on a =CH2) are split apart. The spectrum
   draws each multiplet from its J values, exaggerated for visibility.
+- **Spin simulation** (`backend/app/spinsim.py`): clicking a 1H signal shows it as a spectrometer would at
+  60, 100, 300, 400 or 600 MHz, from the full spin Hamiltonian (every shift and coupling, diagonalised
+  exactly per group of coupled protons, up to 10 at a time), so roofing, AB quartets and extra lines appear
+  at low field. Larger groups are drawn first order; exchangeable protons are broad.
+- **DEPT and 2D**: the 13C tab switches to DEPT-135 (CH and CH3 up, CH2 down) and DEPT-90 (CH only). The 2D NMR
+  tab draws COSY (H-C-C-H and separate geminal signals), HSQC (each carbon and its protons) and HMBC
+  (carbons two or three bonds from a proton) from the structure and the shifts; pointing at a cross peak
+  highlights both atoms.
 - **IR**: characteristic bands from the functional groups present, drawn as a synthetic
   transmittance curve, with the experimental spectrum from the NIST Chemistry WebBook
-  overlaid when NIST has one.
+  overlaid when NIST has one. With [xtb](https://github.com/grimme-lab/xtb) installed, the
+  spectrum is also calculated (`backend/app/vibrations.py`): the structure is optimised with
+  GFN2-xTB and its normal modes computed (frequencies scaled by 0.985, usually within about
+  50 cm⁻¹ of experiment), and clicking a band animates that vibration in 3D. Up to 80 atoms,
+  one calculation at a time (`CHEM_XTB_JOBS`); about 5 s for ibuprofen. The Docker image installs
+  xtb from conda-forge; locally, point `CHEM_XTB` at the binary (for example
+  `micromamba create -p ~/.local/share/xtb-env -c conda-forge xtb=6.7.1`).
 - **Mass spec**: molecular-ion isotope pattern (Cl/Br/S visible), NIST's experimental EI
   spectrum when available, and a fragmentation tree (`backend/app/msfrag.py`): single-bond
   cleavages ranked by stability (acylium, benzylic/allylic, alpha to a heteroatom), the
@@ -155,10 +176,19 @@ highlights the atoms responsible in the 2D drawing.
   with Cl / Br, its isotope cluster; an ion reachable both directly and stepwise is listed
   once under its precursor.
 
+- **ESI and high resolution** (`backend/app/msinfo.py`): the usual electrospray ions ([M+H]+, [M+Na]+,
+  [M-H]-, adducts) with exact m/z, the likely ones marked from the groups present (a basic nitrogen takes
+  a proton, an acid loses one, oxygen-rich molecules hold sodium); rings plus double bonds and the
+  nitrogen rule; and every CHNOS formula within 5 ppm of the exact mass that passes both rules.
+- **UV-Vis** (`backend/app/uvvis.py`): λmax estimated with the Woodward-Fieser rules for conjugated
+  dienes and α,β-unsaturated carbonyls (Fieser-Kuhn above four C=C), with every increment listed and the
+  atoms it counts highlighted. Butadiene 217 nm, mesityl oxide 239 (measured 237), β-carotene 453 (452).
+  Isolated and aromatic chromophores get a note instead of a number.
+
 Results are cached per molecule (`SPECTRA_VERSION` in `backend/app/cache.py` invalidates
 old rows when the payload changes). `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no
-nmrshiftdb2 or NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each
-request. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
+NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each request.
+`CHEM_NMR_ENV_DB` moves the NMR index. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
 
 ### Reaction index
 

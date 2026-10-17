@@ -45,6 +45,12 @@ these packages unmodified.
 | pytest, pytest-xdist (development and testing) | MIT / MIT | Tests |
 | RXNMapper, with PyTorch and Transformers (index building only, in a separate environment) | MIT / BSD-3-Clause / Apache-2.0 | Atom-mapping the Rhea and CRD reactions |
 
+The calculated IR spectra use **xtb** (Grimme group, University of Bonn, LGPL-3.0-or-later,
+<https://github.com/grimme-lab/xtb>), run as a separate program. The Docker image installs the
+unmodified conda-forge build of xtb 6.7.1 under /opt/xtb, with its licence files; the source is
+at the link above. Bannwarth, C.; Ehlert, S.; Grimme, S. GFN2-xTB. *J. Chem. Theory Comput.*
+**2019**, 15, 1652–1671.
+
 Chem Illustrator also needs a Java runtime (for example OpenJDK) to run OPSIN. It is
 installed separately and is not distributed with this repository.
 
@@ -66,6 +72,15 @@ installed separately and is not distributed with this repository.
   reactions (left-to-right direction, no generic R groups) are atom-mapped with RXNMapper
   and added to the reaction index, each linked to its Rhea entry and EC numbers.
   `backend/tests/fixtures_reactions_rhea.tsv` holds two mapped rows.
+- **nmrshiftdb2**, University of Cologne, <https://nmrshiftdb.nmr.uni-koeln.de>, under the
+  nmrshiftdb2 Database License (derived from the ODC Open Database License). Steinbeck, C.;
+  Kuhn, S. *Phytochemistry* **2004**, 65, 2711–2717. `backend/scripts/nmr_env.py` reads the
+  assigned spectra in `nmrshiftdb2withsignals.sd` and writes `backend/app/data/nmr_env.db`: median
+  ¹H and ¹³C shifts per atom environment, and each compound's own assigned shifts. That file is a
+  derivative database and is distributed under the nmrshiftdb2 Database License, not the MIT
+  licence; as its section 4.5 requires, the software that uses it is open source (MIT).
+  `docs/benchmark/nmr_test.jsonl`, the held-out molecules the benchmark scores against, is
+  under the same licence.
 - **Open Reaction Database** (ORD), <https://open-reaction-database.org>, data released under
   CC BY-SA 4.0. Kearnes, S. M. et al. The Open Reaction Database. *J. Am. Chem. Soc.* **2021**,
   143 (45), 18820–18826. `backend/scripts/ord_papers.py` reads the non-patent datasets and
@@ -95,9 +110,6 @@ naming the source, and use of each service is subject to its provider's terms.
   Kim, S. et al. *Nucleic Acids Res.* **2023**, 51 (D1), D1373–D1380.
 - **NCI/CADD Chemical Identifier Resolver (CACTUS)**, National Cancer
   Institute: fallback name resolution.
-- **nmrshiftdb2**, University of Cologne: predicted ¹H and ¹³C NMR shifts
-  using HOSE codes. Steinbeck, C.; Kuhn, S. *Phytochemistry* **2004**, 65,
-  2711–2717.
 - **NIST Chemistry WebBook**, NIST Standard Reference Database Number 69:
   experimental IR and mass spectra. Linstrom, P. J.; Mallard, W. G., Eds.
   National Institute of Standards and Technology, Gaithersburg, MD.

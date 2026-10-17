@@ -89,3 +89,40 @@ def test_reagents_named_in_words():
     side = wiki._side_combos(st)
     rxns = wiki.balance("CCC(C)Cl", ["Cl", "CC=CC"], "addition of hydrochloric acid to 2-butene", st, side)
     assert rxns == ["CC=CC.Cl>>CCC(C)Cl"]
+
+
+def _forward(text, own=None, title="Topic", names=None, by_title=None):
+    st = wiki.Structures()
+    st.by_title.update(by_title or {})
+    lower = {t.lower(): s for t, s in st.by_title.items()}
+    return wiki.forward_candidates(title, own, text, st, wiki._side_combos(st), lower, names or {}, None)
+
+
+def test_reaction_sentence_credits_the_product():
+    """A sentence on another article (a reaction or the starting material) is a route to the
+    compound it names after the verb, here a name looked up in PubChem."""
+    text = "Treating [[trans-2-Butene|trans-2-butene]] with bromine gives meso-2,3-dibromobutane."
+    found = _forward(text, by_title={"Trans-2-Butene": "C/C=C/C"},
+                     names={"meso-2,3-dibromobutane": "C[C@@H](Br)[C@H](C)Br"})
+    meso = Chem.MolToSmiles(Chem.MolFromSmiles("C[C@@H](Br)[C@H](C)Br"))
+    assert [r for r, _, _ in found] == [f"BrBr.C/C=C/C>>{meso}"]
+
+
+def test_reaction_sentence_on_the_compound_article():
+    text = "==Reactions==\nIt reacts with [[hydrogen bromide]] to give [[Bromocyclohexane|bromocyclohexane]].\n"
+    st_titles = {"Hydrogen bromide": "Br", "Bromocyclohexane": "BrC1CCCCC1"}
+    st = wiki.Structures()
+    st.by_title.update(st_titles)
+    found = wiki.forward_candidates("Cyclohexene", "C1=CCCCC1", text, st, wiki._side_combos(st), {}, {}, wiki.REACT_SECTION)
+    assert [r for r, _, _ in found] == ["Br.C1=CCCCC1>>BrC1CCCCC1"]
+
+
+@pytest.mark.parametrize("text", [
+    "Ethene does not react with bromine to give 1,2-dibromoethane.",  # denied
+    "Analogues of ethene include propene, which forms 1,2-dibromoethane with bromine.",  # not a reaction
+    "Diatomic carbon reacts with acetaldehyde to give ethyne.",  # the subject takes no part
+])
+def test_reaction_sentences_refused(text):
+    by_title = {"Ethene": "C=C", "Propene": "CC=C", "1,2-dibromoethane": "BrCCBr", "Diatomic carbon": "[C]#[C]",
+                "Acetaldehyde": "CC=O", "Ethyne": "C#C"}
+    assert _forward(text, by_title=by_title) == []

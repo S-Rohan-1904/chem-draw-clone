@@ -3,7 +3,7 @@
 reactions.db is built offline by scripts/build_reactions.py from Daniel
 Lowe's text-mined US patent reactions (1976-Sep 2016, CC0), the Chemical
 Reaction Database (CC BY 4.0), Rhea enzyme reactions (CC BY 4.0) and the
-equations written in Wikipedia compound articles (CC BY-SA 4.0). For
+equations and sentences in Wikipedia chemistry articles (CC BY-SA 4.0). For
 each molecule it holds up to five reaction types in each direction, "uses"
 (the molecule is a reactant) and "makes" (it is the product), ranked by how
 many distinct reactions show that type, each with one real example. Enzyme
@@ -49,7 +49,7 @@ SOURCES = {
         "licence": "CC BY 4.0",
     },
     "wiki": {
-        "name": "Equations in chemical compound articles",
+        "name": "Equations and sentences in chemistry articles",
         "author": "Wikipedia contributors",
         "url": "https://en.wikipedia.org/wiki/Wikipedia:Copyrights",
         "licence": "CC BY-SA 4.0",

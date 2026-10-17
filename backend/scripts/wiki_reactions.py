@@ -1,4 +1,4 @@
-"""Reactions written as equations in English Wikipedia chemical compound articles.
+"""Reactions written as equations or sentences in English Wikipedia chemistry articles.
 
 Articles give the textbook routes to a compound as equations, for example
 {{chem2|C2H4 + H2O -> C2H5OH}} under Production in "Ethanol". This script
@@ -13,6 +13,8 @@ keeps only the ones it can resolve without guessing:
 Steps (output files go in DIR):
 
   uv run python scripts/wiki_reactions.py fetch DIR      # compound list from Wikidata, wikitext of each article
+  uv run python scripts/wiki_reactions.py fetch-topics DIR  # articles about reactions and functional groups
+  uv run python scripts/wiki_reactions.py names DIR      # PubChem structures for names in reaction sentences
   uv run python scripts/wiki_reactions.py extract DIR    # DIR/wiki_reactions.tsv and a report
 
 The tsv has one reaction per line, reactants>>products, then the article title
@@ -33,7 +35,9 @@ import re
 import sys
 import time
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
+from urllib.parse import quote
 
 import httpx
 from rdkit import Chem, RDLogger
@@ -554,22 +558,30 @@ def _side_combos(st: "Structures") -> dict[tuple, list[tuple[int, str]]]:
     return out
 
 
-def _sentences(text: str):
-    """Sentences of the preparation sections, with their links kept."""
-    heads = list(PREP_SECTION.finditer(text))
-    for h in heads:
+def _sections(text: str, section: re.Pattern | None):
+    """Bodies of the sections whose heading matches (with their subsections), or the whole
+    article when section is None."""
+    if section is None:
+        yield text
+        return
+    for h in section.finditer(text):
         level = len(h.group(1))
         nxt = re.compile(r"^={2,%d}[^=].*?={2,%d}\s*$" % (level, level), re.M).search(text, h.end())
-        body = text[h.end(): nxt.start() if nxt else len(text)]
+        yield text[h.end(): nxt.start() if nxt else len(text)]
+
+
+def _sentences(text: str, section: re.Pattern | None = PREP_SECTION, verb: re.Pattern = PREP_VERB):
+    """Sentences of the matching sections that use one of the verbs, with their links kept."""
+    for body in _sections(text, section):
         body = re.sub(r"<ref[^>]*/>|<ref.*?</ref>|\{\{(?:cite|citation|cn|citation needed)[^{}]*\}\}", "", body, flags=re.S | re.I)
         body = re.sub(r"\[\[(?:File|Image):[^\]]*\]\]", "", body)
         for para in body.split("\n"):
             if para.startswith((":", "{", "|", "!", "*")) and not para.startswith("* "):
                 continue
-            yield from (s.strip() for s in re.split(r"(?<=[a-z0-9)\]])\.\s+(?=[A-Z\[])", para) if PREP_VERB.search(s))
+            yield from (s.strip() for s in re.split(r"(?<=[a-z0-9)\]])\.\s+(?=[A-Z\[])", para) if verb.search(s))
 
 
-def balance(own: str, named: list[str], plain: str, st: "Structures", side: dict) -> list[str]:
+def balance(own: str, named: list[str], plain: str, st: "Structures", side: dict, amounts: tuple = (1, 2, 3)) -> list[str]:
     """Reaction SMILES in which the fewest of the named compounds (with small whole-number
     amounts) give the compound plus at most two simple side products, atom for atom."""
     target = st.formula(own)
@@ -587,8 +599,8 @@ def balance(own: str, named: list[str], plain: str, st: "Structures", side: dict
     best: list[tuple] = []
     for size in (1, 2, 3):
         for subset in itertools.combinations(cands, size):
-            for coefs in itertools.product((1, 2, 3), repeat=size):
-                for pn in (1, 2, 3):
+            for coefs in itertools.product(amounts, repeat=size):
+                for pn in amounts:
                     diff = Counter()
                     for n, s in zip(coefs, subset):
                         for k, v in st.formula(s).items():
@@ -644,6 +656,253 @@ def prose_candidates(title: str, own: str, text: str, st: "Structures", side: di
     return out
 
 
+# --- sentences about what a compound becomes ----------------------------------------
+# "Cyclohexene reacts with [[bromine]] to give trans-1,2-dibromocyclohexane." The Reactions
+# sections of compound articles, and whole articles about reactions and functional groups,
+# say what compounds turn into; the product's own article often says nothing about how it is
+# made. The compounds named before the verb are the starting materials and one named after it
+# the product; the same balance test as for preparation sentences decides.
+
+REACT_SECTION = re.compile(r"^(={2,4})\s*([^=]*?(?:Reaction|Reactivity|Chemical properties|Chemistry|Uses|Applications|"
+                           r"Derivatives|Laboratory use)[^=]*?)\s*\1\s*$", re.M | re.I)
+FORWARD_VERB = re.compile(r"\b(?:to give|gives|giving|to form|forms|forming|to yield|yields|yielding|to afford|affords|"
+                          r"affording|to produce|produces|producing|to provide|provides|providing|furnish(?:es|ing)?|"
+                          r"(?:is|are|was|were|be|being) converted (?:in)?to|converts? (?:it |them )?(?:in)?to)\b", re.I)
+FORWARD_NEGATION = re.compile(r"\b(cannot|can ?not|not|unlike|instead of|rather than|failed|unsuccessful|never|without|"
+                              r"would|might|could|hypothetical|proposed|analog(?:ue)?s?|include|derived|structure|adducts?|complex(?:es)?)\b", re.I)
+# Words a name lookup should not be asked about: classes of compounds, not compounds.
+CLASS_WORDS = {"alkene", "alkane", "alkyne", "arene", "amine", "amide", "imine", "ester", "ether", "ketone", "aldehyde",
+               "alcohol", "halide", "haloalkane", "epoxide", "diol", "carbonyl", "nitrile", "enol", "enolate", "enamine",
+               "olefin", "acetal", "hemiacetal", "ylide", "carbocation", "carbanion", "radical", "intermediate", "product",
+               "alkoxide", "carboxylate", "anhydride", "hydrocarbon", "polymer", "monomer", "oligomer", "salt", "base",
+               "acid", "catalyst", "solvent", "complex", "derivative", "isomer", "mixture", "solution", "compound"}
+CHEMICAL_ROOT = re.compile(r"meth|eth|prop|but|pent|hex|hept|oct|non|dec|benz|phen|tolu|xyl|cyclo|chlor|brom|iod|fluor|nitr|"
+                           r"amin|amid|hydroxy|oxo|oxy|carb|sulf|thi|phosph|pyr|fur|indol|naphth|anthr|acet|form|"
+                           r"(?:ane|ene|yne|ol|al|one|ide|ate|ite|ine|ium)$", re.I)
+CHEMICAL_END = re.compile(r"(?:ane|ene|yne|ol|al|one|ide|ate|ite|ine|ium|ose|yl ?\w*| acid)$", re.I)
+
+
+def _word_candidates(plain: str):
+    """(start, end, text) of every word, and of every word with the lower-case word after it
+    (acetic acid, ethyl acetate), trimmed of punctuation around it."""
+    for m in re.finditer(r"[A-Za-z0-9α-ωΔ,()'\[\]+-]+(?:\s[a-z]+)?", plain):
+        word = m.group(0)
+        for w in (word, word.split(" ")[0]):
+            start = m.start()
+            t = w.rstrip(",;:'\"")
+            while t.endswith(")") and t.count(")") > t.count("("):
+                t = t[:-1]
+            while t.startswith(("(", "[")) and t.count("(") + t.count("[") > t.count(")") + t.count("]"):
+                t, start = t[1:], start + 1
+            if t and not t.startswith(("-", ",", "+")):
+                yield start, start + len(t), t
+
+
+def _looks_like_name(w: str) -> bool:
+    """A word worth looking up as a compound name: 2,3-dibromobutane, cyclohexene, meso-tartaric acid."""
+    low = w.lower()
+    if len(w) < 5 or low in CLASS_WORDS or low.split(" ")[-1] in CLASS_WORDS - {"acid"}:
+        return False
+    if low.endswith("s") and not low.endswith(("ss", "is")):
+        return False  # plural: a class (alkenes, dibromides)
+    if " " in low and not low.endswith(" acid"):
+        return False
+    if low.split(" ")[0] in _english():
+        return False  # forming, alone, separate: words, and any compound among them has an article
+    if re.search(r"[A-Z]{2}|\d{3}", w) or not CHEMICAL_ROOT.search(low.split(" ")[0]):
+        return False
+    return bool(re.search(r"\d|-", w) or CHEMICAL_END.search(low))
+
+
+@lru_cache(maxsize=1)
+def _english() -> frozenset:
+    path = Path("/usr/share/dict/words")
+    return frozenset(w.strip().lower() for w in open(path, encoding="utf-8")) if path.exists() else frozenset()
+
+
+def _mentions(sent: str, st: "Structures", lower: dict, names: dict) -> tuple[str, list[tuple[int, int, str]]]:
+    """Plain text of a sentence and the compounds it names: (start, end, SMILES) by position.
+    Links name their article's compound; other words are looked up among article titles,
+    reagents named in words, and the PubChem names step's answers."""
+    parts, spans, pos, last = [], [], 0, 0
+    for lm in LINK.finditer(sent):
+        parts.append(sent[last:lm.start()])
+        pos += lm.start() - last
+        shown = lm.group(2) or lm.group(1)
+        t = lm.group(1).strip()
+        t = t[:1].upper() + t[1:]
+        smi = NAMED.get(t.lower()) or st.by_title.get(t)
+        if smi:
+            spans.append((pos, pos + len(shown), smi))
+        parts.append(shown)
+        pos += len(shown)
+        last = lm.end()
+    parts.append(sent[last:])
+    plain = "".join(parts)
+
+    def free(a: int, b: int) -> bool:
+        return not any(a < e and s < b for s, e, _ in spans)
+
+    for name, smi in NAMED.items():
+        for m in re.finditer(r"\b%s\b" % re.escape(name), plain, re.I):
+            if free(m.start(), m.end()):
+                spans.append((m.start(), m.end(), smi))
+    for a, b, w in _word_candidates(plain):
+        smi = lower.get(w.lower()) or names.get(w.lower())
+        if smi and free(a, b):
+            spans.append((a, b, smi))
+    return plain, sorted(spans)
+
+
+def forward_candidates(title: str, own: str | None, text: str, st: "Structures", side: dict, lower: dict, names: dict,
+                       section: re.Pattern | None) -> list[tuple[str, str, str]]:
+    """(reaction SMILES, sentence, product SMILES) for sentences that say what named compounds
+    turn into, when the starting materials named before the verb balance the product after it."""
+    out = []
+    subject = re.compile(r"(?:^|\W)(?:it|this compound|the compound)(?:\W|$)", re.I) if own else None
+    simple = {_canon(s) for s in SIDE_PRODUCTS} | {_canon(s) for s in NAMED.values()}
+    for sent in _sentences(text, section, FORWARD_VERB):
+        plain, spans = _mentions(sent, st, lower, names)
+        verb = FORWARD_VERB.search(plain)
+        if not verb or FORWARD_NEGATION.search(plain[: verb.end()]):
+            continue
+        before = [smi for s, e, smi in spans if e <= verb.start()]
+        if subject and subject.search(plain[: verb.start()]):
+            before.insert(0, own)
+        after = [smi for s, e, smi in spans if s >= verb.end()]
+        if not before or not after:
+            continue
+        # Every carbon compound named before the verb takes part (one that does not is a solvent
+        # or a reagent of another step, and the route found without it is not what the sentence
+        # says); inorganic ones may be catalysts. Sentences rarely give amounts: one of each.
+        organic = {_canon(b) for b in before if "C" in formula_of(st.mol(b))} if all(st.mol(b) for b in before) else None
+        if organic is None:
+            continue
+        for product in after[:3]:
+            if _canon(product) in simple:
+                continue  # water, hydrogen chloride: a coproduct, not the product the sentence is about
+            rxns = [r for r in balance(product, before, plain, st, side, amounts=(1,))
+                    if organic - {_canon(product)} <= set(r.split(">>")[0].split("."))]
+            if rxns:
+                out.extend((rxn, plain[:400], product) for rxn in rxns)
+                break
+    return out
+
+
+def _pages(folder: Path):
+    """Compound articles, then the articles about reactions and functional groups (whole=True)."""
+    for name, whole in (("pages.jsonl", False), ("topics.jsonl", True)):
+        if (folder / name).exists():
+            for line in open(folder / name, encoding="utf-8"):
+                yield json.loads(line), whole
+
+
+# --- topic articles and names --------------------------------------------------------
+
+TOPIC_CATEGORIES = ["Organic reactions", "Name reactions", "Addition reactions", "Substitution reactions",
+                    "Elimination reactions", "Organic redox reactions", "Rearrangement reactions", "Coupling reactions",
+                    "Carbon-carbon bond forming reactions", "Halogenation reactions", "Functional groups",
+                    "Olefination reactions", "Cycloadditions", "Protecting groups", "Reagents for organic chemistry"]
+
+
+def fetch_topics(out: Path) -> None:
+    """Wikitext of the articles in TOPIC_CATEGORIES and their direct subcategories -> topics.jsonl."""
+    client = httpx.Client(timeout=120, headers=UA)
+
+    def members(cat: str, kind: str) -> list[str]:
+        titles, cont = [], {}
+        while True:
+            r = client.get(API, params={"action": "query", "list": "categorymembers", "cmtitle": f"Category:{cat}",
+                                        "cmtype": kind, "cmlimit": 500, "format": "json", "formatversion": 2, **cont})
+            r.raise_for_status()
+            j = r.json()
+            titles += [m["title"] for m in j["query"]["categorymembers"]]
+            if "continue" not in j:
+                return titles
+            cont = j["continue"]
+
+    cats = list(TOPIC_CATEGORIES)
+    for c in TOPIC_CATEGORIES:
+        cats += [s.removeprefix("Category:") for s in members(c, "subcat")]
+    titles = sorted({t for c in dict.fromkeys(cats) for t in members(c, "page")})
+    known = {json.loads(line)["page"] for line in open(out / "pages.jsonl", encoding="utf-8")} if (out / "pages.jsonl").exists() else set()
+    todo = [t for t in titles if t not in known]
+    print(f"{len(cats)} categories, {len(titles)} articles, {len(todo)} not compound articles", flush=True)
+    with open(out / "topics.jsonl", "w", encoding="utf-8") as f:
+        for i in range(0, len(todo), 50):
+            r = client.get(API, params={"action": "query", "prop": "revisions", "rvprop": "content|ids", "rvslots": "main",
+                                        "titles": "|".join(todo[i:i + 50]), "format": "json", "formatversion": 2, "maxlag": 5})
+            r.raise_for_status()
+            for p in r.json()["query"]["pages"]:
+                if "revisions" in p:
+                    rev = p["revisions"][0]
+                    f.write(json.dumps({"title": p["title"], "page": p["title"], "revid": rev["revid"],
+                                        "text": rev["slots"]["main"]["content"]}) + "\n")
+            time.sleep(0.5)
+
+
+def load_names(folder: Path) -> dict[str, str]:
+    path = folder / "names.tsv"
+    if not path.exists():
+        return {}
+    out = {}
+    for line in open(path, encoding="utf-8"):
+        name, _, smi = line.rstrip("\n").partition("\t")
+        if smi:
+            out[name] = smi
+    return out
+
+
+def lookup_names(folder: Path) -> None:
+    """Looks up in PubChem the words of reaction sentences that read like compound names and
+    are not article titles; names.tsv keeps every answer (empty when PubChem has none, or more
+    than one compound, for the name), so a stopped run resumes."""
+    st = Structures(folder / "compounds.csv")
+    lower = {t.lower() for t in st.by_title}
+    path = folder / "names.tsv"
+    done = set()
+    if path.exists():
+        done = {line.split("\t", 1)[0] for line in open(path, encoding="utf-8")}
+    words: Counter = Counter()
+    for page, whole in _pages(folder):
+        for sent in _sentences(page["text"], None if whole else REACT_SECTION, FORWARD_VERB):
+            plain = LINK.sub(lambda m: m.group(2) or m.group(1), sent)
+            for _, _, w in _word_candidates(plain):
+                low = w.lower()
+                if low not in lower and low not in NAMED and low not in done and _looks_like_name(w):
+                    words[low] += 1
+    todo = [w for w, _ in words.most_common()]
+    print(f"{len(todo)} names to look up", flush=True)
+    client = httpx.Client(timeout=30, headers=UA)
+    url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{}/property/IsomericSMILES/JSON"
+    with open(path, "a", encoding="utf-8") as f:
+        for i, w in enumerate(todo):
+            smi = ""
+            for attempt in range(4):
+                try:
+                    r = client.get(url.format(quote(w, safe="")))
+                except httpx.HTTPError:
+                    time.sleep(2 * (attempt + 1))
+                    continue
+                if r.status_code == 503:
+                    time.sleep(2 * (attempt + 1))
+                    continue
+                if r.status_code == 200:
+                    props = r.json().get("PropertyTable", {}).get("Properties", [])
+                    found = {p.get("SMILES") or p.get("IsomericSMILES") or "" for p in props}
+                    found = {_canon(s) for s in found if s}
+                    found.discard("")
+                    if len(found) == 1:
+                        smi = found.pop()
+                break
+            f.write(f"{w}\t{smi}\n")
+            if i % 50 == 0:
+                f.flush()
+            if i % 500 == 0:
+                print(f"  {i} looked up", flush=True)
+            time.sleep(0.21)  # PubChem asks for at most 5 requests a second
+
+
 def extract(folder: Path) -> None:
     st = Structures(folder / "compounds.csv")
     side_combos = _side_combos(st)
@@ -651,8 +910,7 @@ def extract(folder: Path) -> None:
     lower = {t.lower(): s for t, s in st.by_title.items() if not re.search(r"\s", t) or t.count(" ") < 2}
     out_rows, report = [], Counter()
     seen = set()
-    for line in open(folder / "pages.jsonl", encoding="utf-8"):
-        page = json.loads(line)
+    for page, whole in _pages(folder):
         text = page["text"]
         own = st.by_title.get(page["title"])
         candidates = {}
@@ -693,7 +951,7 @@ def extract(folder: Path) -> None:
             seen.add(rxn)
             report["kept"] += 1
             out_rows.append((rxn, page["title"], page["revid"], eq, own or ""))
-        if own:
+        if own and not whole:
             for rxn, sent in prose_candidates(page["title"], own, text, st, side_combos, lower):
                 report["sentences"] += 1
                 if rxn in seen:
@@ -702,6 +960,20 @@ def extract(folder: Path) -> None:
                 seen.add(rxn)
                 report["kept from sentences"] += 1
                 out_rows.append((rxn, page["title"], page["revid"], "sentence: " + sent, own))
+    # Sentences about what compounds become go last, so the rows above keep their line numbers.
+    names = load_names(folder)
+    for page, whole in _pages(folder):
+        own = None if whole else st.by_title.get(page["title"])
+        found = forward_candidates(page["title"], own, page["text"], st, side_combos, lower, names,
+                                   None if whole else REACT_SECTION)
+        for rxn, sent, product in found:
+            report["reaction sentences"] += 1
+            if rxn in seen:
+                report["duplicate"] += 1
+                continue
+            seen.add(rxn)
+            report["kept from reaction sentences"] += 1
+            out_rows.append((rxn, page["title"], page["revid"], "reaction sentence: " + sent, product))
     with open(folder / "wiki_reactions.tsv", "w", encoding="utf-8") as f:
         for rxn, title, revid, eq, own in out_rows:
             f.write(f"{rxn}\t{title}\t{revid}\t{eq.replace(chr(9), ' ').replace(chr(10), ' ')}\t{own}\n")
@@ -712,10 +984,10 @@ def extract(folder: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("step", choices=["fetch", "extract"])
+    ap.add_argument("step", choices=["fetch", "fetch-topics", "names", "extract"])
     ap.add_argument("dir", type=Path)
     args = ap.parse_args()
-    (fetch if args.step == "fetch" else extract)(args.dir)
+    {"fetch": fetch, "fetch-topics": fetch_topics, "names": lookup_names, "extract": extract}[args.step](args.dir)
 
 
 if __name__ == "__main__":

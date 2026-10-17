@@ -92,8 +92,9 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   each with one example, preferring the simplest that reports a yield (scheme, source link,
   year, yield) and the reacting atoms highlighted. Enzyme reactions are listed separately with
   their EC numbers. Textbook routes come first, in their own group: equations written in
-  English Wikipedia compound articles, and preparation sentences whose named compounds balance
-  to the molecule atom for atom, each drawn and linked to the article revision it was read from
+  English Wikipedia compound articles, preparation sentences whose named compounds balance
+  to the molecule atom for atom, and sentences in other articles (a starting material's
+  Reactions section, an article about a reaction) that name the molecule as the product, each drawn and linked to the article revision it was read from
   (`backend/scripts/wiki_reactions.py`, CC BY-SA 4.0), and the same for the sentences of
   PubChem's Methods of Manufacturing, whose named compounds carry PubChem CIDs
   (`backend/scripts/hsdb_reactions.py`). Every stereoisomer of a structure is looked up
@@ -201,14 +202,19 @@ Rhea (`rhea-reaction-smiles.tsv`, `rhea-directions.tsv`, `rhea2ec.tsv` from
 runs in a throwaway environment so torch never enters the project (CRD takes a few hours;
 the output is appended to, so a stopped run resumes). The Wikipedia equations are read from
 the wikitext of every English article about a compound with an InChIKey in Wikidata
-(about 22,000; `fetch` downloads them once, `extract` writes `wiki_reactions.tsv`):
+(about 22,000; `fetch` downloads them once, `extract` writes `wiki_reactions.tsv`), and of
+about 1,700 more articles about reactions and functional groups (`fetch-topics`). Besides
+equations and preparation sentences, `extract` reads sentences that say what a compound turns
+into ("cyclohexene reacts with bromine to give ..."), with names that are not article titles
+looked up in PubChem once (`names`, about 20 minutes, kept in `names.tsv`):
 
 ```bash
 cd backend
 MAP='uv run --isolated --no-project --python 3.12 --with rxnmapper --with transformers>=4.40,<4.50 --with rdkit --with setuptools<81 python scripts/map_reactions.py'
 $MAP rhea path/to/rhea-tsv-folder rhea_mapped.tsv
 $MAP crd path/to/reactionSmilesFigShare2025.txt crd_mapped.tsv
-uv run python scripts/wiki_reactions.py fetch wiki && uv run python scripts/wiki_reactions.py extract wiki
+uv run python scripts/wiki_reactions.py fetch wiki && uv run python scripts/wiki_reactions.py fetch-topics wiki
+uv run python scripts/wiki_reactions.py names wiki && uv run python scripts/wiki_reactions.py extract wiki
 $MAP wiki wiki/wiki_reactions.tsv wiki_mapped.tsv
 uv run python scripts/hsdb_reactions.py fetch hsdb && uv run python scripts/hsdb_reactions.py extract hsdb
 $MAP hsdb hsdb/hsdb_reactions.tsv hsdb_mapped.tsv

@@ -261,3 +261,40 @@ Index 1952056 reactions, 2110102 molecules, built 2026-09-29. Reactions scored i
 | patents | 90.8% |
 | pubchem methods | 62.3% |
 | wikipedia | 58.9% |
+
+## Wikipedia reaction sentences (2026-10-17)
+
+Index 1952160 reactions, 2110126 molecules, built 2026-10-17. Reactions scored in 2 s. Precision sheet `docs/benchmark/precision_wikipedia_reaction_sentences.csv`.
+
+**teaching** (621 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 89.9% | 72.8% |
+| Used in, with textbook routes | 90.2% | 74.2% |
+| Used in, with enzyme reactions too | 90.8% | 75.7% |
+| Made by | 53.5% | 25.0% |
+| Made by, with textbook routes | 77.0% | 30.0% |
+| Made by, with enzyme reactions too | 80.7% | 38.0% |
+
+**drugs** (50 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 92.0% | 24.0% |
+| Used in, with textbook routes | 92.0% | 24.0% |
+| Used in, with enzyme reactions too | 92.0% | 24.0% |
+| Made by | 98.0% | 48.0% |
+| Made by, with textbook routes | 98.0% | 48.0% |
+| Made by, with enzyme reactions too | 100.0% | 48.0% |
+
+**all** (671 molecules)
+
+| | at least 1 type | at least 5 types |
+|---|---|---|
+| Used in | 90.0% | 69.2% |
+| Used in, with textbook routes | 90.3% | 70.5% |
+| Used in, with enzyme reactions too | 90.9% | 71.8% |
+| Made by | 56.8% | 26.7% |
+| Made by, with textbook routes | 78.5% | 31.3% |
+| Made by, with enzyme reactions too | 82.1% | 38.7% |

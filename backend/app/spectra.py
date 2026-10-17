@@ -19,7 +19,7 @@ from urllib.parse import quote
 
 import httpx
 
-from . import couplings, nmr_env, spinsim
+from . import couplings, nmr_env, spinsim, vibrations
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdMolDescriptors
 
@@ -779,7 +779,8 @@ def build(smiles: str, kind: str) -> tuple[dict, bool]:
     experimental, complete = nist(mol, kind)
     note = NIST_NOTE if experimental else ("No experimental spectrum for this compound in the NIST WebBook." if enabled() else "")
     if kind == "ir":
-        return {"predicted": ir_bands(mol), "experimental": experimental, "note": note}, complete
+        calculated, calc_complete = vibrations.calculate(mol)
+        return {"predicted": ir_bands(mol), "experimental": experimental, "calculated": calculated, "note": note}, complete and calc_complete
     data = ms_predict(mol)
     data["experimental"] = experimental
     data["note"] = note

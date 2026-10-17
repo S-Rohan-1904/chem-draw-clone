@@ -404,3 +404,8 @@ button.chip { font: inherit; cursor: pointer; }
 .spectrum .xpeak.sel, .spectrum .xpeak:hover { fill: #f59e0b; opacity: 1; }
 .nmr-zoom { margin-top: 0.5rem; }
 .nmr-zoom svg { margin-top: 0.3rem; }
+.spectrum .curve.calc { stroke: #059669; }
+.spectrum .mode-hit { fill: transparent; cursor: pointer; }
+.spectrum .mode-hit:hover, .spectrum .mode-hit.sel { fill: #059669; opacity: 0.18; }
+.mode-panel { margin-top: 0.5rem; }
+.mode-viewer { position: relative; width: 100%; height: 260px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }

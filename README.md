@@ -161,7 +161,13 @@ highlights the atoms responsible in the 2D drawing.
   highlights both atoms.
 - **IR**: characteristic bands from the functional groups present, drawn as a synthetic
   transmittance curve, with the experimental spectrum from the NIST Chemistry WebBook
-  overlaid when NIST has one.
+  overlaid when NIST has one. With [xtb](https://github.com/grimme-lab/xtb) installed, the
+  spectrum is also calculated (`backend/app/vibrations.py`): the structure is optimised with
+  GFN2-xTB and its normal modes computed (frequencies scaled by 0.985, usually within about
+  50 cm⁻¹ of experiment), and clicking a band animates that vibration in 3D. Up to 80 atoms,
+  one calculation at a time (`CHEM_XTB_JOBS`); about 5 s for ibuprofen. The Docker image installs
+  xtb from conda-forge; locally, point `CHEM_XTB` at the binary (for example
+  `micromamba create -p ~/.local/share/xtb-env -c conda-forge xtb=6.7.1`).
 - **Mass spec**: molecular-ion isotope pattern (Cl/Br/S visible), NIST's experimental EI
   spectrum when available, and a fragmentation tree (`backend/app/msfrag.py`): single-bond
   cleavages ranked by stability (acylium, benzylic/allylic, alpha to a heteroatom), the

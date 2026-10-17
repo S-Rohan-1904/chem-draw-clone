@@ -320,9 +320,30 @@ export interface IrBand {
   atoms: number[]
 }
 
+export interface IrMode {
+  /** Scaled harmonic frequency, cm-1 */
+  freq: number
+  /** km/mol */
+  intensity: number
+  /** Heavy atoms that move most */
+  atoms: number[]
+  /** Displacement per atom (heavy atoms first, then hydrogens), as in atoms below */
+  disp: [number, number, number][]
+}
+
+export interface IrCalculated {
+  method: string
+  scale: number
+  seconds: number
+  atoms: { el: string; x: number; y: number; z: number }[]
+  modes: IrMode[]
+}
+
 export interface IrSpectrum {
   predicted: IrBand[]
   experimental: { x: number[]; y: number[]; state: string | null; title: string; url: string } | null
+  /** Normal modes from GFN2-xTB, or null when the server has no xtb or the molecule is too big. */
+  calculated?: IrCalculated | null
   note: string
   cached: boolean
 }

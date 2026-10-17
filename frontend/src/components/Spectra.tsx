@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import type { IrSpectrum, Molecule, MsNode, MsSpectrum, NmrSpectrum } from '../types'
 import { type DeptMode, deptSign } from './dept'
+import { ModeViewer } from './IrModes'
 import { TwoD, Zoom } from './NmrExtras'
 
 interface Props {
@@ -213,9 +214,12 @@ function Multiplet({ x, y0, h, mult, couplings }: { x: number; y0: number; h: nu
 // ---------------------------------------------------------------- IR
 
 function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHighlight'] }) {
-  const [showPred, setShowPred] = useState(true)
+  const calc = data.calculated ?? null
+  const [showPred, setShowPred] = useState(!calc)
   const [showExp, setShowExp] = useState(true)
+  const [showCalc, setShowCalc] = useState(true)
   const [sel, setSel] = useState<number | null>(null)
+  const [mode, setMode] = useState<number | null>(null)
   const sx = (cm: number) => PAD.l + ((4000 - Math.min(Math.max(cm, 400), 4000)) / 3600) * PW
   const sy = (t: number) => PAD.t + (1 - Math.min(Math.max(t, 0), 1)) * PH
   const hover = (i: number | null) => {
@@ -235,11 +239,23 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
   })
   const path = (X: number[], Y: number[]) => X.map((x, i) => `${i ? 'L' : 'M'}${sx(x).toFixed(1)},${sy(Y[i]).toFixed(1)}`).join(' ')
   const exp = data.experimental
+  // Calculated transmittance: Lorentzian absorption bands (12 cm-1 half width) scaled so the strongest dips to about 10 %.
+  const topI = calc ? Math.max(...calc.modes.map((m) => m.intensity), 1e-9) : 1
+  const calcY = calc ? xs.map((x) => {
+    const a = calc.modes.reduce((s, m) => s + (m.intensity / topI) * (144 / ((x - m.freq) ** 2 + 144)), 0)
+    return 10 ** -a
+  }) : []
+  const strong = calc ? calc.modes.map((m, i) => ({ m, i })).filter(({ m }) => m.intensity >= 0.03 * topI) : []
+  const pickMode = (i: number | null) => {
+    setMode(i)
+    onHighlight(i === null || !calc ? null : calc.modes[i].atoms)
+  }
   return (
     <div className="spectrum">
       <div className="toolbar">
         <label className="check"><input type="checkbox" checked={showPred} onChange={(e) => setShowPred(e.target.checked)} /> predicted bands</label>
         {exp && <label className="check"><input type="checkbox" checked={showExp} onChange={(e) => setShowExp(e.target.checked)} /> experimental (NIST{exp.state ? `, ${exp.state}` : ''})</label>}
+        {calc && <label className="check"><input type="checkbox" checked={showCalc} onChange={(e) => setShowCalc(e.target.checked)} /> calculated ({calc.method})</label>}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="IR spectrum">
         <Axis x0={400} x1={4000} ticks={range(4000, 500, -500)} unit="wavenumber / cm⁻¹" reversed />
@@ -249,7 +265,36 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
         ))}
         {showPred && <path d={path(xs, pred)} className="curve pred" />}
         {showExp && exp && <path d={path(exp.x, exp.y)} className="curve exp" />}
+        {showCalc && calc && <path d={path(xs, calcY)} className="curve calc" />}
+        {showCalc && strong.map(({ m, i }) => (
+          <rect key={`m${i}`} x={sx(m.freq) - 4} y={PAD.t} width={8} height={PH} className={`mode-hit${mode === i ? ' sel' : ''}`}
+            onClick={() => pickMode(mode === i ? null : i)} />
+        ))}
       </svg>
+      {calc && (mode !== null ? (
+        <div className="mode-panel">
+          <ModeViewer calc={calc} mode={mode} />
+          <p className="small">
+            <b>{calc.modes[mode].freq.toFixed(0)} cm⁻¹</b>, {calc.modes[mode].intensity.toFixed(0)} km/mol. The highlighted atoms move most.{' '}
+            <button type="button" className="link small" onClick={() => pickMode(null)}>Close</button>
+          </p>
+        </div>
+      ) : (
+        <p className="muted small">Click a band of the calculated spectrum to watch that vibration in 3D.</p>
+      ))}
+      {calc && (
+        <table className="peak-table">
+          <thead><tr><th>calc. cm⁻¹</th><th>intensity (km/mol)</th><th>vibration</th></tr></thead>
+          <tbody>
+            {strong.sort((a, b) => b.m.freq - a.m.freq).map(({ m, i }) => (
+              <tr key={i} className={mode === i ? 'sel' : ''} onClick={() => pickMode(mode === i ? null : i)}>
+                <td>{m.freq.toFixed(0)}</td><td>{m.intensity.toFixed(0)}</td>
+                <td><button type="button" className="link small">Show</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <table className="peak-table">
         <thead><tr><th>cm⁻¹</th><th>band</th><th>intensity</th></tr></thead>
         <tbody>
@@ -263,6 +308,7 @@ function Ir({ data, onHighlight }: { data: IrSpectrum; onHighlight: Props['onHig
       <p className="muted small">
         {data.note}{' '}
         {exp && <a href={exp.url} target="_blank" rel="noreferrer">View at NIST</a>}
+        {calc && ` Calculated with ${calc.method} (a semiempirical quantum method, xtb) on an optimised structure, frequencies scaled by ${calc.scale}. Bands are usually within about 50 cm⁻¹ of experiment, nitriles about 5 % high.`}
       </p>
     </div>
   )

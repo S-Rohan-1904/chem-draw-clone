@@ -19,7 +19,7 @@ from urllib.parse import quote
 
 import httpx
 
-from . import couplings, nmr_env
+from . import couplings, nmr_env, spinsim
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdMolDescriptors
 
@@ -273,11 +273,17 @@ def _c_shift(c: Chem.Atom) -> tuple[float, str]:
     return round(shift, 1), kind + ("-" + "/".join(tags) if tags else "")
 
 
-def nmr_local(mol: Chem.Mol) -> dict:
-    """Rule-based 1H and 13C: {h: {peaks}, c: {peaks}}. Atom indices refer to
-    the heavy-atom mol (hydrogens are reported through their parent)."""
+def _parts(mol: Chem.Mol) -> tuple[Chem.Mol, list[int], object]:
+    """(mol with explicit H, symmetry ranks, preferred conformer or None)."""
     mh, ranks = equivalence(mol)
-    conf = couplings.conformer(mh) if mol.GetNumHeavyAtoms() <= 60 else None
+    return mh, ranks, couplings.conformer(mh) if mol.GetNumHeavyAtoms() <= 60 else None
+
+
+def nmr_local(mol: Chem.Mol, parts: tuple | None = None) -> dict:
+    """Rule-based 1H and 13C: {h: {peaks}, c: {peaks}}. Atom indices refer to
+    the heavy-atom mol (hydrogens are reported through their parent). Each 1H peak
+    also carries "_hs", its hydrogens in the explicit-H mol (dropped before the reply)."""
+    mh, ranks, conf = parts or _parts(mol)
     h_peaks = []
     for cls in _classes(mh, ranks, 1):
         parent = mh.GetAtomWithIdx(cls[0]).GetNeighbors()[0]
@@ -295,11 +301,13 @@ def nmr_local(mol: Chem.Mol) -> dict:
             "couplings": js,
             "label": label,
             "exchangeable": exch,
+            "_hs": cls,
         })
     c_peaks = []
     for cls in _classes(mh, ranks, 6):
         shift, label = _c_shift(mh.GetAtomWithIdx(cls[0]))
-        c_peaks.append({"shift": shift, "atoms": cls, "integration": len(cls), "label": label})
+        c_peaks.append({"shift": shift, "atoms": cls, "integration": len(cls), "label": label,
+                        "hs": mh.GetAtomWithIdx(cls[0]).GetTotalNumHs(includeNeighbors=True)})
     h_peaks.sort(key=lambda p: -p["shift"])
     c_peaks.sort(key=lambda p: -p["shift"])
     return {"h": {"peaks": h_peaks}, "c": {"peaks": c_peaks}, "source": "rules", "note": RULES_NOTE}
@@ -354,7 +362,61 @@ def nmr(smiles: str) -> tuple[dict, bool]:
     them, else the local index, else additive rules. (The live nmrshiftdb2 service is no longer asked:
     the local index covers the same data, needs no network, and handles charged structures.)"""
     mol = Chem.MolFromSmiles(smiles)
-    return apply_index(nmr_local(mol), mol), True
+    parts = _parts(mol)
+    data = apply_index(nmr_local(mol, parts), mol)
+    data["correlations"] = correlations(data, mol)
+    data["simulation"] = simulation(data, parts)
+    for p in data["h"]["peaks"]:
+        p.pop("_hs", None)
+    return data, True
+
+
+def correlations(data: dict, mol: Chem.Mol) -> dict:
+    """2D NMR cross peaks as pairs of peak indices: COSY (1H-1H across three bonds, H-C-C-H, or geminal
+    when the two are separate signals), HSQC (each carbon and its own hydrogens) and HMBC (a carbon two or
+    three bonds from a hydrogen). Exchangeable protons are left out of COSY and HMBC."""
+    dist = Chem.GetDistanceMatrix(mol)
+    hp, cp = data["h"]["peaks"], data["c"]["peaks"]
+    cosy, hsqc, hmbc = set(), set(), set()
+    for a, pa in enumerate(hp):
+        for b in range(a + 1, len(hp)):
+            pb = hp[b]
+            if pa.get("exchangeable") or pb.get("exchangeable"):
+                continue
+            if any(dist[x][y] <= 1 for x in pa["atoms"] for y in pb["atoms"]):
+                cosy.add((a, b))
+        for c, pc in enumerate(cp):
+            d = min(dist[x][y] for x in pa["atoms"] for y in pc["atoms"])
+            if d == 0:
+                hsqc.add((c, a))
+            elif d <= 2 and not pa.get("exchangeable"):
+                hmbc.add((c, a))
+    return {"cosy": sorted(cosy), "hsqc": sorted(hsqc), "hmbc": sorted(hmbc)}
+
+
+def simulation(data: dict, parts: tuple) -> dict | None:
+    """The 1H spectrum at several fields from the full spin Hamiltonian (app.spinsim), or None."""
+    mh, _, conf = parts
+    shift: dict[int, float] = {}
+    first_order: dict[int, list[dict]] = {}
+    broad = []
+    for p in data["h"]["peaks"]:
+        if p.get("exchangeable"):
+            broad.append((p["shift"], p["integration"]))
+            continue
+        for h in p.get("_hs", []):
+            shift[h] = p["shift"]
+            first_order[h] = p.get("couplings", [])
+    if not shift and not broad:
+        return None
+    js = {}
+    hs = sorted(shift)
+    for i, a in enumerate(hs):
+        for b in hs[i + 1:]:
+            j = couplings._pair_j(mh, conf, mh.GetAtomWithIdx(a), mh.GetAtomWithIdx(b))
+            if j is not None and abs(j) >= couplings.MIN_J:
+                js[(a, b)] = abs(j)
+    return spinsim.simulate(shift, js, broad, first_order, couplings.MIN_J)
 
 
 # ---------------------------------------------------------------- IR

@@ -131,7 +131,7 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 
 ## Spectra
 
-Every built molecule gets a Spectra card with four tabs. Hovering a peak or band
+Every built molecule gets a Spectra card with five tabs. Hovering a peak or band
 highlights the atoms responsible in the 2D drawing.
 
 - **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
@@ -151,6 +151,14 @@ highlights the atoms responsible in the 2D drawing.
   ortho / meta, 2.5 Hz aldehyde; O-H and N-H are broad singlets. Equivalent partners that
   differ in J (axial / equatorial, cis / trans on a =CH2) are split apart. The spectrum
   draws each multiplet from its J values, exaggerated for visibility.
+- **Spin simulation** (`backend/app/spinsim.py`): clicking a 1H signal shows it as a spectrometer would at
+  60, 100, 300, 400 or 600 MHz, from the full spin Hamiltonian (every shift and coupling, diagonalised
+  exactly per group of coupled protons, up to 10 at a time), so roofing, AB quartets and extra lines appear
+  at low field. Larger groups are drawn first order; exchangeable protons are broad.
+- **DEPT and 2D**: the 13C tab switches to DEPT-135 (CH and CH3 up, CH2 down) and DEPT-90 (CH only). The 2D NMR
+  tab draws COSY (H-C-C-H and separate geminal signals), HSQC (each carbon and its protons) and HMBC
+  (carbons two or three bonds from a proton) from the structure and the shifts; pointing at a cross peak
+  highlights both atoms.
 - **IR**: characteristic bands from the functional groups present, drawn as a synthetic
   transmittance curve, with the experimental spectrum from the NIST Chemistry WebBook
   overlaid when NIST has one.

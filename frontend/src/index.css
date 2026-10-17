@@ -394,3 +394,13 @@ button.chip { font: inherit; cursor: pointer; }
 .nmr-measured { background: var(--green-soft); color: var(--green); }
 .nmr-index { background: var(--accent-soft); color: var(--accent); }
 .nmr-rules { background: var(--warn-soft); color: var(--warn); }
+.spectrum line.stick.neg { stroke: #b91c1c; }
+.spectrum line.baseline { stroke: #9ca3af; stroke-width: 1; }
+.spectrum .curve.sim { stroke: #1d4ed8; }
+.spectrum .axis line.grid { stroke: #e5e7eb; }
+.spectrum line.diagonal { stroke: #d1d5db; stroke-dasharray: 3 3; }
+.spectrum .xpeak { fill: #1d4ed8; opacity: 0.8; cursor: pointer; }
+.spectrum .xpeak.diag { fill: #9ca3af; }
+.spectrum .xpeak.sel, .spectrum .xpeak:hover { fill: #f59e0b; opacity: 1; }
+.nmr-zoom { margin-top: 0.5rem; }
+.nmr-zoom svg { margin-top: 0.3rem; }

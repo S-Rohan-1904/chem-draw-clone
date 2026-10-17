@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import type { IrSpectrum, Molecule, MsNode, MsSpectrum, NmrSpectrum } from '../types'
+import { type DeptMode, deptSign } from './dept'
+import { TwoD, Zoom } from './NmrExtras'
 
 interface Props {
   mol: Molecule
   onHighlight: (atoms: number[] | null) => void
 }
 
-type Tab = 'h' | 'c' | 'ir' | 'ms'
+type Tab = 'h' | 'c' | '2d' | 'ir' | 'ms'
 
 const W = 640
 const H = 260
@@ -55,16 +57,17 @@ export function Spectra({ mol, onHighlight }: Props) {
       <header className="card-head">
         <h2>Spectra</h2>
         <div className="toolbar">
-          {(['h', 'c', 'ir', 'ms'] as Tab[]).map((t) => (
+          {(['h', 'c', '2d', 'ir', 'ms'] as Tab[]).map((t) => (
             <button key={t} type="button" className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
-              {t === 'h' ? '¹H NMR' : t === 'c' ? '¹³C NMR' : t === 'ir' ? 'IR' : 'Mass spec'}
+              {t === 'h' ? '¹H NMR' : t === 'c' ? '¹³C NMR' : t === '2d' ? '2D NMR' : t === 'ir' ? 'IR' : 'Mass spec'}
             </button>
           ))}
         </div>
       </header>
       {error && <p className="warn">{error}</p>}
       {loading && <p className="muted small">Loading…</p>}
-      {!loading && (tab === 'h' || tab === 'c') && nmr && <Nmr data={nmr} nucleus={tab} onHighlight={onHighlight} />}
+      {!loading && (tab === 'h' || tab === 'c') && nmr && <Nmr key={tab} data={nmr} nucleus={tab} onHighlight={onHighlight} />}
+      {!loading && tab === '2d' && nmr && <TwoD data={nmr} onHighlight={onHighlight} />}
       {!loading && tab === 'ir' && ir && <Ir data={ir} onHighlight={onHighlight} />}
       {!loading && tab === 'ms' && ms && <Ms data={ms} onHighlight={onHighlight} />}
     </section>
@@ -102,6 +105,8 @@ function range(a: number, b: number, step: number): number[] {
 function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' | 'c'; onHighlight: Props['onHighlight'] }) {
   const peaks = data[nucleus].peaks
   const [sel, setSel] = useState<number | null>(null)
+  const [zoom, setZoom] = useState<number | null>(null)
+  const [dept, setDept] = useState<DeptMode>('bb')
   const max = nucleus === 'h' ? 12 : 220
   const sx = (ppm: number) => PAD.l + ((max - Math.min(Math.max(ppm, 0), max)) / max) * PW
   const top = Math.max(...peaks.map((p) => p.integration), 1)
@@ -113,20 +118,38 @@ function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' |
   }
   return (
     <div className="spectrum">
+      {nucleus === 'c' && peaks.some((p) => p.hs !== undefined) && (
+        <div className="toolbar small">
+          {([['bb', 'All carbons'], ['135', 'DEPT-135'], ['90', 'DEPT-90']] as [DeptMode, string][]).map(([m, label]) => (
+            <button key={m} type="button" className={dept === m ? 'active' : ''} onClick={() => setDept(m)}>{label}</button>
+          ))}
+        </div>
+      )}
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${nucleus === 'h' ? '1H' : '13C'} NMR`}>
+        {dept !== 'bb' && <line x1={PAD.l} x2={PAD.l + PW} y1={PAD.t + PH / 2} y2={PAD.t + PH / 2} className="baseline" />}
         <Axis x0={0} x1={max} ticks={nucleus === 'h' ? range(0, 12, 1) : range(0, 220, 20)} unit="δ / ppm" reversed />
         {peaks.map((p, i) => {
           const h = (p.integration / top) * (PH - 24)
           const x = sx(p.shift)
           return (
-            <g key={i} className={`peak ${sel === i ? 'sel' : ''}`} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)} onClick={() => hover(sel === i ? null : i)}>
+            <g key={i} className={`peak ${sel === i ? 'sel' : ''}`} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)} onClick={() => { hover(i); setZoom(zoom === i ? null : i) }}>
               <rect x={x - 6} y={PAD.t} width={12} height={PH} className="hit" />
-              <Multiplet x={x} y0={PAD.t + PH} h={h} mult={nucleus === 'h' ? p.multiplicity ?? 's' : 's'} couplings={nucleus === 'h' ? p.couplings : undefined} />
+              {dept === 'bb'
+                ? <Multiplet x={x} y0={PAD.t + PH} h={h} mult={nucleus === 'h' ? p.multiplicity ?? 's' : 's'} couplings={nucleus === 'h' ? p.couplings : undefined} />
+                : deptSign(p.hs, dept) !== 0 && <line x1={x} x2={x} y1={PAD.t + PH / 2} y2={PAD.t + PH / 2 - deptSign(p.hs, dept) * (PH / 2 - 10)} className={`stick${deptSign(p.hs, dept) < 0 ? ' neg' : ''}`} />}
               {nucleus === 'h' && (labelled[i] || sel === i) && <text x={x} y={PAD.t + PH - h - 6} textAnchor="middle" className="int">{p.integration}H</text>}
             </g>
           )
         })}
       </svg>
+      {nucleus === 'h' && data.simulation && (zoom !== null && peaks[zoom]
+        ? <Zoom data={data} peak={peaks[zoom]} />
+        : <p className="muted small">Click a signal to see it as a spectrometer would, at 60 to 600 MHz.</p>)}
+      {dept !== 'bb' && (
+        <p className="muted small">
+          {dept === '135' ? 'DEPT-135: CH and CH3 point up, CH2 points down, carbons without hydrogens disappear.' : 'DEPT-90: only CH carbons show.'}
+        </p>
+      )}
       <table className="peak-table">
         <thead><tr><th>δ (ppm)</th><th>{nucleus === 'h' ? 'H' : 'C'}</th>{nucleus === 'h' && <th>mult.</th>}<th>environment</th>{data.source !== 'rules' && <th>shift from</th>}</tr></thead>
         <tbody>

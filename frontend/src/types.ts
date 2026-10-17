@@ -282,6 +282,19 @@ export interface NmrPeak {
   estimate?: 'measured' | 'index' | 'rules'
   /** Typical error of a predicted shift, in ppm. */
   spread?: number
+  /** Hydrogens on a carbon (13C peaks), for DEPT. */
+  hs?: number
+}
+
+export interface NmrSimulation {
+  fields: number[]
+  /** MHz -> [ppm, intensity] lines from the full spin Hamiltonian */
+  lines: Record<string, [number, number][]>
+  /** Exchangeable protons: [ppm, count], drawn broad. */
+  broad: [number, number][]
+  /** False when a group of coupled protons was too big to solve and is drawn first order. */
+  exact: boolean
+  largest: number
 }
 
 export interface NmrSpectrum {
@@ -291,6 +304,9 @@ export interface NmrSpectrum {
   note: string
   /** The nmrshiftdb2 record the measured shifts come from. */
   record?: { id: string; solvent: string }
+  /** 2D cross peaks as index pairs: COSY [h, h], HSQC and HMBC [c, h]. */
+  correlations?: { cosy: [number, number][]; hsqc: [number, number][]; hmbc: [number, number][] }
+  simulation?: NmrSimulation | null
   cached: boolean
 }
 

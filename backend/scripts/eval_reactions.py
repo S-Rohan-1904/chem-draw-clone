@@ -66,16 +66,53 @@ def _resolve(name: str) -> str:
         return ""
 
 
-def _single(rows: list[dict]) -> list[dict]:
+def _key(smiles: str) -> str | None:
+    """InChIKey of a one-molecule SMILES, else None."""
+    mol = Chem.MolFromSmiles(smiles) if smiles and "." not in smiles else None
+    return Chem.MolToInchiKey(mol) if mol is not None else None
+
+
+def _spans(entry: str, longest: int = 3) -> list[str]:
+    words = entry.split(" ")
+    return [" ".join(words[i:j]) for i in range(len(words)) for j in range(i + 1, min(len(words), i + longest) + 1)]
+
+
+def _part_names(entry: str, parts: list[str], resolved: dict[str, str], longest: int = 3) -> list[str]:
+    """A name for each molecule of a dotted entry. The resolved SMILES is sorted,
+    not in the order the entry names them, so each name is resolved on its own
+    and matched by InChIKey. A molecule's name can itself have spaces ("acetic
+    acid formic acid"), so the longest run of words that names a still unnamed
+    part wins. A part no name matches is called "<entry> (n)"."""
+    keys = [_key(p) for p in parts]
+    names: list[str | None] = [None] * len(parts)
+    words = entry.split(" ")
+    i = 0
+    while i < len(words):
+        for j in range(min(len(words), i + longest), i, -1):
+            span = " ".join(words[i:j])
+            key = _key(resolved.get(span, ""))
+            hits = [k for k, (pk, n) in enumerate(zip(keys, names)) if key and pk == key and n is None]
+            if hits:
+                for k in hits:
+                    names[k] = span
+                i = j
+                break
+        else:
+            i += 1
+    return [n or f"{entry} ({k + 1})" for k, n in enumerate(names)]
+
+
+def _single(rows: list[dict], jobs: int = 8) -> list[dict]:
     """One row per molecule. Some teaching entries name several molecules at once
     ("methanol ethanol propan-1-ol propan-2-ol") and resolve to a dotted SMILES that
     no index entry can match; score each molecule, once per set."""
+    spans = sorted({s for row in rows if "." in row["smiles"] for s in _spans(row["name"])})
+    with ThreadPoolExecutor(jobs) as pool:
+        resolved = dict(zip(spans, pool.map(_resolve, spans)))
     out, seen = [], set()
     for row in rows:
         parts = row["smiles"].split(".")
-        names = row["name"].split(" ") if len(parts) > 1 else [row["name"]]
-        if len(names) != len(parts):
-            names = [f"{row['name']} ({i + 1})" for i in range(len(parts))]
+        names = _part_names(row["name"], parts, resolved) if len(parts) > 1 else [row["name"]]
         for name, smi in zip(names, parts):
             mol = Chem.MolFromSmiles(smi)
             if mol is None:
@@ -91,7 +128,7 @@ def molecule_set(jobs: int) -> list[dict]:
     """[{name, set, smiles}], resolving and saving the set on first use."""
     if MOLECULES.exists():
         with open(MOLECULES, encoding="utf-8") as f:
-            return _single([row for row in csv.DictReader(f, delimiter="\t") if row["smiles"]])
+            return _single([row for row in csv.DictReader(f, delimiter="\t") if row["smiles"]], jobs)
     names = [n.strip() for n in NAMES.read_text(encoding="utf-8").splitlines() if n.strip()]
     entries = [(n, "teaching") for n in names] + [(n, "drugs") for n in DRUGS]
     with ThreadPoolExecutor(jobs) as pool:
@@ -105,7 +142,7 @@ def molecule_set(jobs: int) -> list[dict]:
     missing = [r["name"] for r in rows if not r["smiles"]]
     if missing:
         print(f"{len(missing)} names did not resolve and are left out: {', '.join(missing[:20])}")
-    return _single([r for r in rows if r["smiles"]])
+    return _single([r for r in rows if r["smiles"]], jobs)
 
 
 # --- scoring -------------------------------------------------------------------

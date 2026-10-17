@@ -5,13 +5,6 @@ from rdkit import Chem
 from app import spectra
 from tests.test_api import client
 
-ETHANOL_1H = """<cml xmlns="http://www.xml-cml.org/schema"><spectrum type="NMR"><peakList>
-<peak xValue="1.185" atomRefs="a4"/><peak xValue="1.185" atomRefs="a5"/><peak xValue="1.185" atomRefs="a6"/>
-<peak xValue="3.67" atomRefs="a7"/><peak xValue="3.67" atomRefs="a8"/><peak xValue="4.21" atomRefs="a9"/>
-</peakList></spectrum></cml>"""
-ETHANOL_13C = """<cml xmlns="http://www.xml-cml.org/schema"><spectrum type="NMR"><peakList>
-<peak xValue="18.16" atomRefs="a1"/><peak xValue="58.64" atomRefs="a2"/></peakList></spectrum></cml>"""
-
 JCAMP_XY = """##TITLE=test
 ##JCAMP-DX=4.24
 ##XUNITS=1/CM
@@ -100,33 +93,11 @@ def test_parse_jcamp_xy_and_pairs():
     assert list(zip(d["x"], d["y"])) == [(31.0, 999.0), (45.0, 500.0), (46.0, 200.0)]
 
 
-def test_nmrshiftdb_atom_mapping():
-    mol = Chem.MolFromSmiles("CCO")
-    refs = spectra.map_atom_refs(mol)
-    assert refs["a1"] == (0, 0) and refs["a3"] == (2, 2)
-    assert refs["a4"] == (-1, 0) and refs["a6"] == (-1, 0) and refs["a7"] == (-1, 1) and refs["a9"] == (-1, 2)
-    merged = spectra.merge_nmrshiftdb(spectra.nmr_local(mol), ETHANOL_1H, ETHANOL_13C, mol)
-    assert merged["source"] == "nmrshiftdb2"
-    h = {p["label"]: p["shift"] for p in merged["h"]["peaks"]}
-    assert h["CH3"] == 1.19 and h["CH2-O"] == 3.67 and h["OH"] == 4.21
-    c = sorted(p["shift"] for p in merged["c"]["peaks"])
-    assert c == [18.2, 58.6]
-
-
 def _mock(monkeypatch, handler):
     monkeypatch.setenv("CHEM_SPECTRA_LOOKUP", "1")
     transport = httpx.MockTransport(handler)
     real = httpx.Client
     monkeypatch.setattr(spectra.httpx, "Client", lambda **kw: real(transport=transport, **{k: v for k, v in kw.items() if k != "transport"}))
-
-
-def test_nmr_falls_back_to_rules_when_service_down(monkeypatch):
-    def handler(request):
-        raise httpx.ConnectError("down")
-
-    _mock(monkeypatch, handler)
-    data, complete = spectra.nmr("CCO")
-    assert data["source"] == "rules" and complete is False
 
 
 def test_nist_lookup_and_caching(monkeypatch):

@@ -1,11 +1,12 @@
 """Spectra for the built molecule: 1H/13C NMR, IR and mass spectrum.
 
 Predicted parts are computed here from the structure (symmetry-exact signal
-counts, additive shift rules, characteristic IR bands, isotope patterns and
-simple bond cleavages). Better NMR shifts come from the nmrshiftdb2 HOSE-code
-service when reachable; experimental IR and MS come from the NIST Chemistry
-WebBook (SRD 69). Both are optional: with CHEM_SPECTRA_LOOKUP=0 everything is
-computed locally.
+counts, characteristic IR bands, isotope patterns and bond cleavages). NMR
+shifts are the compound's measured ones when nmrshiftdb2 has it, else
+predictions from a local index of nmrshiftdb2's assigned spectra (app.nmr_env),
+else additive rules; all of this is offline. Experimental IR and MS come from
+the NIST Chemistry WebBook (SRD 69) when reachable; CHEM_SPECTRA_LOOKUP=0 turns
+that off.
 """
 
 from __future__ import annotations
@@ -13,23 +14,24 @@ from __future__ import annotations
 import math
 import os
 import re
-import xml.etree.ElementTree as ET
 from collections import defaultdict
 from urllib.parse import quote
 
 import httpx
 
-from . import couplings
+from . import couplings, nmr_env
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdMolDescriptors
 
-NMRSHIFTDB = "https://nmrshiftdb.nmr.uni-koeln.de/NmrshiftdbServlet/nmrshiftdbaction/predict/smiles/{}/spectrumtype/{}"
 NIST_SEARCH = "https://webbook.nist.gov/cgi/cbook.cgi?InChI={}&Units=SI"
 NIST_JCAMP = "https://webbook.nist.gov/cgi/cbook.cgi?JCAMP={}&Type={}&Index={}"
 NIST_PAGE = "https://webbook.nist.gov/cgi/cbook.cgi?ID={}&Units=SI&Type={}"
 
-NMR_NOTE = "Shifts predicted with HOSE codes by nmrshiftdb2 (nmrshiftdb.nmr.uni-koeln.de)."
 RULES_NOTE = "Shifts estimated from additive substituent rules. Expect +/- 0.5 ppm (1H) and +/- 10 ppm (13C)."
+INDEX_NOTE = ("Predicted signals are matched to atoms with the same surroundings, up to four bonds out, in about "
+              "43,000 assigned nmrshiftdb2 spectra. The ± is how far such a match is usually off.")
+PARTLY_RULES_NOTE = "Signals marked as estimated have no close match and use additive rules (about ±0.5 ppm 1H, ±10 ppm 13C)."
+MEASURED_NOTE = "Signals marked as measured are this compound's assigned spectrum in nmrshiftdb2 (record {record}, {solvent})."
 NIST_NOTE = "Experimental spectrum from the NIST Chemistry WebBook, NIST Standard Reference Database 69."
 
 _MULT = {0: "s", 1: "d", 2: "t", 3: "q", 4: "quint", 5: "sext", 6: "sept"}
@@ -303,90 +305,56 @@ def nmr_local(mol: Chem.Mol) -> dict:
     return {"h": {"peaks": h_peaks}, "c": {"peaks": c_peaks}, "source": "rules", "note": RULES_NOTE}
 
 
-# ---------------------------------------------------------------- nmrshiftdb2
+# ---------------------------------------------------------------- local index
 
-def _cml_peaks(text: str) -> list[tuple[float, str]]:
-    """[(shift, 'aN')] from a nmrshiftdb2 prediction (CML)."""
-    root = ET.fromstring(text)
-    out = []
-    for peak in root.iter():
-        if peak.tag.endswith("peak") and "xValue" in peak.attrib and "atomRefs" in peak.attrib:
-            for ref in peak.attrib["atomRefs"].split():
-                out.append((float(peak.attrib["xValue"]), ref))
-    return out
-
-
-def map_atom_refs(mol: Chem.Mol) -> dict[str, tuple[int, int]]:
-    """'aN' -> (heavy atom index, parent heavy atom index). nmrshiftdb2 numbers
-    heavy atoms in SMILES order, then appends hydrogens per heavy atom in order."""
-    refs: dict[str, tuple[int, int]] = {}
-    n = 1
-    for a in mol.GetAtoms():
-        refs[f"a{n}"] = (a.GetIdx(), a.GetIdx())
-        n += 1
-    for a in mol.GetAtoms():
-        for _ in range(a.GetTotalNumHs(includeNeighbors=True)):
-            refs[f"a{n}"] = (-1, a.GetIdx())
-            n += 1
-    return refs
-
-
-def merge_nmrshiftdb(local: dict, h_text: str | None, c_text: str | None, mol: Chem.Mol) -> dict:
-    """Replace rule shifts with nmrshiftdb2 ones where the service answered."""
-    refs = map_atom_refs(mol)
-    out = {"h": {"peaks": [dict(p) for p in local["h"]["peaks"]]}, "c": {"peaks": [dict(p) for p in local["c"]["peaks"]]}, "source": "rules", "note": RULES_NOTE}
-    used = False
-    if c_text:
-        by_atom = {refs[r][0]: s for s, r in _cml_peaks(c_text) if r in refs and refs[r][0] >= 0}
-        if by_atom:
-            for p in out["c"]["peaks"]:
-                vals = [by_atom[i] for i in p["atoms"] if i in by_atom]
-                if vals:
-                    p["shift"] = round(sum(vals) / len(vals), 1)
-            out["c"]["peaks"].sort(key=lambda p: -p["shift"])
-            used = True
-    if h_text:
-        by_parent: dict[int, list[float]] = defaultdict(list)
-        for s, r in _cml_peaks(h_text):
-            if r in refs and refs[r][0] < 0:
-                by_parent[refs[r][1]].append(s)
-        if by_parent:
-            for p in out["h"]["peaks"]:
-                vals = [v for i in p["atoms"] for v in by_parent.get(i, [])]
-                if vals:
-                    p["shift"] = round(sum(vals) / len(vals), 2)
-            out["h"]["peaks"].sort(key=lambda p: -p["shift"])
-            used = True
-    if used:
-        out["source"] = "nmrshiftdb2"
-        out["note"] = NMR_NOTE
+def apply_index(data: dict, mol: Chem.Mol) -> dict:
+    """Replace rule shifts, per symmetry class, with the compound's measured shifts when nmrshiftdb2 has
+    it, else with predictions from the local index (app.nmr_env) and their error bars. Classes neither
+    can place keep their rule shift, marked as estimated."""
+    pred = nmr_env.predict(mol)
+    seen = nmr_env.measured(mol)
+    if not pred["C"] and not pred["H"]:
+        return data
+    out = {**data, "h": {"peaks": [dict(p) for p in data["h"]["peaks"]]}, "c": {"peaks": [dict(p) for p in data["c"]["peaks"]]}}
+    counts = {"measured": 0, "index": 0, "rules": 0}
+    for nuc, key, digits in (("c", "C", 1), ("h", "H", 2)):
+        for p in out[nuc]["peaks"]:
+            atoms = [i for i in p["atoms"] if i < mol.GetNumAtoms()]
+            found = [seen[key][i] for i in atoms] if seen else []
+            hits = [pred[key][i] for i in atoms if pred[key][i]]
+            if found and all(v is not None for v in found):
+                p["shift"] = round(sum(found) / len(found), digits)
+                p["estimate"] = "measured"
+            elif hits:
+                p["shift"] = round(sum(h["shift"] for h in hits) / len(hits), digits)
+                p["spread"] = round(sum(h["spread"] for h in hits) / len(hits), digits)
+                p["examples"] = min(h["n"] for h in hits)
+                p["radius"] = min(h["radius"] for h in hits)
+                p["estimate"] = "index"
+            else:
+                p["estimate"] = "rules"
+            counts[p["estimate"]] += 1
+        out[nuc]["peaks"].sort(key=lambda p: -p["shift"])
+    notes = []
+    if counts["measured"]:
+        notes.append(MEASURED_NOTE.format(record=seen["record"], solvent=seen["solvent"] or "solvent not given"))
+    if counts["index"]:
+        notes.append(INDEX_NOTE)
+    if counts["rules"]:
+        notes.append(PARTLY_RULES_NOTE)
+    out["source"] = "measured" if counts["measured"] else "index" if counts["index"] else "rules"
+    out["note"] = " ".join(notes)
+    if seen:
+        out["record"] = {"id": seen["record"], "solvent": seen["solvent"]}
     return out
 
 
 def nmr(smiles: str) -> tuple[dict, bool]:
-    """(nmr dict, complete). complete is False when the lookup was wanted but failed."""
+    """(nmr dict, complete). Everything is local: the compound's measured shifts when nmrshiftdb2 has
+    them, else the local index, else additive rules. (The live nmrshiftdb2 service is no longer asked:
+    the local index covers the same data, needs no network, and handles charged structures.)"""
     mol = Chem.MolFromSmiles(smiles)
-    local = nmr_local(mol)
-    if not enabled() or "[H]" in smiles:
-        return local, True
-    h_text = c_text = None
-    try:
-        with httpx.Client(timeout=_timeout(), follow_redirects=True) as client:
-            for kind in ("1H", "13C"):
-                r = client.get(NMRSHIFTDB.format(quote(smiles, safe=""), kind))
-                if r.status_code == 200 and r.text.lstrip().startswith("<cml"):
-                    if kind == "1H":
-                        h_text = r.text
-                    else:
-                        c_text = r.text
-    except (httpx.HTTPError, ValueError):
-        pass
-    if not h_text and not c_text:
-        return local, False
-    try:
-        return merge_nmrshiftdb(local, h_text, c_text, mol), bool(h_text and c_text)
-    except (ET.ParseError, KeyError, IndexError):
-        return local, False
+    return apply_index(nmr_local(mol), mol), True
 
 
 # ---------------------------------------------------------------- IR

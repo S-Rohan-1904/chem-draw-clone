@@ -278,13 +278,19 @@ export interface NmrPeak {
   couplings?: { J: number; n: number; atoms: number[] }[]
   label: string
   exchangeable?: boolean
+  /** measured: this compound's assigned spectrum; index: predicted from look-alike atoms; rules: additive rules */
+  estimate?: 'measured' | 'index' | 'rules'
+  /** Typical error of a predicted shift, in ppm. */
+  spread?: number
 }
 
 export interface NmrSpectrum {
   h: { peaks: NmrPeak[] }
   c: { peaks: NmrPeak[] }
-  source: 'rules' | 'nmrshiftdb2'
+  source: 'rules' | 'index' | 'measured'
   note: string
+  /** The nmrshiftdb2 record the measured shifts come from. */
+  record?: { id: string; solvent: string }
   cached: boolean
 }
 

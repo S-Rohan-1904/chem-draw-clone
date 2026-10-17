@@ -390,3 +390,7 @@ button.chip { font: inherit; cursor: pointer; }
 .peak-table th, .peak-table td { text-align: left; padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }
 .peak-table th { color: var(--muted); font-weight: 600; }
 .peak-table tr.sel td, .peak-table tbody tr:hover td { background: var(--accent-soft); cursor: default; }
+.peak-table .tag { margin-left: 0; }
+.nmr-measured { background: var(--green-soft); color: var(--green); }
+.nmr-index { background: var(--accent-soft); color: var(--accent); }
+.nmr-rules { background: var(--warn-soft); color: var(--warn); }

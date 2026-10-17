@@ -73,6 +73,8 @@ export function Spectra({ mol, onHighlight }: Props) {
 
 // ---------------------------------------------------------------- helpers
 
+const ESTIMATE = { measured: 'measured', index: 'predicted', rules: 'estimated' } as const
+
 function Axis({ x0, x1, ticks, unit, reversed }: { x0: number; x1: number; ticks: number[]; unit: string; reversed?: boolean }) {
   const sx = (v: number) => PAD.l + ((reversed ? x1 - v : v - x0) / (x1 - x0)) * PW
   return (
@@ -126,14 +128,15 @@ function Nmr({ data, nucleus, onHighlight }: { data: NmrSpectrum; nucleus: 'h' |
         })}
       </svg>
       <table className="peak-table">
-        <thead><tr><th>δ (ppm)</th><th>{nucleus === 'h' ? 'H' : 'C'}</th>{nucleus === 'h' && <th>mult.</th>}<th>environment</th></tr></thead>
+        <thead><tr><th>δ (ppm)</th><th>{nucleus === 'h' ? 'H' : 'C'}</th>{nucleus === 'h' && <th>mult.</th>}<th>environment</th>{data.source !== 'rules' && <th>shift from</th>}</tr></thead>
         <tbody>
           {peaks.map((p, i) => (
             <tr key={i} className={sel === i ? 'sel' : ''} onMouseEnter={() => hover(i)} onMouseLeave={() => hover(null)}>
-              <td>{p.shift.toFixed(nucleus === 'h' ? 2 : 1)}</td>
+              <td>{p.shift.toFixed(nucleus === 'h' ? 2 : 1)}{p.spread != null && <span className="muted"> ± {p.spread.toFixed(nucleus === 'h' ? 2 : 1)}</span>}</td>
               <td>{p.integration}</td>
               {nucleus === 'h' && <td>{p.multiplicity}{p.exchangeable ? ' (br, exchangeable)' : ''}{p.couplings && p.couplings.length > 0 && <span className="muted">, J = {p.couplings.map((c) => c.J.toFixed(1)).join(', ')} Hz</span>}</td>}
               <td>{p.label}</td>
+              {data.source !== 'rules' && <td><span className={`tag nmr-${p.estimate ?? 'rules'}`}>{ESTIMATE[p.estimate ?? 'rules']}</span></td>}
             </tr>
           ))}
         </tbody>

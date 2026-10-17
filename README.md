@@ -135,9 +135,16 @@ Every built molecule gets a Spectra card with four tabs. Hovering a peak or band
 highlights the atoms responsible in the 2D drawing.
 
 - **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
-  integrations are computed locally. Shifts come from the nmrshiftdb2 HOSE-code
-  prediction service when reachable, otherwise from additive substituent rules
-  (teaching accuracy only).
+  integrations are computed locally. Shifts come, per signal, from the first of these that has one,
+  all offline (`backend/app/nmr_env.py`, index `backend/app/data/nmr_env.db`):
+  the compound's own assigned spectrum when it is one of the 43,000 compounds in nmrshiftdb2
+  (marked measured, with the record number and solvent; shifts are as deposited, and a few records'
+  1H assignments look shuffled); a prediction from atoms with the same
+  surroundings up to four bonds out in those spectra (marked predicted, with a ± calibrated on held-out
+  molecules); additive substituent rules (marked estimated). On 4,355 molecules held out of the
+  index, predictions are off by 2.5 ppm (13C) and 0.24 ppm (1H) on average, against 8.9 and 0.66 ppm
+  for the rules (`docs/spectra-benchmark.md`, `backend/scripts/eval_spectra.py`). Rebuild the index from
+  nmrshiftdb2's `nmrshiftdb2withsignals.sd` with `uv run python scripts/nmr_env.py build <file>`.
 - **Couplings** (`backend/app/couplings.py`): first-order J values and multiplet patterns
   (d, dd, td, ...). 7 Hz across freely rotating bonds, Karplus J from the dihedral in the
   lowest-energy MMFF conformer inside rings, 16 / 10.5 Hz trans / cis on alkenes, 8 / 2 Hz
@@ -157,8 +164,8 @@ highlights the atoms responsible in the 2D drawing.
 
 Results are cached per molecule (`SPECTRA_VERSION` in `backend/app/cache.py` invalidates
 old rows when the payload changes). `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no
-nmrshiftdb2 or NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each
-request. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
+NIST requests); `CHEM_SPECTRA_TIMEOUT` (seconds, default 10) bounds each request.
+`CHEM_NMR_ENV_DB` moves the NMR index. Experimental data: NIST Chemistry WebBook, NIST Standard Reference Database 69.
 
 ### Reaction index
 

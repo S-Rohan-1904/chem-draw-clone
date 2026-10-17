@@ -14,3 +14,5 @@ os.environ.setdefault("CHEM_SPECTRA_LOOKUP", "0")
 os.environ.setdefault("CHEM_ORD_DB", "/nonexistent/ord_papers.db")
 # Literature services too; tests that need them patch each module's enabled() and mock HTTP.
 os.environ.setdefault("CHEM_LITERATURE_LOOKUP", "0")
+# The NMR shift index is a local build; tests of the rules run without it and build their own.
+os.environ.setdefault("CHEM_NMR_ENV_DB", "/nonexistent/nmr_env.db")

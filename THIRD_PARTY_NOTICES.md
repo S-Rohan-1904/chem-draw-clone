@@ -66,6 +66,15 @@ installed separately and is not distributed with this repository.
   reactions (left-to-right direction, no generic R groups) are atom-mapped with RXNMapper
   and added to the reaction index, each linked to its Rhea entry and EC numbers.
   `backend/tests/fixtures_reactions_rhea.tsv` holds two mapped rows.
+- **nmrshiftdb2**, University of Cologne, <https://nmrshiftdb.nmr.uni-koeln.de>, under the
+  nmrshiftdb2 Database License (derived from the ODC Open Database License). Steinbeck, C.;
+  Kuhn, S. *Phytochemistry* **2004**, 65, 2711–2717. `backend/scripts/nmr_env.py` reads the
+  assigned spectra in `nmrshiftdb2withsignals.sd` and writes `backend/app/data/nmr_env.db`: median
+  ¹H and ¹³C shifts per atom environment, and each compound's own assigned shifts. That file is a
+  derivative database and is distributed under the nmrshiftdb2 Database License, not the MIT
+  licence; as its section 4.5 requires, the software that uses it is open source (MIT).
+  `docs/benchmark/nmr_test.jsonl`, the held-out molecules the benchmark scores against, is
+  under the same licence.
 - **Open Reaction Database** (ORD), <https://open-reaction-database.org>, data released under
   CC BY-SA 4.0. Kearnes, S. M. et al. The Open Reaction Database. *J. Am. Chem. Soc.* **2021**,
   143 (45), 18820–18826. `backend/scripts/ord_papers.py` reads the non-patent datasets and
@@ -95,9 +104,6 @@ naming the source, and use of each service is subject to its provider's terms.
   Kim, S. et al. *Nucleic Acids Res.* **2023**, 51 (D1), D1373–D1380.
 - **NCI/CADD Chemical Identifier Resolver (CACTUS)**, National Cancer
   Institute: fallback name resolution.
-- **nmrshiftdb2**, University of Cologne: predicted ¹H and ¹³C NMR shifts
-  using HOSE codes. Steinbeck, C.; Kuhn, S. *Phytochemistry* **2004**, 65,
-  2711–2717.
 - **NIST Chemistry WebBook**, NIST Standard Reference Database Number 69:
   experimental IR and mass spectra. Linstrom, P. J.; Mallard, W. G., Eds.
   National Institute of Standards and Technology, Gaithersburg, MD.

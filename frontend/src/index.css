@@ -409,3 +409,7 @@ button.chip { font: inherit; cursor: pointer; }
 .spectrum .mode-hit:hover, .spectrum .mode-hit.sel { fill: #059669; opacity: 0.18; }
 .mode-panel { margin-top: 0.5rem; }
 .mode-viewer { position: relative; width: 100%; height: 260px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.spectrum .curve.uv { stroke: #7c3aed; stroke-width: 2; cursor: pointer; }
+.spectrum line.uv-max { stroke: #7c3aed; stroke-dasharray: 3 3; }
+.spectrum h3.sub { font-size: 0.9rem; margin: 0.9rem 0 0.2rem; }
+.peak-table tr.muted td { color: var(--muted); }

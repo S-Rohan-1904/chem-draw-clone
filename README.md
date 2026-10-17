@@ -131,7 +131,7 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
 
 ## Spectra
 
-Every built molecule gets a Spectra card with five tabs. Hovering a peak or band
+Every built molecule gets a Spectra card with six tabs. Hovering a peak or band
 highlights the atoms responsible in the 2D drawing.
 
 - **1H / 13C NMR**: number of signals is exact (symmetry classes of the structure);
@@ -175,6 +175,15 @@ highlights the atoms responsible in the 2D drawing.
   ions (acylium −CO, tropylium −C2H2, alkyl −C2H4). Each ion is drawn with its charge and,
   with Cl / Br, its isotope cluster; an ion reachable both directly and stepwise is listed
   once under its precursor.
+
+- **ESI and high resolution** (`backend/app/msinfo.py`): the usual electrospray ions ([M+H]+, [M+Na]+,
+  [M-H]-, adducts) with exact m/z, the likely ones marked from the groups present (a basic nitrogen takes
+  a proton, an acid loses one, oxygen-rich molecules hold sodium); rings plus double bonds and the
+  nitrogen rule; and every CHNOS formula within 5 ppm of the exact mass that passes both rules.
+- **UV-Vis** (`backend/app/uvvis.py`): λmax estimated with the Woodward-Fieser rules for conjugated
+  dienes and α,β-unsaturated carbonyls (Fieser-Kuhn above four C=C), with every increment listed and the
+  atoms it counts highlighted. Butadiene 217 nm, mesityl oxide 239 (measured 237), β-carotene 453 (452).
+  Isolated and aromatic chromophores get a note instead of a number.
 
 Results are cached per molecule (`SPECTRA_VERSION` in `backend/app/cache.py` invalidates
 old rows when the payload changes). `CHEM_SPECTRA_LOOKUP=0` keeps everything local (no

@@ -19,7 +19,7 @@ from urllib.parse import quote
 
 import httpx
 
-from . import couplings, nmr_env, spinsim, vibrations
+from . import couplings, msinfo, nmr_env, spinsim, uvvis, vibrations
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdMolDescriptors
 
@@ -631,6 +631,9 @@ def ms_predict(mol: Chem.Mol) -> dict:
         "isotopes": isotope_pattern(counts),
         "fragments": ms_fragments(mol),
         "tree": msfrag.tree(mol)["nodes"],
+        "esi": msinfo.esi_ions(mol),
+        "rules": msinfo.rules(mol),
+        "hrms": msinfo.formulas_for(mol),
     }
 
 
@@ -772,10 +775,12 @@ def nist(mol: Chem.Mol, kind: str) -> tuple[dict | None, bool]:
 # ---------------------------------------------------------------- entry points
 
 def build(smiles: str, kind: str) -> tuple[dict, bool]:
-    """(payload, complete). kind is 'nmr' | 'ir' | 'ms'."""
+    """(payload, complete). kind is 'nmr' | 'ir' | 'ms' | 'uv'."""
     if kind == "nmr":
         return nmr(smiles)
     mol = Chem.MolFromSmiles(smiles)
+    if kind == "uv":
+        return uvvis.estimate(mol), True
     experimental, complete = nist(mol, kind)
     note = NIST_NOTE if experimental else ("No experimental spectrum for this compound in the NIST WebBook." if enabled() else "")
     if kind == "ir":

@@ -12,8 +12,8 @@ Sources
   https://ftp.expasy.org/databases/rhea/tsv/ (CC BY 4.0). Only the
   left-to-right reaction of each entry, and none with generic R groups (*).
   ref is RHEA:<id>, extra is the EC number(s).
-- wiki: wiki_reactions.tsv from scripts/wiki_reactions.py, equations in English
-  Wikipedia compound articles (CC BY-SA 4.0). ref is <article title>#<line>, extra is
+- wiki: wiki_reactions.tsv from scripts/wiki_reactions.py, equations and sentences
+  in English Wikipedia chemistry articles (CC BY-SA 4.0). ref is <article title>#<line>, extra is
   the article revision the equation was read from.
 - hsdb: hsdb_reactions.tsv from scripts/hsdb_reactions.py, routes read from
   PubChem's Methods of Manufacturing (HSDB). ref is <CID>#<line>, extra is the

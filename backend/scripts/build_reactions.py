@@ -55,7 +55,7 @@ SOURCES = {
     "uspto": "Lowe, Chemical reactions from US patents (1976-Sep2016), figshare, doi:10.6084/m9.figshare.5104873, CC0",
     "crd": "van der Lingen, Chemical Reaction Database, Zenodo, doi:10.5281/zenodo.18109268, CC BY 4.0",
     "rhea": "Rhea, the reaction knowledgebase, https://www.rhea-db.org, CC BY 4.0",
-    "wiki": "Equations in English Wikipedia chemical compound articles, https://en.wikipedia.org, CC BY-SA 4.0",
+    "wiki": "Equations and sentences in English Wikipedia chemistry articles, https://en.wikipedia.org, CC BY-SA 4.0",
     "hsdb": "Hazardous Substances Data Bank, Methods of Manufacturing, U.S. National Library of Medicine, via PubChem",
 }
 ENZYME_SOURCES = {"rhea"}

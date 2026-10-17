@@ -59,9 +59,12 @@ function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
   }
   const textbookUses = data.textbook_uses ?? []
   const textbookMakes = data.textbook_makes ?? []
+  const curatedUses = data.curated_uses ?? []
+  const curatedMakes = data.curated_makes ?? []
+  const anyTextbook = textbookUses.length + textbookMakes.length + curatedUses.length + curatedMakes.length > 0
   return (
     <div className="bonding-body">
-      {data.uses.length === 0 && data.makes.length === 0 && textbookUses.length === 0 && textbookMakes.length === 0 && (
+      {data.uses.length === 0 && data.makes.length === 0 && !anyTextbook && !data.no_preparation && (
         data.heavy_atoms && data.max_atoms && data.heavy_atoms > data.max_atoms ? (
           <p className="muted small">
             This molecule has {data.heavy_atoms} heavy atoms, and the reaction index covers molecules up to {data.max_atoms}.
@@ -77,14 +80,20 @@ function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
       {data.stereo_ignored && (
         <p className="muted small">Reactions of every stereoisomer of this structure are shown together. Rows marked "other stereoisomer" have an example recorded for a different stereoisomer, or without stereochemistry.</p>
       )}
-      <Section title="Used in" empty={textbookUses.length ? '' : 'No recorded reactions use this molecule as a starting material.'} items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
+      <Section title="Used in" empty={textbookUses.length || curatedUses.length ? '' : 'No recorded reactions use this molecule as a starting material.'} items={data.uses} direction="uses" onOpen={onOpen} onHighlight={onHighlight} />
+      {curatedUses.length > 0 && (
+        <Section title="Used in, reviewed textbook routes" empty="" items={curatedUses} direction="uses" kind="curated" onOpen={onOpen} onHighlight={onHighlight} />
+      )}
       {textbookUses.length > 0 && (
         <Section title="Used in, textbook routes" empty="" items={textbookUses} direction="uses" kind="textbook" onOpen={onOpen} onHighlight={onHighlight} />
+      )}
+      {curatedMakes.length > 0 && (
+        <Section title="Made by, reviewed textbook routes" empty="" items={curatedMakes} direction="makes" kind="curated" onOpen={onOpen} onHighlight={onHighlight} />
       )}
       {textbookMakes.length > 0 && (
         <Section title="Made by, textbook routes" empty="" items={textbookMakes} direction="makes" kind="textbook" onOpen={onOpen} onHighlight={onHighlight} />
       )}
-      <Section title="Made by" empty={made?.methods.length || wiki?.paragraphs.length || textbookMakes.length ? '' : 'No recorded reactions make this molecule.'} items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
+      <Section title="Made by" empty={made?.methods.length || wiki?.paragraphs.length || textbookMakes.length || curatedMakes.length ? '' : data.no_preparation || 'No recorded reactions make this molecule.'} items={data.makes} direction="makes" onOpen={onOpen} onHighlight={onHighlight} />
       {made && made.methods.length > 0 && <Methods data={made} onOpen={onOpen} />}
       {wiki && wiki.paragraphs.length > 0 && <Wikipedia data={wiki} onOpen={onOpen} />}
       {data.enzyme_uses.length > 0 && (
@@ -107,7 +116,7 @@ function RecordedTab({ data, made, wiki, onOpen, onHighlight }: {
   )
 }
 
-const SEEN_IN = { recorded: 'recorded reaction', enzyme: 'enzyme reaction', textbook: 'Wikipedia route' }
+const SEEN_IN = { recorded: 'recorded reaction', enzyme: 'enzyme reaction', textbook: 'Wikipedia route', curated: 'reviewed route' }
 
 function Section({ title, empty, items, direction, kind = 'recorded', onOpen, onHighlight }: {
   title: string
@@ -130,9 +139,10 @@ function Section({ title, empty, items, direction, kind = 'recorded', onOpen, on
               <div className="rxn-info">
                 <b>{r.label}</b>
                 <span className="muted small">
-                  seen in {r.count} {SEEN_IN[kind]}{r.count === 1 ? '' : 's'}
+                  {kind === 'curated' ? 'reviewed textbook route' : `seen in ${r.count} ${SEEN_IN[kind]}${r.count === 1 ? '' : 's'}`}
                   {r.other_stereo && ', other stereoisomer'}
                 </span>
+                {r.note && <span className="small">{r.note}</span>}
                 <span className="small">
                   Example: {r.ref_url ? <a href={r.ref_url} target="_blank" rel="noopener noreferrer">{r.ref_label}</a> : r.ref_label}
                   {r.year ? ` (${r.year})` : ''}

@@ -1,0 +1,2 @@
+[CH3:1][CH:2]=[CH:4][CH3:5].[Br:6][Br:3]>>[CH3:1][CH:2]([Br:3])[CH:4]([CH3:5])[Br:6]	2,3-Dibromobutane#2			1001|CC(Br)C(C)Br	0.402
+[CH3:1]/[CH:2]=[CH:4]/[CH3:5].[Br:6][Br:3]>>[CH3:1][C@H:2]([Br:3])[C@@H:4]([CH3:5])[Br:6]	2,3-Dibromobutane#1			1001|C[C@H](Br)[C@@H](C)Br	0.494

@@ -196,7 +196,7 @@ export interface RecordedReaction {
   reactants: string[]
   agents: string[]
   products: string[]
-  source: 'uspto' | 'crd' | 'rhea' | 'wiki' | 'hsdb'
+  source: 'uspto' | 'crd' | 'rhea' | 'wiki' | 'hsdb' | 'curated'
   ref: string
   ref_label: string
   ref_url: string
@@ -207,6 +207,8 @@ export interface RecordedReaction {
   atoms: number[]
   /** The example is recorded for another stereoisomer, or without stereochemistry (older servers leave it out). */
   other_stereo?: boolean
+  /** Reviewed textbook routes: what the stereochemistry of the route is (older servers leave it out). */
+  note?: string
 }
 
 export interface RecordedReactions {
@@ -218,6 +220,11 @@ export interface RecordedReactions {
   /** Equations written in Wikipedia compound articles (older servers leave these out). */
   textbook_uses?: RecordedReaction[]
   textbook_makes?: RecordedReaction[]
+  /** Hand-reviewed textbook routes, which replace the other textbook routes when one makes this stereoisomer. */
+  curated_uses?: RecordedReaction[]
+  curated_makes?: RecordedReaction[]
+  /** A reviewed note for molecules with no common preparation, set only when nothing makes the molecule. */
+  no_preparation?: string
   stereo_ignored: boolean
   sources: { name: string; author: string; url: string; licence: string }[]
   heavy_atoms?: number

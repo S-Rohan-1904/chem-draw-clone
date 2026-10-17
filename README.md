@@ -96,7 +96,10 @@ Under every built molecule (endpoints under `/api/analysis`, code in `backend/ap
   to the molecule atom for atom, each drawn and linked to the article revision it was read from
   (`backend/scripts/wiki_reactions.py`, CC BY-SA 4.0), and the same for the sentences of
   PubChem's Methods of Manufacturing, whose named compounds carry PubChem CIDs
-  (`backend/scripts/hsdb_reactions.py`). Every stereoisomer of a structure is looked up
+  (`backend/scripts/hsdb_reactions.py`). Hand-reviewed textbook routes (`backend/app/data/curated_reactions.tsv`,
+  stereochemistry included) are a group of their own above those, and one that makes the exact stereoisomer
+  drawn replaces the unreviewed textbook routes. Molecules the file marks as having no common preparation
+  (3-methylhexane, spiro[4.5]decane) say so instead of showing an empty list. Every stereoisomer of a structure is looked up
   together, and rows whose example is another stereoisomer's say so. Under "Made by" the card also shows how
   the molecule is produced, in text: the manufacturing methods PubChem takes from the Hazardous Substances Data Bank
   (`backend/app/manufacture.py`), and the production or synthesis section of its English
@@ -212,11 +215,17 @@ uv run python scripts/wiki_reactions.py fetch wiki && uv run python scripts/wiki
 $MAP wiki wiki/wiki_reactions.tsv wiki_mapped.tsv
 uv run python scripts/hsdb_reactions.py fetch hsdb && uv run python scripts/hsdb_reactions.py extract hsdb
 $MAP hsdb hsdb/hsdb_reactions.tsv hsdb_mapped.tsv
+$MAP curated app/data/curated_reactions.tsv curated_mapped.tsv
 uv run python scripts/build_reactions.py -j 8 --uspto 1976_Sep2016_USPTOgrants_smiles.rsmi \
     2001_Sep2016_USPTOapplications_smiles.rsmi --crd crd_mapped.tsv --rhea rhea_mapped.tsv \
-    --wiki wiki_mapped.tsv --hsdb hsdb_mapped.tsv
+    --wiki wiki_mapped.tsv --hsdb hsdb_mapped.tsv --curated curated_mapped.tsv
 HF_TOKEN=... uv run python scripts/reactions_index.py upload <hf-user>/chem-forge-reactions
 ```
+
+The reviewed routes start as drafts in a review sheet (`docs/curated/made_by_review.csv`, see
+`docs/curated/README.md`); `scripts/curated_reactions.py accept` copies only the rows a reviewer marked right
+into the curated file. Its "no common preparation" notes are read at run time; its routes need the
+mapping step and an index rebuild (delete `curated_mapped.tsv` first if accepted rows were edited).
 
 `setup.sh` and the Docker build download it when `REACTIONS_REPO=<hf-user>/chem-forge-reactions`
 is set; without it the card says the index is not installed. Literature lookups are cached per

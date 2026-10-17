@@ -80,8 +80,19 @@ def newman_svg(molblock: str, front: int, back: int, rotate_deg: float = 0.0, si
     r_circle = size * 0.22
     r_front = size * 0.36
     r_back = size * 0.44
-    parts = [f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {size} {size}' width='{size}' height='{size}'>",
-             "<rect width='100%' height='100%' fill='white'/>"]
+    font = 15
+    body: list[str] = []
+    # Label boxes (x0, y0, x1, y1), to size the frame; the first is the drawing itself.
+    boxes = [(cx - r_back, cy - r_back, cx + r_back, cy + r_back)]
+
+    def label(x: float, y: float, text: str, colour: str, bold: bool) -> None:
+        # Text is centred on (x, y): about 0.6 em per character wide, one em tall.
+        w = 0.6 * font * len(text)
+        boxes.append((x - w / 2, y - font / 2 - 2, x + w / 2, y + font / 2 + 2))
+        weight = " font-weight='600'" if bold else ""
+        body.append(f"<text x='{x:.1f}' y='{y + font * 0.35:.1f}' text-anchor='middle' font-size='{font}'{weight} "
+                    f"fill='{colour}' font-family='sans-serif'>{text}</text>")
+
     # Back atom substituents: from circle edge outward (drawn first so front covers them).
     back_subs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(back).GetNeighbors() if nb.GetIdx() != front]
     for idx in back_subs:
@@ -89,24 +100,37 @@ def newman_svg(molblock: str, front: int, back: int, rotate_deg: float = 0.0, si
         x1, y1 = cx + dx * r_circle, cy - dy * r_circle
         x2, y2 = cx + dx * r_back, cy - dy * r_back
         sym = mol.GetAtomWithIdx(idx).GetSymbol()
-        parts.append(f"<line x1='{x1:.1f}' y1='{y1:.1f}' x2='{x2:.1f}' y2='{y2:.1f}' stroke='#94a3b8' stroke-width='3'/>")
-        parts.append(f"<text x='{cx + dx * (r_back + 18):.1f}' y='{cy - dy * (r_back + 18) + 5:.1f}' text-anchor='middle' font-size='15' fill='{COLORS.get(sym, '#1a1d29')}' font-family='sans-serif'>{_label(mol.GetAtomWithIdx(idx), back)}</text>")
-    parts.append(f"<circle cx='{cx}' cy='{cy}' r='{r_circle}' fill='white' stroke='#1a1d29' stroke-width='2.5'/>")
+        body.append(f"<line x1='{x1:.1f}' y1='{y1:.1f}' x2='{x2:.1f}' y2='{y2:.1f}' stroke='#94a3b8' stroke-width='3'/>")
+        label(cx + dx * (r_back + 18), cy - dy * (r_back + 18), _label(mol.GetAtomWithIdx(idx), back), COLORS.get(sym, "#1a1d29"), False)
+    body.append(f"<circle cx='{cx}' cy='{cy}' r='{r_circle}' fill='white' stroke='#1a1d29' stroke-width='2.5'/>")
     front_subs = [nb.GetIdx() for nb in mol.GetAtomWithIdx(front).GetNeighbors() if nb.GetIdx() != back]
     for idx in front_subs:
         dx, dy = project(idx, front, 0.0)
         x2, y2 = cx + dx * r_front, cy - dy * r_front
         sym = mol.GetAtomWithIdx(idx).GetSymbol()
-        parts.append(f"<line x1='{cx}' y1='{cy}' x2='{x2:.1f}' y2='{y2:.1f}' stroke='#1a1d29' stroke-width='3'/>")
-        parts.append(f"<text x='{cx + dx * (r_front + 18):.1f}' y='{cy - dy * (r_front + 18) + 5:.1f}' text-anchor='middle' font-size='15' font-weight='600' fill='{COLORS.get(sym, '#1a1d29')}' font-family='sans-serif'>{_label(mol.GetAtomWithIdx(idx), front)}</text>")
+        body.append(f"<line x1='{cx}' y1='{cy}' x2='{x2:.1f}' y2='{y2:.1f}' stroke='#1a1d29' stroke-width='3'/>")
+        label(cx + dx * (r_front + 18), cy - dy * (r_front + 18), _label(mol.GetAtomWithIdx(idx), front), COLORS.get(sym, "#1a1d29"), True)
     # Dihedral between the first substituent of each end, after the user's rotation.
     dihedral = None
     if front_subs and back_subs:
         fx, fy = project(front_subs[0], front, 0.0)
         bx, by = project(back_subs[0], back, rotate_deg)
         dihedral = round(math.degrees(math.atan2(fx * by - fy * bx, fx * bx + fy * by)) % 360, 1)
-    parts.append(f"<text x='12' y='{size - 12}' font-size='12' fill='#6b7280' font-family='sans-serif'>front: {mol.GetAtomWithIdx(front).GetSymbol()}{front + 1}, back: {mol.GetAtomWithIdx(back).GetSymbol()}{back + 1}</text>")
-    parts.append("</svg>")
+    # Frame the drawing so the widest label fits in any direction: the frame then stays the same while the
+    # back carbon is rotated, and the caption sits on its own line underneath.
+    pad = 10
+    half_w = max(b[2] - b[0] for b in boxes[1:]) / 2 if len(boxes) > 1 else 0
+    half_h = font / 2 + 2
+    rx = r_back + 18 + half_w + pad
+    ry = r_back + 18 + half_h + pad
+    x0, y0 = cx - rx, cy - ry
+    caption_y = cy + ry + 6
+    w, h = 2 * rx, caption_y + 8 - y0
+    parts = [f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='{x0:.1f} {y0:.1f} {w:.1f} {h:.1f}' width='{w:.0f}' height='{h:.0f}'>",
+             f"<rect x='{x0:.1f}' y='{y0:.1f}' width='{w:.1f}' height='{h:.1f}' fill='white'/>", *body,
+             f"<text x='{x0 + pad:.1f}' y='{caption_y:.1f}' font-size='12' fill='#6b7280' font-family='sans-serif'>front: "
+             f"{mol.GetAtomWithIdx(front).GetSymbol()}{front + 1}, back: {mol.GetAtomWithIdx(back).GetSymbol()}{back + 1}</text>",
+             "</svg>"]
     return {"svg": "".join(parts), "dihedral": dihedral, "front_subs": front_subs, "back_subs": back_subs}
 
 
